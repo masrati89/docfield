@@ -19,7 +19,7 @@ CREATE TABLE defect_library (
 );
 
 CREATE INDEX idx_defect_library_org ON defect_library(organization_id);
-CREATE INDEX idx_defect_library_search ON defect_library USING gin (to_tsvector('hebrew', description));
+CREATE INDEX idx_defect_library_search ON defect_library USING gin (to_tsvector('simple', description));
 
 ALTER TABLE defect_library ENABLE ROW LEVEL SECURITY;
 

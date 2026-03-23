@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import { I18nManager } from 'react-native';
-import { Stack } from 'expo-router';
+import { Slot } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+
+import { AuthProvider } from '@/contexts/AuthContext';
 
 import '../global.css';
 
@@ -29,8 +31,8 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-    </Stack>
+    <AuthProvider>
+      <Slot />
+    </AuthProvider>
   );
 }

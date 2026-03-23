@@ -5,7 +5,10 @@ import {
   ClipboardCheck,
   Settings,
   Plus,
+  LogOut,
 } from 'lucide-react';
+
+import { useAuth } from '@/contexts/AuthContext';
 
 const NAV_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: 'דשבורד' },
@@ -15,6 +18,8 @@ const NAV_ITEMS = [
 ] as const;
 
 export function DashboardLayout() {
+  const { profile, signOut } = useAuth();
+
   return (
     <div className="flex min-h-screen bg-cream-50">
       {/* Sidebar — right side in RTL (natural position) */}
@@ -64,9 +69,22 @@ export function DashboardLayout() {
           ))}
         </nav>
 
-        {/* Footer */}
+        {/* Footer — user info + sign out */}
         <div className="p-4 border-t border-cream-200">
-          <p className="text-[11px] font-rubik text-neutral-400 text-center">
+          {profile && (
+            <p className="text-[13px] font-rubik text-neutral-600 mb-2 truncate">
+              {profile.fullName}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={signOut}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-rubik text-neutral-500 hover:bg-cream-100 hover:text-neutral-700 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-primary-500 focus-visible:outline-offset-2"
+          >
+            <LogOut size={18} strokeWidth={1.5} />
+            התנתק
+          </button>
+          <p className="text-[11px] font-rubik text-neutral-400 text-center mt-2">
             DocField v0.0.1
           </p>
         </div>
