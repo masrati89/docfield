@@ -1,0 +1,16 @@
+{
+  "name": "@docfield/mobile",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .expo"
+  },
+  "dependencies": {
+    "@docfield/shared": "*",
+    "@docfield/ui": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
