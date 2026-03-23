@@ -17,4 +17,7 @@ config.resolver.nodeModulesPaths = [
   path.resolve(monorepoRoot, 'node_modules'),
 ];
 
+// Monorepo: ensure hoisted packages resolve correctly
+config.resolver.disableHierarchicalLookup = false;
+
 module.exports = withNativeWind(config, { input: './global.css' });
