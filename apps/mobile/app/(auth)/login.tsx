@@ -138,7 +138,7 @@ export default function LoginScreen() {
         }
       }
       setErrors(fieldErrors);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Platform.OS !== 'web' && Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       triggerShake();
       return;
     }
@@ -150,10 +150,10 @@ export default function LoginScreen() {
 
       if (error) {
         setErrors({ general: error });
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Platform.OS !== 'web' && Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         triggerShake();
       } else {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Platform.OS !== 'web' && Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } finally {
       setIsSubmitting(false);
@@ -170,7 +170,7 @@ export default function LoginScreen() {
   }, [buttonScale]);
 
   const handleButtonPress = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Platform.OS !== 'web' && Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     handleSubmit();
   }, [handleSubmit]);
 
