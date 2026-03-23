@@ -90,7 +90,114 @@
 
 ---
 
-## 2. ארכיטקטורת מערכת — High Level
+## 2. Design System Integration
+
+### הקשר בין Architecture ל-Design
+
+```
+┌─────────────────────────────────────────────────────┐
+│  docs/DESIGN_SYSTEM_DOCFIELD.md                     │
+│  └── מקור האמת: צבעים, typography, spacing, shadows │
+│       ↓                                              │
+│  Skills (~/.claude/skills/)                          │
+│  └── HOW to build components (UX, accessibility,    │
+│       animations, best practices)                    │
+│       ↓                                              │
+│  packages/shared/                                    │
+│  └── theme/ (Design System as Code — tokens, types) │
+│       ↓                                              │
+│  apps/mobile + apps/web                              │
+│  └── UI components using theme + skills guidelines   │
+└─────────────────────────────────────────────────────┘
+```
+
+### Skills עיצוב — כלי עבודה לבניית UI
+
+DocField משתמש ב-Skills מותקנים ב-`~/.claude/skills/` שמדריכים את Claude Code:
+
+| Skill | תפקיד | פלטפורמה |
+|-------|--------|----------|
+| `bencium-controlled-ux-designer` | עקרונות UX, היררכיה, accessibility | כל UI |
+| `ui-ux-pro-max` | ארכיטקטורת מסכים, navigation, state | כל UI |
+| `bencium-innovative-ux-designer` | פתרונות יצירתיים, micro-interactions | features ייחודיים |
+| `frontend-design` | קוד UI נקי, conventions | כל UI |
+| `design-audit` | ביקורת עקביות עם Design System | לפני commit |
+| `web-design-guidelines` | web accessibility, responsive | apps/web |
+| `vercel-react-native-skills` | React Native best practices | apps/mobile |
+
+### פרוטוקול בניית Component
+
+```
+1. קרא את ה-Design System (docs/DESIGN_SYSTEM_DOCFIELD.md)
+2. קרא Skills רלוונטיים לפי סוג העבודה:
+   - Component → frontend-design + bencium-controlled-ux-designer
+   - מסך מלא → ui-ux-pro-max + vercel-react-native-skills (mobile)
+   - Feature ייחודי → bencium-innovative-ux-designer
+3. בנה את ה-Component לפי העקרונות משני המקורות
+4. הרץ design-audit (/design-check) לפני commit
+5. וודא TypeScript תקין: npx tsc --noEmit
+```
+
+### Component Development Workflow
+
+כל component UI עובר את התהליך הזה:
+
+**שלב 1 — קרא את המקורות:**
+```bash
+# Design System
+docs/DESIGN_SYSTEM_DOCFIELD.md
+
+# Skills רלוונטיים
+~/.claude/skills/bencium-controlled-ux-designer/SKILL.md
+~/.claude/skills/frontend-design/SKILL.md
+```
+
+**שלב 2 — בנה את ה-component:**
+```typescript
+// apps/mobile/src/components/DefectCard.tsx
+import { theme } from '@docfield/ui';
+
+export function DefectCard({ defect }: Props) {
+  // משתמש ב-theme.colors, theme.spacing, theme.typography
+  // עוקב אחרי עקרונות מ-Skills
+}
+```
+
+**שלב 3 — בדוק integration:**
+```bash
+# TypeScript
+npx tsc --noEmit
+
+# Build
+npm run build
+
+# Design audit
+/design-check
+```
+
+### תלויות בין Packages
+
+```
+apps/mobile   ─┬─→  @docfield/ui (theme)
+               └─→  @docfield/shared (types, utils)
+
+apps/web      ─┬─→  @docfield/ui (theme)
+               └─→  @docfield/shared (types, utils)
+
+packages/ui     ─→  standalone (no deps)
+packages/shared ─→  standalone (zod only)
+```
+
+**כלל:** apps תלויים ב-packages, packages לא תלויים באף אחד.
+
+### כלל: Design System מנצח
+
+אם יש סתירה בין Skill להנחיות ב-Design System — **ה-Design System מנצח תמיד**.
+ה-Skills מלמדים *איך* לבנות. ה-Design System מגדיר *מה* לבנות.
+
+---
+
+## 3. ארכיטקטורת מערכת — High Level
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -749,6 +856,39 @@ Production:
 - Supabase Production Project
 - Sentry monitoring active
 ```
+
+---
+
+## ✅ Component Quality Checklist
+
+לפני כל commit של component חדש:
+
+**TypeScript**
+- [ ] `npx tsc --noEmit` עובר ללא שגיאות
+- [ ] כל ה-imports מ-`@docfield/*` עובדים
+- [ ] Props מוקלדים (TypeScript interfaces)
+
+**Design System**
+- [ ] משתמש רק ב-`theme.colors` (לא hardcoded hex)
+- [ ] משתמש רק ב-`theme.spacing` (לא magic numbers)
+- [ ] משתמש ב-`theme.typography.*.fontFamily`
+- [ ] עוקב אחרי `theme.borderRadius`, `theme.shadows`
+
+**Skills Compliance**
+- [ ] Component עוקב אחרי `frontend-design` guidelines
+- [ ] UX עוקב אחרי `bencium-controlled-ux-designer`
+- [ ] אם mobile — עוקב אחרי `vercel-react-native-skills`
+
+**Integration**
+- [ ] `npm run build` עובר בהצלחה
+- [ ] Component מיובא ועובד ב-parent
+- [ ] אין `console.log`/errors בקוד production
+
+**Design Audit**
+- [ ] הרצת `/design-check` על הקובץ
+- [ ] תיקון כל הממצאים
+
+> אם כל הסעיפים ✅ — אפשר לעשות commit.
 
 ---
 

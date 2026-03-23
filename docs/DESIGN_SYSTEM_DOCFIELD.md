@@ -15,7 +15,60 @@
 
 ---
 
-## 2. Color Palette
+## 2. Skills עיצוב — כלי העבודה שלנו
+
+DocField משתמש ב-Skills מתקדמים שמדריכים את Claude Code בבניית UI/UX איכותי.
+ה-Skills מותקנים ב-`~/.claude/skills/` ונטענים אוטומטית לפי הקשר.
+
+### Skills מותקנים
+
+| Skill | מתי להשתמש | מה הוא מספק |
+|-------|-----------|-------------|
+| **bencium-controlled-ux-designer** | בניית כל component UI חדש | עקרונות UX, היררכיה ויזואלית, accessibility |
+| **ui-ux-pro-max** | בניית מסכים מלאים | ארכיטקטורת מסכים, navigation patterns, state management |
+| **bencium-innovative-ux-designer** | features ייחודיים | פתרונות עיצוב יצירתיים, אנימציות, micro-interactions |
+| **frontend-design** | כל קוד UI | קוד נקי, conventions, best practices |
+| **design-audit** | לפני כל commit | ביקורת עיצוב — וידוא עקביות עם Design System |
+| **web-design-guidelines** | apps/web | עקרונות web accessibility, responsive design |
+| **vercel-react-native-skills** | apps/mobile | React Native best practices, performance |
+
+### כלל זהב — מתי לקרוא Skills
+
+**תמיד לפני:**
+- יצירת component חדש → קרא `frontend-design` + `bencium-controlled-ux-designer`
+- יצירת מסך מלא → קרא `ui-ux-pro-max` + `vercel-react-native-skills` (אם mobile)
+- feature ייחודי → קרא `bencium-innovative-ux-designer`
+- commit → הרץ `design-audit` (פקודת `/design-check`)
+
+### דוגמה לשימוש
+
+```
+אני רוצה ליצור את מסך דוח המסירה.
+קודם קרא:
+1. docs/DESIGN_SYSTEM_DOCFIELD.md (Design System)
+2. ~/.claude/skills/ui-ux-pro-max/SKILL.md (ארכיטקטורת מסכים)
+3. ~/.claude/skills/vercel-react-native-skills/SKILL.md (React Native)
+
+אחר כך תצור את המסך לפי העקרונות משלושת המקורות.
+```
+
+### חשוב: Skills משלימים, לא מחליפים
+
+```
+Design System = מה (צבעים, typography, spacing, component specs)
+Skills        = איך (לבנות components איכותיים עם ה-"מה")
+
+סדר עדיפויות:
+1. Design System של DocField (המסמך הזה) ← מקור האמת
+2. Skills (bencium, ui-ux-pro-max...) ← כללי בנייה
+3. react-native-reusables ← base components
+
+אם יש סתירה בין Skill ל-Design System — ה-Design System מנצח.
+```
+
+---
+
+## 3. Color Palette
 
 ### Primary — Forest Green (ירוק יער)
 הצבע המוביל. משדר אמינות, מקצועיות, יציבות.
