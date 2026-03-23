@@ -4,16 +4,20 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@docfield/shared": ["../../packages/shared/src"],
-      "@docfield/ui": ["../../packages/ui/src"]
+      "@/*": [
+        "./*"
+      ],
+      "@docfield/shared": [
+        "../../packages/shared/src"
+      ],
+      "@docfield/ui": [
+        "../../packages/ui/src"
+      ]
     }
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts",
     "nativewind-env.d.ts"
   ]
 }
