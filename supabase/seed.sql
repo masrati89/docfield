@@ -2,8 +2,8 @@
 -- Run after migrations: supabase db reset
 --
 -- NOTE: This seed creates demo data for local development only.
--- Users must be created through Supabase Auth (not directly in the users table)
--- because the auth trigger (handle_new_user) populates the public.users table.
+-- Auth users are created in auth.users which triggers handle_new_user()
+-- to auto-populate public.users.
 
 -- ===========================================
 -- DEMO ORGANIZATION
@@ -16,6 +16,75 @@ INSERT INTO organizations (id, name, settings) VALUES (
         "defaultLanguage": "he",
         "pdfBrandingEnabled": true
     }'::jsonb
+);
+
+-- ===========================================
+-- DEMO USERS (auth.users → trigger creates public.users)
+-- Password for all: Test1234
+-- ===========================================
+
+-- Admin user
+INSERT INTO auth.users (
+    instance_id, id, aud, role, email, encrypted_password,
+    email_confirmed_at, raw_user_meta_data,
+    created_at, updated_at, confirmation_token, recovery_token
+) VALUES (
+    '00000000-0000-0000-0000-000000000000',
+    '00000000-0000-0000-0000-000000000101',
+    'authenticated', 'authenticated',
+    'admin@docfield.test',
+    crypt('Test1234', gen_salt('bf')),
+    NOW(),
+    jsonb_build_object(
+        'full_name', 'חיים מנהל',
+        'organization_id', '00000000-0000-0000-0000-000000000001',
+        'role', 'admin'
+    ),
+    NOW(), NOW(), '', ''
+);
+
+INSERT INTO auth.identities (
+    id, user_id, identity_data, provider, provider_id,
+    last_sign_in_at, created_at, updated_at
+) VALUES (
+    '00000000-0000-0000-0000-000000000101',
+    '00000000-0000-0000-0000-000000000101',
+    jsonb_build_object('sub', '00000000-0000-0000-0000-000000000101', 'email', 'admin@docfield.test'),
+    'email',
+    '00000000-0000-0000-0000-000000000101',
+    NOW(), NOW(), NOW()
+);
+
+-- Inspector user
+INSERT INTO auth.users (
+    instance_id, id, aud, role, email, encrypted_password,
+    email_confirmed_at, raw_user_meta_data,
+    created_at, updated_at, confirmation_token, recovery_token
+) VALUES (
+    '00000000-0000-0000-0000-000000000000',
+    '00000000-0000-0000-0000-000000000102',
+    'authenticated', 'authenticated',
+    'inspector@docfield.test',
+    crypt('Test1234', gen_salt('bf')),
+    NOW(),
+    jsonb_build_object(
+        'full_name', 'דני מפקח',
+        'organization_id', '00000000-0000-0000-0000-000000000001',
+        'role', 'inspector'
+    ),
+    NOW(), NOW(), '', ''
+);
+
+INSERT INTO auth.identities (
+    id, user_id, identity_data, provider, provider_id,
+    last_sign_in_at, created_at, updated_at
+) VALUES (
+    '00000000-0000-0000-0000-000000000102',
+    '00000000-0000-0000-0000-000000000102',
+    jsonb_build_object('sub', '00000000-0000-0000-0000-000000000102', 'email', 'inspector@docfield.test'),
+    'email',
+    '00000000-0000-0000-0000-000000000102',
+    NOW(), NOW(), NOW()
 );
 
 -- ===========================================
