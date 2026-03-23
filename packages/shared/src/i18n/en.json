@@ -1,0 +1,228 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "close": "Close",
+    "confirm": "Confirm",
+    "search": "Search",
+    "filter": "Filter",
+    "sortBy": "Sort by",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "sending": "Sending...",
+    "noResults": "No results found",
+    "retry": "Retry",
+    "yes": "Yes",
+    "no": "No",
+    "add": "Add",
+    "done": "Done",
+    "select": "Select",
+    "required": "Required"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full name",
+    "phone": "Phone",
+    "forgotPassword": "Forgot password",
+    "resetPassword": "Reset password",
+    "welcomeBack": "Welcome back!",
+    "createAccount": "Create new account",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?",
+    "errors": {
+      "invalidCredentials": "Invalid email or password",
+      "emailInUse": "Email is already in use",
+      "weakPassword": "Password is too weak",
+      "sessionExpired": "Session expired — please log in again"
+    }
+  },
+  "projects": {
+    "title": "Projects",
+    "create": "New project",
+    "name": "Project name",
+    "address": "Address",
+    "city": "City",
+    "buildingsCount": "Number of buildings",
+    "apartmentsCount": "Number of apartments",
+    "status": {
+      "active": "Active",
+      "completed": "Completed",
+      "archived": "Archived"
+    }
+  },
+  "buildings": {
+    "title": "Buildings",
+    "create": "New building",
+    "name": "Building name / number",
+    "floorsCount": "Number of floors"
+  },
+  "apartments": {
+    "title": "Apartments",
+    "create": "New apartment",
+    "number": "Apartment number",
+    "floor": "Floor",
+    "roomsCount": "Number of rooms",
+    "types": {
+      "regular": "Regular",
+      "garden": "Garden apartment",
+      "penthouse": "Penthouse",
+      "duplex": "Duplex",
+      "studio": "Studio"
+    },
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In progress",
+      "delivered": "Delivered",
+      "completed": "Completed"
+    }
+  },
+  "inspection": {
+    "newReport": "New report",
+    "editReport": "Edit report",
+    "roundNumber": "Round",
+    "tenantName": "Tenant name",
+    "tenantPhone": "Tenant phone",
+    "tenantEmail": "Tenant email",
+    "notes": "Notes",
+    "generatePdf": "Generate PDF",
+    "sendReport": "Send report",
+    "reportTypes": {
+      "delivery": "Delivery inspection",
+      "bedek_bait": "Home inspection",
+      "supervision": "Supervision",
+      "leak_detection": "Leak detection",
+      "public_areas": "Public areas"
+    },
+    "status": {
+      "draft": "Draft",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "sent": "Sent"
+    }
+  },
+  "checklist": {
+    "pass": "Pass",
+    "fail": "Fail",
+    "notApplicable": "N/A",
+    "addNote": "Add note",
+    "takePhoto": "Take photo",
+    "itemChecked": "Checked and OK",
+    "addManualDefect": "Add manual defect",
+    "selectRoom": "Select room",
+    "progress": "Progress",
+    "itemsChecked": "items checked"
+  },
+  "defects": {
+    "title": "Defects",
+    "addDefect": "New defect",
+    "description": "Defect description",
+    "room": "Room",
+    "category": "Category",
+    "selectSeverity": "Select severity",
+    "addPhoto": "Add photo",
+    "fromLibrary": "From library",
+    "severity": {
+      "critical": "Critical",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "status": {
+      "open": "Open",
+      "in_progress": "In progress",
+      "fixed": "Fixed",
+      "not_fixed": "Not fixed"
+    },
+    "source": {
+      "checklist": "From checklist",
+      "manual": "Manual",
+      "library": "From library"
+    }
+  },
+  "rooms": {
+    "living_room": "Living room",
+    "kitchen": "Kitchen",
+    "bedroom_1": "Bedroom 1",
+    "bedroom_2": "Bedroom 2",
+    "bedroom_3": "Bedroom 3",
+    "master_bathroom": "Master bathroom",
+    "parent_bathroom": "Parent bathroom",
+    "guest_toilet": "Guest toilet",
+    "service_balcony": "Service balcony",
+    "living_balcony": "Living room balcony",
+    "hallway": "Hallway",
+    "laundry": "Laundry room",
+    "safe_room": "Safe room",
+    "storage": "Storage room"
+  },
+  "categories": {
+    "plaster": "Plaster",
+    "painting": "Painting",
+    "tiling": "Tiling",
+    "wall_cladding": "Wall cladding",
+    "plumbing": "Plumbing",
+    "electrical": "Electrical",
+    "carpentry": "Carpentry",
+    "aluminum": "Aluminum",
+    "waterproofing": "Waterproofing",
+    "cleaning": "Cleaning",
+    "hvac": "HVAC",
+    "gas": "Gas",
+    "elevators": "Elevators",
+    "general": "General"
+  },
+  "signatures": {
+    "inspectorSignature": "Inspector signature",
+    "tenantSignature": "Tenant signature",
+    "signHere": "Sign here",
+    "clear": "Clear signature",
+    "signed": "Signed",
+    "signatureRequired": "Signature required"
+  },
+  "pdf": {
+    "reportTitle": "Delivery Report",
+    "generatedAt": "Generated on",
+    "page": "Page",
+    "of": "of",
+    "summary": "Summary",
+    "defectsFound": "Defects found",
+    "passedItems": "Passed items",
+    "inspectorDetails": "Inspector details",
+    "tenantDetails": "Tenant details"
+  },
+  "errors": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email address",
+    "invalidPhone": "Invalid phone number",
+    "tooShort": "Too short",
+    "tooLong": "Too long",
+    "networkError": "Network error — check your connection",
+    "syncFailed": "Sync failed — will retry automatically",
+    "generic": "An error occurred — please try again",
+    "unauthorized": "You don't have permission for this action",
+    "notFound": "Item not found"
+  },
+  "empty": {
+    "noProjects": "No projects yet",
+    "noBuildings": "No buildings in project",
+    "noApartments": "No apartments in building",
+    "noDefects": "No defects — everything looks good!",
+    "noReports": "No reports yet",
+    "noPhotos": "No photos",
+    "startFirst": "Create your first one"
+  },
+  "sync": {
+    "syncing": "Syncing...",
+    "syncComplete": "Sync complete",
+    "offline": "Working offline",
+    "online": "Connected",
+    "lastSynced": "Last synced"
+  }
+}

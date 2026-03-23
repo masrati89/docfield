@@ -1,0 +1,228 @@
+{
+  "common": {
+    "save": "שמור",
+    "cancel": "ביטול",
+    "delete": "מחק",
+    "edit": "עריכה",
+    "back": "חזרה",
+    "next": "הבא",
+    "close": "סגור",
+    "confirm": "אישור",
+    "search": "חיפוש",
+    "filter": "סינון",
+    "sortBy": "מיון לפי",
+    "loading": "טוען...",
+    "saving": "שומר...",
+    "sending": "שולח...",
+    "noResults": "לא נמצאו תוצאות",
+    "retry": "נסה שוב",
+    "yes": "כן",
+    "no": "לא",
+    "add": "הוסף",
+    "done": "סיום",
+    "select": "בחר",
+    "required": "חובה"
+  },
+  "auth": {
+    "login": "התחברות",
+    "register": "הרשמה",
+    "logout": "התנתקות",
+    "email": "אימייל",
+    "password": "סיסמה",
+    "fullName": "שם מלא",
+    "phone": "טלפון",
+    "forgotPassword": "שכחתי סיסמה",
+    "resetPassword": "איפוס סיסמה",
+    "welcomeBack": "שמח לראות אותך!",
+    "createAccount": "יצירת חשבון חדש",
+    "alreadyHaveAccount": "כבר יש לך חשבון?",
+    "dontHaveAccount": "אין לך חשבון?",
+    "errors": {
+      "invalidCredentials": "אימייל או סיסמה שגויים",
+      "emailInUse": "כתובת האימייל כבר בשימוש",
+      "weakPassword": "הסיסמה חלשה מדי",
+      "sessionExpired": "פג תוקף החיבור — התחבר מחדש"
+    }
+  },
+  "projects": {
+    "title": "פרויקטים",
+    "create": "פרויקט חדש",
+    "name": "שם פרויקט",
+    "address": "כתובת",
+    "city": "עיר",
+    "buildingsCount": "מספר בניינים",
+    "apartmentsCount": "מספר דירות",
+    "status": {
+      "active": "פעיל",
+      "completed": "הושלם",
+      "archived": "בארכיון"
+    }
+  },
+  "buildings": {
+    "title": "בניינים",
+    "create": "בניין חדש",
+    "name": "שם / מספר בניין",
+    "floorsCount": "מספר קומות"
+  },
+  "apartments": {
+    "title": "דירות",
+    "create": "דירה חדשה",
+    "number": "מספר דירה",
+    "floor": "קומה",
+    "roomsCount": "מספר חדרים",
+    "types": {
+      "regular": "רגילה",
+      "garden": "דירת גן",
+      "penthouse": "פנטהאוז",
+      "duplex": "דופלקס",
+      "studio": "סטודיו"
+    },
+    "status": {
+      "pending": "ממתין",
+      "in_progress": "בביצוע",
+      "delivered": "נמסר",
+      "completed": "הושלם"
+    }
+  },
+  "inspection": {
+    "newReport": "דוח חדש",
+    "editReport": "עריכת דוח",
+    "roundNumber": "סבב",
+    "tenantName": "שם דייר",
+    "tenantPhone": "טלפון דייר",
+    "tenantEmail": "אימייל דייר",
+    "notes": "הערות",
+    "generatePdf": "הפק PDF",
+    "sendReport": "שלח דוח",
+    "reportTypes": {
+      "delivery": "מסירת דירה",
+      "bedek_bait": "בדק בית",
+      "supervision": "פיקוח",
+      "leak_detection": "איתור נזילות",
+      "public_areas": "שטחים ציבוריים"
+    },
+    "status": {
+      "draft": "טיוטה",
+      "in_progress": "בביצוע",
+      "completed": "הושלם",
+      "sent": "נשלח"
+    }
+  },
+  "checklist": {
+    "pass": "תקין",
+    "fail": "ליקוי",
+    "notApplicable": "לא רלוונטי",
+    "addNote": "הוסף הערה",
+    "takePhoto": "צלם תמונה",
+    "itemChecked": "נבדק ותקין",
+    "addManualDefect": "הוסף ליקוי ידני",
+    "selectRoom": "בחר חדר",
+    "progress": "התקדמות",
+    "itemsChecked": "פריטים נבדקו"
+  },
+  "defects": {
+    "title": "ליקויים",
+    "addDefect": "ליקוי חדש",
+    "description": "תיאור ליקוי",
+    "room": "חדר",
+    "category": "קטגוריה",
+    "selectSeverity": "בחר חומרה",
+    "addPhoto": "הוסף תמונה",
+    "fromLibrary": "מהמאגר",
+    "severity": {
+      "critical": "חמור",
+      "medium": "בינוני",
+      "low": "קל"
+    },
+    "status": {
+      "open": "פתוח",
+      "in_progress": "בטיפול",
+      "fixed": "תוקן",
+      "not_fixed": "לא תוקן"
+    },
+    "source": {
+      "checklist": "מצ׳קליסט",
+      "manual": "ידני",
+      "library": "מהמאגר"
+    }
+  },
+  "rooms": {
+    "living_room": "סלון",
+    "kitchen": "מטבח",
+    "bedroom_1": "חדר שינה 1",
+    "bedroom_2": "חדר שינה 2",
+    "bedroom_3": "חדר שינה 3",
+    "master_bathroom": "חדר רחצה ראשי",
+    "parent_bathroom": "חדר רחצה הורים",
+    "guest_toilet": "שירותי אורחים",
+    "service_balcony": "מרפסת שירות",
+    "living_balcony": "מרפסת סלון",
+    "hallway": "מעבר / מסדרון",
+    "laundry": "חדר כביסה",
+    "safe_room": "ממ\"ד",
+    "storage": "חדר אחסון"
+  },
+  "categories": {
+    "plaster": "טיח",
+    "painting": "צביעה",
+    "tiling": "ריצוף",
+    "wall_cladding": "חיפוי קירות",
+    "plumbing": "אינסטלציה",
+    "electrical": "חשמל",
+    "carpentry": "נגרות",
+    "aluminum": "אלומיניום",
+    "waterproofing": "איטום",
+    "cleaning": "ניקיון",
+    "hvac": "מיזוג אוויר",
+    "gas": "גז",
+    "elevators": "מעליות",
+    "general": "כללי"
+  },
+  "signatures": {
+    "inspectorSignature": "חתימת בודק",
+    "tenantSignature": "חתימת דייר",
+    "signHere": "חתום כאן",
+    "clear": "נקה חתימה",
+    "signed": "נחתם",
+    "signatureRequired": "נדרשת חתימה"
+  },
+  "pdf": {
+    "reportTitle": "דוח מסירה",
+    "generatedAt": "הופק בתאריך",
+    "page": "עמוד",
+    "of": "מתוך",
+    "summary": "סיכום",
+    "defectsFound": "ליקויים שנמצאו",
+    "passedItems": "פריטים תקינים",
+    "inspectorDetails": "פרטי בודק",
+    "tenantDetails": "פרטי דייר"
+  },
+  "errors": {
+    "required": "שדה חובה",
+    "invalidEmail": "כתובת אימייל לא תקינה",
+    "invalidPhone": "מספר טלפון לא תקין",
+    "tooShort": "קצר מדי",
+    "tooLong": "ארוך מדי",
+    "networkError": "שגיאת רשת — בדוק את החיבור",
+    "syncFailed": "הסנכרון נכשל — ננסה שוב אוטומטית",
+    "generic": "אירעה שגיאה — נסה שוב",
+    "unauthorized": "אין הרשאה לפעולה זו",
+    "notFound": "הפריט לא נמצא"
+  },
+  "empty": {
+    "noProjects": "אין פרויקטים עדיין",
+    "noBuildings": "אין בניינים בפרויקט",
+    "noApartments": "אין דירות בבניין",
+    "noDefects": "אין ליקויים — הכל תקין!",
+    "noReports": "אין דוחות עדיין",
+    "noPhotos": "אין תמונות",
+    "startFirst": "צור את הראשון"
+  },
+  "sync": {
+    "syncing": "מסנכרן...",
+    "syncComplete": "סנכרון הושלם",
+    "offline": "עובד ללא חיבור",
+    "online": "מחובר",
+    "lastSynced": "סנכרון אחרון"
+  }
+}

@@ -1,5 +1,15 @@
-// @docfield/shared — Shared types, constants, validation, and i18n
-// This is the barrel export for the shared package.
-// Each module will be added as the project grows.
+// @docfield/shared — Shared types, constants, validation, utils, and i18n
 
-export {};
+// Types
+export * from './types';
+
+// Constants
+export * from './constants';
+
+// Validation (Zod schemas + inferred types)
+export * from './validation';
+
+// Utilities
+export * from './utils';
+
+// i18n: import JSON files directly from '@docfield/shared/src/i18n/he.json'
