@@ -1,13 +1,6 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist",
-    "jsx": "react-jsx"
-  },
-  "include": ["src"],
+  "files": [],
   "references": [
-    { "path": "../../packages/shared" },
-    { "path": "../../packages/ui" }
+    { "path": "./tsconfig.app.json" }
   ]
 }

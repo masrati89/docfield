@@ -18,8 +18,8 @@ port = 54323
 
 [auth]
 enabled = true
-site_url = "http://localhost:8081"
-additional_redirect_urls = ["http://localhost:5173"]
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173", "exp://localhost:8081", "docfield://"]
 
 [auth.email]
 enable_signup = true
