@@ -8,34 +8,44 @@ import {
 } from '@docfield/shared';
 
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function useProjects() {
+  const { session } = useAuth();
+
   return useQuery({
-    queryKey: ['projects'],
+    queryKey: ['projects', session?.user?.id],
     queryFn: () => getProjects(supabase),
+    enabled: !!session,
   });
 }
 
 export function useBuildings(projectId: string) {
+  const { session } = useAuth();
+
   return useQuery({
-    queryKey: ['buildings', projectId],
+    queryKey: ['buildings', projectId, session?.user?.id],
     queryFn: () => getBuildingsByProject(supabase, projectId),
-    enabled: !!projectId,
+    enabled: !!session && !!projectId,
   });
 }
 
 export function useApartments(buildingId: string) {
+  const { session } = useAuth();
+
   return useQuery({
-    queryKey: ['apartments', buildingId],
+    queryKey: ['apartments', buildingId, session?.user?.id],
     queryFn: () => getApartmentsByBuilding(supabase, buildingId),
-    enabled: !!buildingId,
+    enabled: !!session && !!buildingId,
   });
 }
 
 export function useApartmentDetails(apartmentId: string) {
+  const { session } = useAuth();
+
   return useQuery({
-    queryKey: ['apartment', apartmentId],
+    queryKey: ['apartment', apartmentId, session?.user?.id],
     queryFn: () => getApartmentDetails(supabase, apartmentId),
-    enabled: !!apartmentId,
+    enabled: !!session && !!apartmentId,
   });
 }
