@@ -423,7 +423,7 @@ export default function CreateReportScreen() {
                 editable={!isFormDisabled}
                 className={`
                   h-[50px] rounded-[10px] px-[16px]
-                  text-[15px] font-rubik text-neutral-700
+                  text-[16px] font-rubik text-neutral-700
                   bg-cream-50
                   ${
                     errors.tenantName
@@ -481,7 +481,7 @@ export default function CreateReportScreen() {
                 editable={!isFormDisabled}
                 className={`
                   h-[50px] rounded-[10px] px-[16px]
-                  text-[15px] font-rubik text-neutral-700
+                  text-[16px] font-rubik text-neutral-700
                   bg-cream-50
                   ${
                     errors.tenantPhone
