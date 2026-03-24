@@ -17,3 +17,7 @@ export type {
   ChecklistTemplateWithCounts,
   CreateDeliveryReportInput,
 } from './reports';
+
+export { getChecklistWithResults, upsertChecklistResult } from './checklist';
+
+export type { ChecklistItemWithResult, ChecklistSection } from './checklist';

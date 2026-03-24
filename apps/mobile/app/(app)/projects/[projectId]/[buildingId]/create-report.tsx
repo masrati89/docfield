@@ -256,13 +256,14 @@ export default function CreateReportScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
 
-      // TODO: Navigate to checklist screen with reportId (Phase 6)
-      Alert.alert('דוח נוצר בהצלחה', `מספר סבב: ${report.roundNumber}`, [
-        {
-          text: 'אישור',
-          onPress: () => router.back(),
+      // Navigate to checklist screen
+      router.replace({
+        pathname: '/reports/[reportId]/checklist',
+        params: {
+          reportId: report.id,
+          templateId: selectedTemplateId,
         },
-      ]);
+      });
     } catch {
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
