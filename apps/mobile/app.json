@@ -23,7 +23,19 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "DocField צריך גישה למצלמה כדי לתעד ליקויים."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "DocField צריך גישה לגלריה כדי לבחור תמונות של ליקויים."
+        }
+      ]
     ]
   }
 }

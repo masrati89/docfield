@@ -173,21 +173,12 @@ export default function ChecklistScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
 
-    // TODO: Navigate to defects screen or summary
-    // For now: go back with success message
-    Alert.alert(
-      'הבדיקה הושלמה',
-      hasDefects
-        ? `נמצאו ליקויים. בשלב הבא תוכל לפרט אותם.`
-        : 'כל הפריטים תקינים!',
-      [
-        {
-          text: 'אישור',
-          onPress: () => router.back(),
-        },
-      ]
-    );
-  }, [hasDefects, router]);
+    // Navigate to defects list screen
+    router.push({
+      pathname: '/reports/[reportId]/defects',
+      params: { reportId: reportId ?? '' },
+    });
+  }, [router, reportId]);
 
   const handleFinish = useCallback(() => {
     if (Platform.OS !== 'web') {

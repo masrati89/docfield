@@ -21,3 +21,14 @@ export type {
 export { getChecklistWithResults, upsertChecklistResult } from './checklist';
 
 export type { ChecklistItemWithResult, ChecklistSection } from './checklist';
+
+export {
+  getDefectsByReport,
+  createDefect,
+  updateDefect,
+  deleteDefect,
+  uploadDefectPhoto,
+  deleteDefectPhoto,
+} from './defects';
+
+export type { DefectWithPhotos } from './defects';
