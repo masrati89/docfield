@@ -10,3 +10,10 @@ export type {
   BuildingWithCounts,
   ApartmentWithReportCount,
 } from './projects';
+
+export { getChecklistTemplates, createDeliveryReport } from './reports';
+
+export type {
+  ChecklistTemplateWithCounts,
+  CreateDeliveryReportInput,
+} from './reports';

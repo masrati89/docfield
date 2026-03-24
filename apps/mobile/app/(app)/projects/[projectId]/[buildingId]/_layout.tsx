@@ -5,6 +5,7 @@ export default function BuildingDetailLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="[apartmentId]" />
+      <Stack.Screen name="create-report" />
     </Stack>
   );
 }

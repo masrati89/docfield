@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { View, Text, Pressable, ScrollView, Platform } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Feather } from '@expo/vector-icons';
@@ -44,7 +44,12 @@ function getTypeLabel(type?: string): string {
 }
 
 export default function ApartmentDetailsScreen() {
-  const { apartmentId } = useLocalSearchParams<{ apartmentId: string }>();
+  const router = useRouter();
+  const { projectId, buildingId, apartmentId } = useLocalSearchParams<{
+    projectId: string;
+    buildingId: string;
+    apartmentId: string;
+  }>();
   const {
     data: apartment,
     isLoading,
@@ -56,8 +61,11 @@ export default function ApartmentDetailsScreen() {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    // TODO: Navigate to create report screen (Phase 6)
-  }, []);
+    router.push({
+      pathname: '/(app)/projects/[projectId]/[buildingId]/create-report',
+      params: { projectId, buildingId, apartmentId },
+    });
+  }, [router, projectId, buildingId, apartmentId]);
 
   if (error) {
     return (
