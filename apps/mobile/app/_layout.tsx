@@ -5,6 +5,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 
 import { AuthProvider } from '@/contexts/AuthContext';
+import { QueryProvider } from '@/providers/QueryProvider';
 
 import '../global.css';
 
@@ -33,8 +34,10 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <AuthProvider>
-      <Slot />
-    </AuthProvider>
+    <QueryProvider>
+      <AuthProvider>
+        <Slot />
+      </AuthProvider>
+    </QueryProvider>
   );
 }
