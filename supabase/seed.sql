@@ -26,8 +26,11 @@ INSERT INTO organizations (id, name, settings) VALUES (
 -- Admin user
 INSERT INTO auth.users (
     instance_id, id, aud, role, email, encrypted_password,
-    email_confirmed_at, raw_user_meta_data,
-    created_at, updated_at, confirmation_token, recovery_token
+    email_confirmed_at, raw_user_meta_data, raw_app_meta_data,
+    created_at, updated_at, confirmation_token, recovery_token,
+    email_change, email_change_token_new, email_change_token_current,
+    phone, phone_change, phone_change_token,
+    email_change_confirm_status
 ) VALUES (
     '00000000-0000-0000-0000-000000000000',
     '00000000-0000-0000-0000-000000000101',
@@ -40,7 +43,11 @@ INSERT INTO auth.users (
         'organization_id', '00000000-0000-0000-0000-000000000001',
         'role', 'admin'
     ),
-    NOW(), NOW(), '', ''
+    '{"provider": "email", "providers": ["email"]}'::jsonb,
+    NOW(), NOW(), '', '',
+    '', '', '',
+    NULL, '', '',
+    0
 );
 
 INSERT INTO auth.identities (
@@ -58,8 +65,11 @@ INSERT INTO auth.identities (
 -- Inspector user
 INSERT INTO auth.users (
     instance_id, id, aud, role, email, encrypted_password,
-    email_confirmed_at, raw_user_meta_data,
-    created_at, updated_at, confirmation_token, recovery_token
+    email_confirmed_at, raw_user_meta_data, raw_app_meta_data,
+    created_at, updated_at, confirmation_token, recovery_token,
+    email_change, email_change_token_new, email_change_token_current,
+    phone, phone_change, phone_change_token,
+    email_change_confirm_status
 ) VALUES (
     '00000000-0000-0000-0000-000000000000',
     '00000000-0000-0000-0000-000000000102',
@@ -72,7 +82,11 @@ INSERT INTO auth.users (
         'organization_id', '00000000-0000-0000-0000-000000000001',
         'role', 'inspector'
     ),
-    NOW(), NOW(), '', ''
+    '{"provider": "email", "providers": ["email"]}'::jsonb,
+    NOW(), NOW(), '', '',
+    '', '', '',
+    NULL, '', '',
+    0
 );
 
 INSERT INTO auth.identities (
