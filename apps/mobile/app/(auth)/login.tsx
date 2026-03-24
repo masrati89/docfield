@@ -81,9 +81,7 @@ export default function LoginScreen() {
         setErrors((previous) => ({
           ...previous,
           [field]:
-            field === 'email'
-              ? 'נא להזין כתובת אימייל'
-              : 'נא להזין סיסמה',
+            field === 'email' ? 'נא להזין כתובת אימייל' : 'נא להזין סיסמה',
         }));
         return false;
       }
@@ -101,7 +99,10 @@ export default function LoginScreen() {
           (error) => error.path[0] === field
         );
         if (fieldError) {
-          setErrors((previous) => ({ ...previous, [field]: fieldError.message }));
+          setErrors((previous) => ({
+            ...previous,
+            [field]: fieldError.message,
+          }));
           return false;
         }
       }
@@ -138,7 +139,9 @@ export default function LoginScreen() {
         }
       }
       setErrors(fieldErrors);
-      Platform.OS !== 'web' && Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
       triggerShake();
       return;
     }
@@ -150,10 +153,14 @@ export default function LoginScreen() {
 
       if (error) {
         setErrors({ general: error });
-        Platform.OS !== 'web' && Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        }
         triggerShake();
       } else {
-        Platform.OS !== 'web' && Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
       }
     } finally {
       setIsSubmitting(false);
@@ -170,7 +177,9 @@ export default function LoginScreen() {
   }, [buttonScale]);
 
   const handleButtonPress = useCallback(() => {
-    Platform.OS !== 'web' && Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     handleSubmit();
   }, [handleSubmit]);
 
@@ -194,7 +203,9 @@ export default function LoginScreen() {
               className="items-center mb-[48px]"
             >
               <View className="w-[72px] h-[72px] rounded-xl bg-primary-700 items-center justify-center mb-[16px]">
-                <Text className="text-white text-[28px] font-rubik-bold">DF</Text>
+                <Text className="text-white text-[28px] font-rubik-bold">
+                  DF
+                </Text>
               </View>
               <Text className="text-[32px] font-rubik-bold text-primary-700">
                 DocField
@@ -258,9 +269,10 @@ export default function LoginScreen() {
                     h-[50px] rounded-[10px] px-[16px]
                     text-[16px] font-rubik text-neutral-700
                     bg-cream-50
-                    ${errors.email
-                      ? 'border-[1.5px] border-danger-500'
-                      : 'border-[1.5px] border-cream-300'
+                    ${
+                      errors.email
+                        ? 'border-[1.5px] border-danger-500'
+                        : 'border-[1.5px] border-cream-300'
                     }
                     ${isSubmitting ? 'opacity-50' : ''}
                   `}
@@ -316,9 +328,10 @@ export default function LoginScreen() {
                       h-[50px] rounded-[10px] px-[16px] pe-[48px]
                       text-[16px] font-rubik text-neutral-700
                       bg-cream-50
-                      ${errors.password
-                        ? 'border-[1.5px] border-danger-500'
-                        : 'border-[1.5px] border-cream-300'
+                      ${
+                        errors.password
+                          ? 'border-[1.5px] border-danger-500'
+                          : 'border-[1.5px] border-cream-300'
                       }
                       ${isSubmitting ? 'opacity-50' : ''}
                     `}
@@ -329,12 +342,22 @@ export default function LoginScreen() {
                     onPress={() => setShowPassword(!showPassword)}
                     className="absolute start-[12px] top-[13px] p-[2px]"
                     hitSlop={8}
-                    accessibilityLabel={showPassword ? 'הסתר סיסמה' : 'הצג סיסמה'}
+                    accessibilityLabel={
+                      showPassword ? 'הסתר סיסמה' : 'הצג סיסמה'
+                    }
                   >
                     {showPassword ? (
-                      <Feather name="eye-off" size={20} color={COLORS.neutral[400]} />
+                      <Feather
+                        name="eye-off"
+                        size={20}
+                        color={COLORS.neutral[400]}
+                      />
                     ) : (
-                      <Feather name="eye" size={20} color={COLORS.neutral[400]} />
+                      <Feather
+                        name="eye"
+                        size={20}
+                        color={COLORS.neutral[400]}
+                      />
                     )}
                   </Pressable>
                 </View>

@@ -23,7 +23,9 @@ export default function HomeScreen() {
     try {
       const [projectsResult, reportsResult] = await Promise.all([
         supabase.from('projects').select('id', { count: 'exact', head: true }),
-        supabase.from('delivery_reports').select('id', { count: 'exact', head: true }),
+        supabase
+          .from('delivery_reports')
+          .select('id', { count: 'exact', head: true }),
       ]);
 
       setStats({
@@ -42,7 +44,9 @@ export default function HomeScreen() {
   }, [fetchStats]);
 
   const handleSignOut = useCallback(async () => {
-    Platform.OS !== 'web' && Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     await signOut();
   }, [signOut]);
 
