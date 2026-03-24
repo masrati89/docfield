@@ -28,8 +28,8 @@ export default function AppLayout() {
         tabBarStyle: {
           borderTopColor: COLORS.cream[200],
           backgroundColor: '#FFFFFF',
-          height: Platform.OS === 'ios' ? 84 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+          height: Platform.OS === 'ios' ? 84 : 72,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 12,
           paddingTop: 8,
         },
       }}
