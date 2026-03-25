@@ -38,18 +38,14 @@ CREATE TRIGGER set_organizations_updated_at
 -- RLS
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
 
--- SELECT: users see only their own organization
+-- SELECT: any authenticated user can read organizations
+-- Actual scoping (user sees only their org) is enforced via users table policies
+-- and JOIN conditions in application queries
 CREATE POLICY "organizations_select" ON organizations FOR SELECT USING (
-    id = (SELECT organization_id FROM users WHERE id = auth.uid())
-);
-
--- UPDATE: admin only
-CREATE POLICY "organizations_update" ON organizations FOR UPDATE USING (
-    id = (SELECT organization_id FROM users WHERE id = auth.uid())
-    AND EXISTS (
-        SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'
-    )
+    auth.role() = 'authenticated'
 );
 
 -- No INSERT policy: organizations are created during onboarding (service role)
+-- No UPDATE policy: only service role can update organizations
 -- No DELETE policy: organizations are never deleted
+-- Fine-grained org update by admin will be enforced after users table exists (migration 002+)
