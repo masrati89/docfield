@@ -22,7 +22,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { Feather } from '@expo/vector-icons';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react-native';
 
 import { COLORS } from '@docfield/ui';
 import { loginSchema } from '@docfield/shared';
@@ -227,10 +227,10 @@ export default function LoginScreen() {
                   entering={FadeInUp.duration(200)}
                   className="flex-row items-center bg-danger-50 border border-danger-500 rounded-[10px] px-[14px] py-[12px] mb-[16px]"
                 >
-                  <Feather
-                    name="alert-circle"
+                  <AlertCircle
                     size={18}
                     color={COLORS.danger[500]}
+                    strokeWidth={1.5}
                   />
                   <Text className="text-[13px] font-rubik text-danger-700 me-[8px] flex-1">
                     {errors.general}
@@ -283,10 +283,10 @@ export default function LoginScreen() {
                     entering={FadeInUp.duration(200)}
                     className="flex-row items-center mt-[4px]"
                   >
-                    <Feather
-                      name="alert-circle"
+                    <AlertCircle
                       size={14}
                       color={COLORS.danger[700]}
+                      strokeWidth={1.5}
                     />
                     <Text className="text-[13px] font-rubik text-danger-700 me-[4px]">
                       {errors.email}
@@ -347,16 +347,16 @@ export default function LoginScreen() {
                     }
                   >
                     {showPassword ? (
-                      <Feather
-                        name="eye-off"
+                      <EyeOff
                         size={20}
                         color={COLORS.neutral[400]}
+                        strokeWidth={1.5}
                       />
                     ) : (
-                      <Feather
-                        name="eye"
+                      <Eye
                         size={20}
                         color={COLORS.neutral[400]}
+                        strokeWidth={1.5}
                       />
                     )}
                   </Pressable>
@@ -366,10 +366,10 @@ export default function LoginScreen() {
                     entering={FadeInUp.duration(200)}
                     className="flex-row items-center mt-[4px]"
                   >
-                    <Feather
-                      name="alert-circle"
+                    <AlertCircle
                       size={14}
                       color={COLORS.danger[700]}
+                      strokeWidth={1.5}
                     />
                     <Text className="text-[13px] font-rubik text-danger-700 me-[4px]">
                       {errors.password}
