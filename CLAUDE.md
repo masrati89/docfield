@@ -19,10 +19,10 @@ Pricing: Free (3 reports) / ₪99 / ₪199 / ₪349.
 
 Phase 5 — building feature screens. Infrastructure complete.
 
-✅ Done: monorepo, auth, login screen, tab navigation skeleton, DB schema + RLS, design tokens, shared types/validation/i18n, seed data, Rubik fonts, NativeWind, Supabase client
+✅ Done: monorepo, auth, login screen, tab navigation skeleton, DB schema + RLS, design tokens, shared types/validation/i18n, seed data, Rubik fonts, NativeWind, Supabase client, shared UI components (Button, Toast, BottomSheetWrapper, SkeletonBlock, EmptyState), flash-list, expo-blur, fuse.js, netinfo, expo-camera
 🔴 Not built: all tab screens (Home, Reports, Projects, Buildings, Apartments, Checklist, Report Detail, Add Defect, PDF)
-⚠️ Partial: register screen (placeholder), components/ui/ (empty), hooks/ (empty)
-❌ Future deps (install when needed): @shopify/react-native-skia, @shopify/flash-list, expo-blur, expo-camera, @react-native-community/netinfo, @jamsch/expo-speech-recognition
+⚠️ Partial: register screen (placeholder)
+❌ Missing deps: @shopify/react-native-skia (install when building signature/annotation features), @jamsch/expo-speech-recognition (post-MVP)
 
 ## Stack
 
@@ -53,8 +53,8 @@ apps/mobile/
 │       ├── reports.tsx            🔴 placeholder → build from mockups/inField-ReportsList-v5-rtl.jsx
 │       ├── projects.tsx           🔴 placeholder → build from mockups/inField-ProjectsList-v2.jsx
 │       └── settings.tsx           🔴 placeholder (v1.1)
-├── components/ui/                 🔴 empty — shared UI components go here
-├── hooks/                         🔴 empty — custom hooks go here
+├── components/ui/                 ✅ Button, Toast, BottomSheetWrapper, SkeletonBlock, EmptyState
+├── hooks/useToast.ts              ✅ toast state management
 ├── contexts/AuthContext.tsx        ✅
 ├── constants/theme.ts             ✅
 ├── lib/supabase.ts                ✅
