@@ -22,7 +22,7 @@ Phase 5 — building feature screens. Infrastructure complete.
 ✅ Done: monorepo, auth, login screen, tab navigation skeleton, DB schema + RLS, design tokens, shared types/validation/i18n, seed data, Rubik fonts, NativeWind, Supabase client
 🔴 Not built: all tab screens (Home, Reports, Projects, Buildings, Apartments, Checklist, Report Detail, Add Defect, PDF)
 ⚠️ Partial: register screen (placeholder), components/ui/ (empty), hooks/ (empty)
-❌ Missing deps: @jamsch/expo-speech-recognition
+❌ Future deps (install when needed): @shopify/react-native-skia, @shopify/flash-list, expo-blur, expo-camera, @react-native-community/netinfo, @jamsch/expo-speech-recognition
 
 ## Stack
 
