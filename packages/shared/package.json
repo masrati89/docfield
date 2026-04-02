@@ -1,5 +1,5 @@
 {
-  "name": "@docfield/shared",
+  "name": "@infield/shared",
   "version": "0.0.1",
   "private": true,
   "main": "./src/index.ts",
@@ -10,7 +10,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@docfield/ui": "*",
+    "@infield/ui": "*",
     "zod": "3.24.2"
   },
   "devDependencies": {

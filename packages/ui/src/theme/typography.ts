@@ -1,4 +1,4 @@
-// DocField Design System — Typography
+// inField Design System — Typography
 // Hebrew: Rubik | English/Numbers: Inter | Monospace: JetBrains Mono
 
 export const FONT_FAMILIES = {
@@ -37,13 +37,49 @@ export const LINE_HEIGHTS = {
 } as const;
 
 export const TYPOGRAPHY = {
-  display: { size: FONT_SIZES.display, weight: FONT_WEIGHTS.bold, lineHeight: LINE_HEIGHTS.display },
-  h1: { size: FONT_SIZES.h1, weight: FONT_WEIGHTS.bold, lineHeight: LINE_HEIGHTS.h1 },
-  h2: { size: FONT_SIZES.h2, weight: FONT_WEIGHTS.semibold, lineHeight: LINE_HEIGHTS.h2 },
-  h3: { size: FONT_SIZES.h3, weight: FONT_WEIGHTS.semibold, lineHeight: LINE_HEIGHTS.h3 },
-  body: { size: FONT_SIZES.body, weight: FONT_WEIGHTS.regular, lineHeight: LINE_HEIGHTS.body },
-  bodyMedium: { size: FONT_SIZES.bodyMedium, weight: FONT_WEIGHTS.medium, lineHeight: LINE_HEIGHTS.body },
-  caption: { size: FONT_SIZES.caption, weight: FONT_WEIGHTS.regular, lineHeight: LINE_HEIGHTS.caption },
-  captionMedium: { size: FONT_SIZES.captionMedium, weight: FONT_WEIGHTS.medium, lineHeight: LINE_HEIGHTS.caption },
-  small: { size: FONT_SIZES.small, weight: FONT_WEIGHTS.medium, lineHeight: LINE_HEIGHTS.small },
+  display: {
+    size: FONT_SIZES.display,
+    weight: FONT_WEIGHTS.bold,
+    lineHeight: LINE_HEIGHTS.display,
+  },
+  h1: {
+    size: FONT_SIZES.h1,
+    weight: FONT_WEIGHTS.bold,
+    lineHeight: LINE_HEIGHTS.h1,
+  },
+  h2: {
+    size: FONT_SIZES.h2,
+    weight: FONT_WEIGHTS.semibold,
+    lineHeight: LINE_HEIGHTS.h2,
+  },
+  h3: {
+    size: FONT_SIZES.h3,
+    weight: FONT_WEIGHTS.semibold,
+    lineHeight: LINE_HEIGHTS.h3,
+  },
+  body: {
+    size: FONT_SIZES.body,
+    weight: FONT_WEIGHTS.regular,
+    lineHeight: LINE_HEIGHTS.body,
+  },
+  bodyMedium: {
+    size: FONT_SIZES.bodyMedium,
+    weight: FONT_WEIGHTS.medium,
+    lineHeight: LINE_HEIGHTS.body,
+  },
+  caption: {
+    size: FONT_SIZES.caption,
+    weight: FONT_WEIGHTS.regular,
+    lineHeight: LINE_HEIGHTS.caption,
+  },
+  captionMedium: {
+    size: FONT_SIZES.captionMedium,
+    weight: FONT_WEIGHTS.medium,
+    lineHeight: LINE_HEIGHTS.caption,
+  },
+  small: {
+    size: FONT_SIZES.small,
+    weight: FONT_WEIGHTS.medium,
+    lineHeight: LINE_HEIGHTS.small,
+  },
 } as const;

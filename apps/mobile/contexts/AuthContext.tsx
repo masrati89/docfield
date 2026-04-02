@@ -1,7 +1,14 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
-import type { User } from '@docfield/shared';
+import type { User } from '@infield/shared';
 
 import { supabase } from '@/lib/supabase';
 
@@ -12,7 +19,10 @@ interface AuthContextValue {
   user: SupabaseUser | null;
   profile: User | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signIn: (
+    email: string,
+    password: string
+  ) => Promise<{ error: string | null }>;
   signUp: (
     email: string,
     password: string,
@@ -86,16 +96,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Listen to auth state changes
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
-      setSession(initialSession);
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session: initialSession } }) => {
+        setSession(initialSession);
 
-      if (initialSession?.user) {
-        const userProfile = await fetchProfile(initialSession.user.id);
-        setProfile(userProfile);
-      }
+        if (initialSession?.user) {
+          const userProfile = await fetchProfile(initialSession.user.id);
+          setProfile(userProfile);
+        }
 
-      setIsLoading(false);
-    });
+        setIsLoading(false);
+      });
 
     // Subscribe to auth changes
     const {
@@ -117,7 +129,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Sign in with email and password
   const signIn = useCallback(async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
       if (error) {
         return { error: getAuthErrorMessage(error.message) };
@@ -131,7 +146,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Sign up new user
   const signUp = useCallback(
-    async (email: string, password: string, fullName: string, phone?: string) => {
+    async (
+      email: string,
+      password: string,
+      fullName: string,
+      phone?: string
+    ) => {
       try {
         const { error } = await supabase.auth.signUp({
           email,

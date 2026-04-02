@@ -1,5 +1,5 @@
-// DocField Design System — Color Palette
-// Source of truth: docs/DESIGN_SYSTEM_DOCFIELD.md
+// inField Design System — Color Palette
+// Source of truth: docs/DESIGN_SYSTEM.md
 
 export const COLORS = {
   // Primary — Forest Green

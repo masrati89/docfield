@@ -1,4 +1,4 @@
-import { COLORS } from '@docfield/ui';
+import { COLORS } from '@infield/ui';
 
 export const DEFECT_SEVERITIES = [
   {
@@ -26,6 +26,7 @@ export const DEFECT_SEVERITIES = [
 
 export type SeverityValue = (typeof DEFECT_SEVERITIES)[number]['value'];
 
-export const SEVERITY_LABELS: Record<SeverityValue, string> = Object.fromEntries(
-  DEFECT_SEVERITIES.map((severity) => [severity.value, severity.label]),
-) as Record<SeverityValue, string>;
+export const SEVERITY_LABELS: Record<SeverityValue, string> =
+  Object.fromEntries(
+    DEFECT_SEVERITIES.map((severity) => [severity.value, severity.label])
+  ) as Record<SeverityValue, string>;

@@ -27,7 +27,7 @@ export function DashboardLayout() {
         {/* Logo */}
         <div className="p-5 border-b border-cream-200">
           <h1 className="text-xl font-rubik font-bold text-primary-700">
-            DocField
+            inField
           </h1>
           <p className="text-xs font-rubik text-neutral-400 mt-1">
             ניהול דוחות מסירה
@@ -85,7 +85,7 @@ export function DashboardLayout() {
             התנתק
           </button>
           <p className="text-[11px] font-rubik text-neutral-400 text-center mt-2">
-            DocField v0.0.1
+            inField v0.0.1
           </p>
         </div>
       </aside>

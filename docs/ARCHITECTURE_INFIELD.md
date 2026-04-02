@@ -1188,6 +1188,8 @@ completed → in_progress (חזרה לעריכה — אישור כפול)
 
 ## 16. Navigation Architecture
 
+Implementation: Expo Router (file-based). The stack structure below maps to `app/(app)/` directory.
+
 ### App Navigation Structure (React Navigation)
 
 ```

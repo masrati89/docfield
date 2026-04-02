@@ -1,4 +1,4 @@
-// DocField Design System — Border Radius
+// inField Design System — Border Radius
 // Rule: minimum 10px for any interactive element
 
 export const BORDER_RADIUS = {

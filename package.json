@@ -1,8 +1,8 @@
 {
-  "name": "docfield",
+  "name": "infield",
   "version": "0.0.1",
   "private": true,
-  "description": "DocField — Construction delivery reports, inspection & supervision system",
+  "description": "inField — Construction delivery reports, inspection & supervision system",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -19,7 +19,7 @@
   },
   "lint-staged": {
     "**/*.{ts,tsx}": [
-      "eslint --fix --max-warnings 0",
+      "eslint --fix --max-warnings 0 --no-warn-ignored",
       "prettier --write"
     ],
     "**/*.{json,md}": [

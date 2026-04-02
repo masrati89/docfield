@@ -1,223 +1,223 @@
-# inField — Project Instructions
+# inField — Claude Instructions
 
 ## Product
 
-מערכת דוחות מסירה, בדק בית ופיקוח בענף הבנייה.
-שוק יעד: ישראל (עברית, RTL).
-מודל עסקי: SaaS — ניסיון חינם (3 דוחות), בסיסי ₪99, מקצועי ₪199, צוות ₪349.
+Construction inspection SaaS — Israel market (Hebrew, RTL).
+Two modes: בדק בית (defect inspection) | פרוטוקול מסירה (delivery checklist).
+Competitor: Reporto (~80% market, WebView). Our edge: native feel + full offline.
+Pricing: Free (3 reports) / ₪99 / ₪199 / ₪349.
 
-## Tech Stack
+## Iron Rules (Never Break)
 
-| Layer              | Technology                                               |
-| ------------------ | -------------------------------------------------------- |
-| Mobile App         | React Native + Expo SDK 52+ (Expo Router, NativeWind v4) |
-| Offline DB         | WatermelonDB (SQLite)                                    |
-| Drawing/Annotation | @shopify/react-native-skia                               |
-| Speech-to-Text     | @jamsch/expo-speech-recognition                          |
-| Styling (Mobile)   | NativeWind (Tailwind for RN)                             |
-| Web Dashboard      | React + Vite + Tailwind CSS                              |
-| Backend            | Supabase (PostgreSQL + Auth + Storage + Edge Functions)  |
-| PDF (On-device)    | expo-print (HTML→PDF, works offline)                     |
-| Monorepo           | Turborepo + npm workspaces                               |
-| Language           | TypeScript 5.x strict everywhere                         |
-| Icons              | @expo/vector-icons (Feather)                             |
+- Reports are legal documents — no system change ever modifies an existing report
+- Defects stored as full-text snapshots — never foreign keys
+- Completed reports require double confirmation to re-edit
+- Pixel-perfect from mockup — build directly from mockup JSX, never interpret independently
+- Signatures: immutable — no UPDATE or DELETE policy ever
 
-## Monorepo Structure
+## Current Status
+
+Phase 5 — building feature screens. Infrastructure complete.
+
+✅ Done: monorepo, auth, login screen, tab navigation skeleton, DB schema + RLS, design tokens, shared types/validation/i18n, seed data, Rubik fonts, NativeWind, Supabase client
+🔴 Not built: all tab screens (Home, Reports, Projects, Buildings, Apartments, Checklist, Report Detail, Add Defect, PDF)
+⚠️ Partial: register screen (placeholder), components/ui/ (empty), hooks/ (empty)
+❌ Missing deps: @jamsch/expo-speech-recognition
+
+## Stack
+
+| Layer    | Technology                                                        |
+| -------- | ----------------------------------------------------------------- |
+| Mobile   | React Native 0.76.9 + Expo SDK 55 (Expo Router v4, NativeWind v4) |
+| Data     | React Query 5 + Supabase direct — WatermelonDB = post-MVP         |
+| Drawing  | @shopify/react-native-skia (not yet installed)                    |
+| Web      | React + Vite + Tailwind CSS                                       |
+| Backend  | Supabase (PostgreSQL + Auth + Storage + Edge Functions)           |
+| PDF      | expo-print (offline-capable)                                      |
+| Monorepo | Turborepo + npm workspaces                                        |
+| Language | TypeScript 5.x strict                                             |
+| Icons    | @expo/vector-icons (Feather)                                      |
+
+## Mobile App Structure (Expo Router)
 
 ```
-docfield/
-├── apps/mobile/         # React Native + Expo
-├── apps/web/            # React + Vite dashboard
-├── packages/shared/     # Types, validation (Zod), i18n, constants
-└── supabase/            # Migrations, Edge Functions, seed
+apps/mobile/
+├── app/
+│   ├── _layout.tsx                # Root layout
+│   ├── index.tsx                  # Redirect → auth or app
+│   ├── (auth)/
+│   │   ├── login.tsx              ✅ full implementation
+│   │   └── register.tsx           ⚠️ placeholder
+│   └── (app)/
+│       ├── index.tsx              ⚠️ basic only → build from mockups/inField-HomeScreen-v6-rtl.jsx
+│       ├── reports.tsx            🔴 placeholder → build from mockups/inField-ReportsList-v5-rtl.jsx
+│       ├── projects.tsx           🔴 placeholder → build from mockups/inField-ProjectsList-v2.jsx
+│       └── settings.tsx           🔴 placeholder (v1.1)
+├── components/ui/                 🔴 empty — shared UI components go here
+├── hooks/                         🔴 empty — custom hooks go here
+├── contexts/AuthContext.tsx        ✅
+├── constants/theme.ts             ✅
+├── lib/supabase.ts                ✅
+└── assets/fonts/                  ✅ Rubik (Regular/Medium/SemiBold/Bold)
 ```
 
-## Design System — READ BEFORE ANY UI WORK
+## Deeper screens (not yet created, need new files)
 
-**Mandatory reading before writing any UI code:**
+```
+Buildings list  → build from mockups/inField-Buildings-Apartments-v2.jsx
+Apartments list → build from mockups/inField-Buildings-Apartments-v2.jsx
+Report detail   → build from mockups/inField-MainScreen-v6.jsx
+Checklist       → build from mockups/inField-Checklist-FINAL.jsx
+Add defect      → build from mockups/inField-AddDefect-v6.jsx
+PDF bedek bayit → build from mockups/inField-BedekBayit-PDF.jsx
+PDF protocol    → build from mockups/inField-Protocol-PDF.jsx
+```
 
-1. `docs/DESIGN_SYSTEM.md` — Full design system
-2. `.claude/DESIGN_CONTEXT.md` — Brand context and quick reference
+## Packages
 
-### Key Design Rules (Non-Negotiable)
+```
+packages/shared/   (@infield/shared)
+├── types/         inspection, defect, project, checklist, client, org, auth, signature
+├── constants/     categories, rooms, roles, severities, statuses, reportTypes
+├── validation/    Zod schemas: auth, defect, inspection, project, client, org
+├── utils/         formatters, generators, validators
+└── i18n/          he.json + en.json
 
-- **Background:** cream-50 `#FEFDFB` — NEVER pure white `#FFFFFF`
-- **Primary color:** forest green `#1B7A44` (dark: `#0F4F2E`)
-- **Borders:** cream-200 `#F5EFE6` — NEVER gray
-- **Accent:** burnished gold `#C8952E`
-- **Font:** Rubik (Hebrew), Inter (English/numbers)
-- **Direction:** RTL everywhere. Use logical properties (ms/me/ps/pe, NOT ml/mr/pl/pr)
-- **Border radius:** minimum 10px for ALL interactive elements
-- **Every button:** Reanimated press animation `scale(0.98)` + `Haptics.impactAsync(Light)`
-- **Every list:** staggered entrance animation (items fade-in one by one)
-- **Loading states:** skeleton screens — NEVER bare spinners
-- **Shadows:** warm-tinted using `rgba(20,19,17,x)` — NEVER pure black shadows
-- **Empty states:** always designed with icon + text + CTA button
+packages/ui/       (@infield/ui)
+└── design tokens: colors, typography, spacing, shadows, borderRadius
+```
 
-### Severity Colors
+## Database (supabase/migrations/)
 
-| Level      | Color     | Badge BG  | Usage                            |
-| ---------- | --------- | --------- | -------------------------------- |
-| Critical   | `#EF4444` | `#FEF2F2` | קריטי — must fix before delivery |
-| Medium     | `#F59E0B` | `#FFFBEB` | בינוני — should fix              |
-| Low        | `#3B82F6` | `#EFF6FF` | קל — cosmetic                    |
-| Pass/Fixed | `#10B981` | `#ECFDF5` | תקין / תוקן                      |
+```
+001 organizations → 002 users → 003 projects → 004 checklist_templates
+→ 005 delivery_reports → 006 checklist_results → 007 defects
+→ 008 defect_library → 009 signatures → 010 clients → 011 storage_buckets
+```
 
-### Design Skills
+All tables: RLS enforced, organization_id tenant isolation.
 
-When building UI, use these skills in order:
+## Custom Claude Commands
 
-1. Read bencium `MOTION-SPEC.md` for animation timing and easing
-2. Run `python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<query>" --stack react-native`
-3. Follow react-native-reusables patterns for base components
+```
+.claude/commands/design-check.md    # run before every UI commit
+.claude/commands/new-screen.md      # scaffold a new screen
+.claude/commands/security-audit.md  # pre-deploy security check
+```
 
-## Architecture Docs
+## Docs — Load on demand, NOT upfront
 
-- Full architecture: `docs/ARCHITECTURE_INFIELD.md`
-- Security standards: `docs/SECURITY_STANDARDS.md`
-- Screen standards: `docs/SCREEN_STANDARDS.md`
-- Standards reference: `docs/STANDARDS_REFERENCE.md`
-- Handoff guide: `docs/inField-HANDOFF.md`
-- Checklist implementation: `docs/specs/checklist-implementation-notes.md`
+| Task                     | Read                                         |
+| ------------------------ | -------------------------------------------- |
+| Any UI work              | docs/DESIGN_SYSTEM.md + relevant mockup      |
+| DB / data models / types | docs/ARCHITECTURE_INFIELD.md                 |
+| Auth / RLS / security    | docs/SECURITY_STANDARDS.md                   |
+| Screen behavior / inputs | docs/SCREEN_STANDARDS.md                     |
+| Code review / pre-deploy | docs/STANDARDS_REFERENCE.md                  |
+| Checklist feature        | docs/specs/checklist-implementation-notes.md |
+| New session context      | docs/inField-HANDOFF.md                      |
 
-## Security Rules
+## Mockups (mockups/ — read only the one you need)
 
-- **RLS on EVERY table**, no exceptions. Every table has `organization_id`.
-- Supabase Auth tokens stored in `expo-secure-store` — NEVER AsyncStorage.
-- Session timeout: 30 minutes idle.
-- Signatures are **immutable** — no UPDATE or DELETE policies.
-- All user input validated with Zod on BOTH client and server.
-- NEVER expose Supabase service role key in client code.
+```
+inField-HomeScreen-v6-rtl.jsx         → app/(app)/index.tsx
+inField-ReportsList-v5-rtl.jsx        → app/(app)/reports.tsx
+inField-ProjectsList-v2.jsx           → app/(app)/projects.tsx
+inField-Buildings-Apartments-v2.jsx   → buildings + apartments screens
+inField-Checklist-FINAL.jsx           → checklist screen (note: file is DocField-Checklist-FINAL.jsx)
+inField-MainScreen-v6.jsx             → report detail screen
+inField-AddDefect-v6.jsx              → add defect form
+inField-BedekBayit-PDF.jsx            → PDF template bedek bayit
+inField-Protocol-PDF.jsx              → PDF template protocol mesira
+```
 
-## Code Conventions
+## Skills — Use for UI work
 
-### Naming
+```
+~/.claude/skills/vercel-react-native-skills/  # React Native best practices
+~/.claude/skills/frontend-design/             # UI code conventions
+~/.claude/skills/design-audit/                # /design-check before every commit
+```
 
-| Item       | Convention             | Example                |
-| ---------- | ---------------------- | ---------------------- |
-| Components | PascalCase             | `ChecklistItem.tsx`    |
-| Hooks      | camelCase + use prefix | `useChecklist.ts`      |
-| Utils      | camelCase              | `formatPhone.ts`       |
-| Constants  | UPPER_SNAKE_CASE       | `DEFECT_CATEGORIES.ts` |
-| Types      | PascalCase             | `Defect.types.ts`      |
-| DB tables  | snake_case plural      | `delivery_reports`     |
-| DB columns | snake_case             | `created_at`           |
+Design System always wins over Skills on conflicts.
 
-### Import Order
+## Design — Non-Negotiable Rules
+
+Full system: docs/DESIGN_SYSTEM.md — read before ANY UI work.
+
+- Background: `#FEFDFB` (cr50) — never white
+- Primary: `#1B7A44` (g500) — forest green
+- Borders: `#F5EFE6` (cr200) — never gray
+- Accent: `#C8952E` (go500) — gold
+- Fonts: Rubik (Hebrew) / Inter (English + numbers)
+- RTL everywhere — logical properties only (ms/me/ps/pe, not ml/mr)
+- Border radius: min 10px on all interactive elements
+- Press: Reanimated scale(0.98) + Haptics.impactAsync(Light)
+- Loading: skeleton screens — never bare spinners
+- Shadows: warm rgba(20,19,17,x) — never pure black
+- Empty states: icon + text + CTA — always designed
+
+## Security — Non-Negotiable Rules
+
+Full spec: docs/SECURITY_STANDARDS.md
+
+- RLS on every table — no exceptions
+- organization_id on every table
+- Auth tokens in expo-secure-store — never AsyncStorage
+- Zod validation on client AND server
+- Never expose service role key in client
+
+## Code Rules
+
+**Naming**
+| Item | Convention | Example |
+|------------|-------------------|------------------------|
+| Components | PascalCase | `ChecklistItem.tsx` |
+| Hooks | use + camelCase | `useChecklist.ts` |
+| Constants | UPPER_SNAKE_CASE | `DEFECT_CATEGORIES.ts` |
+| DB tables | snake_case plural | `delivery_reports` |
+
+**Components**
+
+- Max ~200 lines — split if larger
+- 3+ useState → extract custom hook
+- Every async op: try/catch + Hebrew error message
+- No inline styles — NativeWind only
+- No prop drilling beyond 2 levels
+
+**State:** Local → useState | Shared → React Context | Server → React Query
+
+**Imports order**
 
 ```typescript
-// 1. React & framework
-import { useState } from 'react';
+// 1. React / framework
 // 2. Third-party
-import { z } from 'zod';
-// 3. Internal (absolute @/ paths)
-import { useAuth } from '@/hooks/useAuth';
+// 3. Internal @/ paths
 // 4. Components
-import { Button } from '@/components/ui/Button';
-// 5. Types
-import type { Defect } from '@docfield/shared';
+// 5. Types (import type)
 ```
 
-### State Management
-
-| Scope                            | Solution                     |
-| -------------------------------- | ---------------------------- |
-| Component-local                  | `useState`                   |
-| Parent-child (1-2 levels)        | Props                        |
-| Shared across components         | React Context                |
-| Complex state                    | `useReducer` + Context       |
-| Server data / cache              | React Query (TanStack Query) |
-| Never prop-drill beyond 2 levels |
-
-### Component Rules
-
-- Max ~200 lines per component file
-- If more than 3 `useState` hooks → extract a custom hook
-- Single responsibility — each component does ONE thing
-- All async operations have try/catch with Hebrew error messages
-- No inline styles on mobile — use NativeWind classes
-
-### i18n
-
-- ALL UI text comes from `packages/shared/src/i18n/` — NEVER hardcode Hebrew strings in components
-- Translation keys: English, dot-notation (e.g., `defects.severity.critical`)
-- Values: natural Hebrew
-
-### Validation
-
-- Shared Zod schemas in `packages/shared/src/validation/`
-- Used on both client (UX feedback) and server (security enforcement)
-- Israeli phone format: `/^0[2-9]\d{7,8}$/`
+**i18n**: All Hebrew strings from packages/shared/src/i18n/ — never hardcoded.
+**Validation**: Shared Zod schemas in packages/shared/src/validation/.
 
 ## Commands
 
 ```bash
-# Development
-npm run dev              # Start dev (from app directory)
-npx expo start           # Start mobile app
-npx turbo build          # Build all packages
-npx turbo lint           # Lint all packages
-npx tsc --noEmit         # TypeScript check (run before every commit)
-
-# Database
-supabase start           # Local Supabase
-supabase db reset        # Reset with migrations + seed
-supabase migration new   # Create new migration
-
-# Testing
-npx turbo test           # Run all tests
+npx expo start           # mobile dev
+npx turbo build          # build all
+npm run typecheck        # TS check — run after every file change
+supabase start           # local backend
+supabase db reset        # reset + seed
 ```
-
-## Offline-First Architecture
-
-- All data saves to WatermelonDB (SQLite) FIRST, always.
-- Sync to Supabase in background when network available.
-- Conflict resolution: last_write_wins (safe because each inspector works on their own reports).
-- Photos: compress locally → upload in background → store URL.
-- PDF generation works fully offline via expo-print.
 
 ## Git
 
-- `main` = production, `develop` = staging
-- Feature branches: `feature/checklist-engine`, `feature/camera-annotation`
-- Commit after each meaningful unit of work
-- Tag releases: `v1.0.0`, `v1.1.0`
+- Branches: main (prod) / develop (staging) / feature/_ / hotfix/_
+- Commits: feat: / fix: / docs: / refactor: / security:
+- No direct push to main
 
-## Referenced Documents
+## Feedback Loop — CRITICAL
 
-@docs/DESIGN_SYSTEM.md
-@docs/ARCHITECTURE_INFIELD.md
-@docs/SECURITY_STANDARDS.md
-@docs/SCREEN_STANDARDS.md
-@docs/STANDARDS_REFERENCE.md
-@docs/inField-HANDOFF.md
-@docs/specs/checklist-implementation-notes.md
-
-## Mockups
-
-```
-mockups/DocField-Checklist-FINAL.jsx       # צ׳קליסט — FINAL
-mockups/inField-MainScreen-v6.jsx          # מסך ראשי בדק בית
-mockups/inField-AddDefect-v6.jsx           # טופס הוספת ממצא
-mockups/inField-BedekBayit-PDF.jsx         # PDF בדק בית
-mockups/inField-Protocol-PDF.jsx           # PDF פרוטוקול מסירה
-mockups/inField-HomeScreen-v6-rtl.jsx      # מסך בית
-mockups/inField-ReportsList-v5-rtl.jsx     # רשימת דוחות
-mockups/inField-Buildings-Apartments-v2.jsx # בניינים ודירות
-mockups/inField-ProjectsList-v2.jsx        # רשימת פרויקטים
-```
-
-## Compacting Instructions
-
-When compacting context, ALWAYS preserve:
-
-- List of all modified files in current session
-- Current task status and next steps
-- Any errors or issues encountered
-- Design system color values and key rules
-
-## Feedback Loops (IMPORTANT)
-
-After EVERY file change: run `npx tsc --noEmit` to verify TypeScript compiles.
-After completing a feature: run `npx turbo build` to verify everything builds.
-If either fails — fix the errors before moving on. Do not skip this step.
+After every file change: `npm run typecheck` — fix all errors before continuing.
+After completing a feature: `npx turbo build` — fix all errors before continuing.
+Never skip. Never defer.

@@ -3,10 +3,20 @@ import { I18nManager } from 'react-native';
 import { Slot } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { AuthProvider } from '@/contexts/AuthContext';
 
 import '../global.css';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
 
 // RTL — mandatory for Israeli market
 I18nManager.allowRTL(true);
@@ -33,8 +43,10 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <AuthProvider>
-      <Slot />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Slot />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

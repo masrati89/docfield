@@ -1,2 +1,2 @@
-// @docfield/ui — Design System tokens and theme
+// @infield/ui — Design System tokens and theme
 export * from './theme';

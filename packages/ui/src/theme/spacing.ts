@@ -1,4 +1,4 @@
-// DocField Design System — Spacing Scale
+// inField Design System — Spacing Scale
 
 export const SPACING = {
   xs: 4,

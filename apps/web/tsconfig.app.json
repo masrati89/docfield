@@ -19,8 +19,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@docfield/shared": ["../../packages/shared/src"],
-      "@docfield/ui": ["../../packages/ui/src"]
+      "@infield/shared": ["../../packages/shared/src"],
+      "@infield/ui": ["../../packages/ui/src"]
     }
   },
   "include": ["src"]

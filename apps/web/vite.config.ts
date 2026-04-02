@@ -7,8 +7,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@docfield/shared': path.resolve(__dirname, '../../packages/shared/src'),
-      '@docfield/ui': path.resolve(__dirname, '../../packages/ui/src'),
+      '@infield/shared': path.resolve(__dirname, '../../packages/shared/src'),
+      '@infield/ui': path.resolve(__dirname, '../../packages/ui/src'),
     },
   },
 });

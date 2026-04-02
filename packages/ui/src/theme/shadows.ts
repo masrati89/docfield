@@ -1,4 +1,4 @@
-// DocField Design System — Shadows (warm-tinted, never pure black)
+// inField Design System — Shadows (warm-tinted, never pure black)
 // Base color: neutral-900 (#141311)
 
 export const SHADOWS = {

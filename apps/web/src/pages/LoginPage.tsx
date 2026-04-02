@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 
-import { loginSchema } from '@docfield/shared';
+import { loginSchema } from '@infield/shared';
 
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -56,7 +56,10 @@ export function LoginPage() {
           (error) => error.path[0] === field
         );
         if (fieldError) {
-          setErrors((previous) => ({ ...previous, [field]: fieldError.message }));
+          setErrors((previous) => ({
+            ...previous,
+            [field]: fieldError.message,
+          }));
           return false;
         }
       }
@@ -144,7 +147,7 @@ export function LoginPage() {
             <span className="text-white text-2xl font-rubik font-bold">DF</span>
           </div>
           <h1 className="text-[32px] font-rubik font-bold text-primary-700">
-            DocField
+            inField
           </h1>
           <p className="text-[15px] font-rubik text-neutral-500 mt-2">
             התחבר לחשבון שלך
@@ -207,9 +210,10 @@ export function LoginPage() {
                 placeholder:text-neutral-400
                 focus-visible:ring-2 focus-visible:ring-primary-500/20
                 disabled:opacity-50
-                ${errors.email
-                  ? 'border-[1.5px] border-danger-500 focus-visible:border-danger-500'
-                  : 'border-[1.5px] border-cream-300 focus-visible:border-primary-500'
+                ${
+                  errors.email
+                    ? 'border-[1.5px] border-danger-500 focus-visible:border-danger-500'
+                    : 'border-[1.5px] border-cream-300 focus-visible:border-primary-500'
                 }
               `}
             />
@@ -257,7 +261,9 @@ export function LoginPage() {
                 disabled={isSubmitting}
                 placeholder="לפחות 8 תווים"
                 dir="ltr"
-                aria-describedby={errors.password ? 'password-error' : undefined}
+                aria-describedby={
+                  errors.password ? 'password-error' : undefined
+                }
                 aria-invalid={!!errors.password}
                 className={`
                   w-full h-[50px] rounded-[10px] px-4 ps-12
@@ -267,9 +273,10 @@ export function LoginPage() {
                   placeholder:text-neutral-400
                   focus-visible:ring-2 focus-visible:ring-primary-500/20
                   disabled:opacity-50
-                  ${errors.password
-                    ? 'border-[1.5px] border-danger-500 focus-visible:border-danger-500'
-                    : 'border-[1.5px] border-cream-300 focus-visible:border-primary-500'
+                  ${
+                    errors.password
+                      ? 'border-[1.5px] border-danger-500 focus-visible:border-danger-500'
+                      : 'border-[1.5px] border-cream-300 focus-visible:border-primary-500'
                   }
                 `}
               />
