@@ -221,3 +221,15 @@ supabase db reset        # reset + seed
 After every file change: `npm run typecheck` — fix all errors before continuing.
 After completing a feature: `npx turbo build` — fix all errors before continuing.
 Never skip. Never defer.
+
+## Screen Completion Protocol
+
+After building ANY screen — before moving to the next one:
+
+1. `npm run typecheck` — zero errors
+2. `npx turbo build` — passes
+3. `/design-check` — run design audit on the new screen
+4. `npx expo start` — open on device/simulator and verify visually
+5. Screenshot → send to Haim for design review approval
+
+Do NOT start the next screen until Haim approves the current one.
