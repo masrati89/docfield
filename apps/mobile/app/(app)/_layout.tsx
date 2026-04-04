@@ -49,8 +49,8 @@ export default function AppLayout() {
             borderTopColor: '#F5EFE6',
             borderTopWidth: 1,
             paddingTop: 6,
-            paddingBottom: bottomPadding,
-            height: 52 + bottomPadding,
+            paddingBottom: bottomPadding + 4,
+            height: 60 + bottomPadding,
           },
         }}
       >
@@ -90,8 +90,6 @@ export default function AppLayout() {
             ),
           }}
         />
-        {/* Hide non-tab routes from tab bar */}
-        <Tabs.Screen name="library" options={{ href: null }} />
       </Tabs>
     </View>
   );
