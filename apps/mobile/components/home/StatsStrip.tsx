@@ -84,7 +84,7 @@ export function StatsStrip({
             borderRadius: BORDER_RADIUS.lg,
             borderWidth: 1,
             borderColor: COLORS.cream[200],
-            backgroundColor: COLORS.cream[50],
+            backgroundColor: COLORS.cream[100],
           }}
         >
           {isLoading ? (
