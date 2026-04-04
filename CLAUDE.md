@@ -107,15 +107,17 @@ All tables: RLS enforced, organization_id tenant isolation.
 
 ## Docs — Load on demand, NOT upfront
 
-| Task                     | Read                                         |
-| ------------------------ | -------------------------------------------- |
-| Any UI work              | docs/DESIGN_SYSTEM.md + relevant mockup      |
-| DB / data models / types | docs/ARCHITECTURE_INFIELD.md                 |
-| Auth / RLS / security    | docs/SECURITY_STANDARDS.md                   |
-| Screen behavior / inputs | docs/SCREEN_STANDARDS.md                     |
-| Code review / pre-deploy | docs/STANDARDS_REFERENCE.md                  |
-| Checklist feature        | docs/specs/checklist-implementation-notes.md |
-| New session context      | docs/inField-HANDOFF.md                      |
+| Task                       | Read                                         |
+| -------------------------- | -------------------------------------------- |
+| Any UI work                | docs/DESIGN_SYSTEM.md + relevant mockup      |
+| DB / data models / types   | docs/ARCHITECTURE_INFIELD.md                 |
+| Auth / RLS / security      | docs/SECURITY_STANDARDS.md                   |
+| Screen behavior / inputs   | docs/SCREEN_STANDARDS.md                     |
+| Code review / pre-deploy   | docs/STANDARDS_REFERENCE.md                  |
+| Checklist feature          | docs/specs/checklist-implementation-notes.md |
+| New session context        | docs/inField-HANDOFF.md                      |
+| Flow / navigation / wizard | docs/FLOW_SPEC.md                            |
+| All docs reference         | docs/CLAUDE_CODE_DOC_REFERENCE.md            |
 
 ## Mockups (mockups/ — read only the one you need)
 
@@ -233,3 +235,8 @@ After building ANY screen — before moving to the next one:
 5. Screenshot → send to Haim for design review approval
 
 Do NOT start the next screen until Haim approves the current one.
+
+## Communication
+
+All explanations, reports, and summaries to the user must be written in Hebrew.
+Code, variable names, comments, and file paths remain in English.
