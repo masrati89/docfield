@@ -1,12 +1,16 @@
-import { useCallback, useEffect, useState } from 'react';
-import { View, ScrollView } from 'react-native';
+import { useState, useMemo, useCallback } from 'react';
+import { View, ScrollView, RefreshControl } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import { COLORS } from '@infield/ui';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { useReports } from '@/hooks/useReports';
+import { useProjects } from '@/hooks/useProjects';
+import { NewInspectionSheet } from '@/components/ui/NewInspectionSheet';
+import { SideMenu } from '@/components/ui/SideMenu';
+import { useSideMenu } from '@/hooks/useSideMenu';
 
 import {
   HomeHeader,
@@ -34,6 +38,7 @@ interface ProjectRow {
   address: string;
   done: number;
   total: number;
+  buildingsCount: number;
 }
 
 // --- Helpers ---
@@ -48,7 +53,6 @@ function formatRelativeTime(dateStr: string): string {
   if (diffHours < 1) return 'עכשיו';
   if (diffHours < 24) return `לפני ${diffHours} שעות`;
   if (diffDays === 1) return 'אתמול';
-  // Format as dd.mm
   const d = date.getDate().toString().padStart(2, '0');
   const m = (date.getMonth() + 1).toString().padStart(2, '0');
   return `${d}.${m}`;
@@ -59,113 +63,108 @@ function formatRelativeTime(dateStr: string): string {
 export default function HomeScreen() {
   const { profile } = useAuth();
   const router = useRouter();
+  const { isOpen: menuOpen, open: openMenu, close: closeMenu } = useSideMenu();
+  const [showNewInspection, setShowNewInspection] = useState(false);
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [draftsCount, setDraftsCount] = useState(0);
-  const [completedCount, setCompletedCount] = useState(0);
-  const [reports, setReports] = useState<ReportRow[]>([]);
-  const [projects, setProjects] = useState<ProjectRow[]>([]);
+  const {
+    reports: allReports,
+    isLoading: reportsLoading,
+    isRefreshing: reportsRefreshing,
+    refetch: refetchReports,
+  } = useReports();
+  const {
+    projects: allProjects,
+    isLoading: projectsLoading,
+    isRefreshing: projectsRefreshing,
+    refetch: refetchProjects,
+  } = useProjects();
 
-  const fetchHomeData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const [draftsResult, completedResult, reportsResult, projectsResult] =
-        await Promise.all([
-          supabase
-            .from('delivery_reports')
-            .select('id', { count: 'exact', head: true })
-            .in('status', ['draft', 'in_progress']),
-          supabase
-            .from('delivery_reports')
-            .select('id', { count: 'exact', head: true })
-            .in('status', ['completed', 'sent']),
-          supabase
-            .from('delivery_reports')
-            .select(
-              'id, report_type, status, report_date, updated_at, tenant_name, apartments!inner(number, buildings!inner(name, projects!inner(name, address)))'
-            )
-            .order('updated_at', { ascending: false })
-            .limit(5),
-          supabase
-            .from('projects')
-            .select('id, name, address, apartments(id, status)')
-            .eq('status', 'active')
-            .limit(3),
-        ]);
+  const isLoading = reportsLoading || projectsLoading;
+  const isRefreshing = reportsRefreshing || projectsRefreshing;
 
-      setDraftsCount(draftsResult.count ?? 0);
-      setCompletedCount(completedResult.count ?? 0);
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([refetchReports(), refetchProjects()]);
+  }, [refetchReports, refetchProjects]);
 
-      // Map reports
-      const mappedReports: ReportRow[] = (reportsResult.data ?? []).map(
-        (r: Record<string, unknown>) => {
-          const apt = r.apartments as Record<string, unknown> | undefined;
-          const bld = apt?.buildings as Record<string, unknown> | undefined;
-          const prj = bld?.projects as Record<string, unknown> | undefined;
-          return {
-            id: r.id as string,
-            project: (prj?.name as string) ?? '',
-            apartment: `דירה ${apt?.number ?? ''}, ${bld?.name ?? ''}`,
-            type: (r.report_type as string) ?? 'delivery',
-            status:
-              (r.status as string) === 'completed' ||
-              (r.status as string) === 'sent'
-                ? 'done'
-                : 'draft',
-            defects: 0,
-            time: formatRelativeTime(
-              (r.updated_at as string) ?? (r.report_date as string)
-            ),
-          };
-        }
-      );
-      setReports(mappedReports);
+  const draftsCount = useMemo(
+    () =>
+      allReports.filter(
+        (r) => r.status === 'draft' || r.status === 'in_progress'
+      ).length,
+    [allReports]
+  );
 
-      // Map projects
-      const mappedProjects: ProjectRow[] = (projectsResult.data ?? []).map(
-        (p: Record<string, unknown>) => {
-          const apts = (p.apartments as Array<{ status: string }>) ?? [];
-          const done = apts.filter(
-            (a) => a.status === 'completed' || a.status === 'delivered'
-          ).length;
-          return {
-            id: p.id as string,
-            name: (p.name as string) ?? '',
-            address: (p.address as string) ?? '',
-            done,
-            total: apts.length || 1,
-          };
-        }
-      );
-      setProjects(mappedProjects);
-    } catch {
-      // Silent fail — shows empty state
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const completedCount = useMemo(
+    () =>
+      allReports.filter((r) => r.status === 'completed' || r.status === 'sent')
+        .length,
+    [allReports]
+  );
 
-  useEffect(() => {
-    fetchHomeData();
-  }, [fetchHomeData]);
+  const reports: ReportRow[] = useMemo(
+    () =>
+      allReports.slice(0, 5).map((r) => ({
+        id: r.id,
+        project: r.project,
+        apartment: r.apartment,
+        type: r.reportType,
+        status:
+          r.status === 'completed' || r.status === 'sent' ? 'done' : 'draft',
+        defects: r.defectCount,
+        time: formatRelativeTime(r.updatedAt),
+      })),
+    [allReports]
+  );
+
+  const projects: ProjectRow[] = useMemo(
+    () =>
+      allProjects
+        .filter((p) => p.status === 'active')
+        .slice(0, 3)
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          address: p.address,
+          done: p.completedApts,
+          total: p.totalApts || 1,
+          buildingsCount: p.buildingsCount,
+        })),
+    [allProjects]
+  );
 
   const userName = profile?.fullName?.split(' ')[0] ?? '';
+
+  const handleOpenMenu = useCallback(() => {
+    openMenu();
+  }, [openMenu]);
+
+  const handleNewInspection = useCallback(() => {
+    setShowNewInspection(true);
+  }, []);
 
   return (
     <SafeAreaView
       edges={['top']}
-      style={{ flex: 1, backgroundColor: COLORS.cream[100] }}
+      style={{ flex: 1, backgroundColor: COLORS.cream[50] }}
     >
       <StatusBar style="dark" />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 20 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.primary[500]}
+            colors={[COLORS.primary[500]]}
+          />
+        }
       >
         <HomeHeader
           userName={userName}
-          onNewInspection={() => {}}
+          onNewInspection={handleNewInspection}
           onBell={() => {}}
-          onMenu={() => {}}
+          onMenu={handleOpenMenu}
         />
 
         {/* Separator */}
@@ -188,18 +187,32 @@ export default function HomeScreen() {
           reports={reports}
           isLoading={isLoading}
           onViewAll={() => router.push('/(app)/reports')}
-          onReportPress={() => {}}
+          onReportPress={(id) => router.push(`/(app)/reports/${id}`)}
         />
 
         <ProjectsSection
           projects={projects}
           isLoading={isLoading}
           onViewAll={() => router.push('/(app)/projects')}
-          onProjectPress={() => {}}
+          onProjectPress={(id) => {
+            const project = projects.find((p) => p.id === id);
+            if (project && project.buildingsCount <= 1) {
+              router.push(`/(app)/projects/${id}/apartments`);
+            } else {
+              router.push(`/(app)/projects/${id}/buildings`);
+            }
+          }}
         />
 
-        <ToolGrid />
+        <ToolGrid onToolPress={() => {}} />
       </ScrollView>
+
+      <NewInspectionSheet
+        visible={showNewInspection}
+        onClose={() => setShowNewInspection(false)}
+      />
+
+      <SideMenu visible={menuOpen} onClose={closeMenu} />
     </SafeAreaView>
   );
 }

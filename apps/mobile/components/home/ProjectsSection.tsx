@@ -3,7 +3,7 @@ import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
-import { SkeletonBlock } from '@/components/ui';
+import { SkeletonBlock, EmptyState } from '@/components/ui';
 
 // --- Types ---
 
@@ -79,7 +79,7 @@ function ProjectRow({
           >
             {project.name}
           </Text>
-          <Feather name="chevron-left" size={14} color={COLORS.neutral[300]} />
+          <Feather name="chevron-left" size={16} color={COLORS.neutral[300]} />
         </View>
 
         {/* Row 2: address */}
@@ -91,7 +91,7 @@ function ProjectRow({
             marginBottom: 7,
           }}
         >
-          <Feather name="map-pin" size={11} color={COLORS.neutral[400]} />
+          <Feather name="map-pin" size={16} color={COLORS.neutral[400]} />
           <Text
             style={{
               fontSize: 11,
@@ -217,11 +217,11 @@ export function ProjectsSection({
           >
             עוד
           </Text>
-          <Feather name="chevron-left" size={14} color={COLORS.neutral[300]} />
+          <Feather name="chevron-left" size={16} color={COLORS.neutral[300]} />
         </Pressable>
       </View>
 
-      {/* Project rows or loading skeleton */}
+      {/* Project rows, loading skeleton, or empty state */}
       {isLoading ? (
         <View style={{ padding: 16, gap: 12 }}>
           {[0, 1, 2].map((i) => (
@@ -232,6 +232,12 @@ export function ProjectsSection({
             </View>
           ))}
         </View>
+      ) : projects.length === 0 ? (
+        <EmptyState
+          icon="folder"
+          title="אין פרויקטים עדיין"
+          subtitle="הוסף פרויקט ראשון כדי להתחיל"
+        />
       ) : (
         projects.map((p, i) => (
           <ProjectRow

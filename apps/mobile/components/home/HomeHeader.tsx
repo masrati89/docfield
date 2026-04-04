@@ -71,7 +71,7 @@ export function HomeHeader({
               justifyContent: 'center',
             }}
           >
-            <Feather name="clipboard" size={14} color={COLORS.primary[500]} />
+            <Feather name="clipboard" size={16} color={COLORS.primary[500]} />
           </View>
           <Text
             style={{
@@ -79,7 +79,7 @@ export function HomeHeader({
               fontWeight: '700',
               color: COLORS.primary[700],
               fontFamily: 'Rubik-Bold',
-              letterSpacing: -0.3,
+              letterSpacing: 0,
             }}
           >
             inField
@@ -100,7 +100,7 @@ export function HomeHeader({
             justifyContent: 'center',
           }}
         >
-          <Feather name="bell" size={19} color={COLORS.neutral[500]} />
+          <Feather name="bell" size={20} color={COLORS.neutral[500]} />
           {/* Notification dot */}
           <View
             style={{

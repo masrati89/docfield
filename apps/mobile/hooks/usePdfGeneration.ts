@@ -1,0 +1,204 @@
+import { useCallback, useState } from 'react';
+import * as Print from 'expo-print';
+import { Platform, Share } from 'react-native';
+
+import { supabase } from '@/lib/supabase';
+import { generateBedekBayitHtml, generateProtocolHtml } from '@/lib/pdf';
+import type { PdfReportData, PdfDefect, PdfSignature } from '@/lib/pdf';
+
+// --- Types ---
+
+interface UsePdfGenerationResult {
+  isGenerating: boolean;
+  isSharing: boolean;
+  generatePdf: (reportId: string) => Promise<string | null>;
+  sharePdf: (reportId: string, existingPdfUri?: string) => Promise<void>;
+}
+
+// --- Fetcher ---
+
+async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
+  // Fetch report with relations
+  const { data: report, error: reportError } = await supabase
+    .from('delivery_reports')
+    .select(
+      `id, report_type, status, tenant_name, tenant_phone, report_date, notes,
+       apartments!inner(
+         number, floor,
+         buildings!inner(
+           name,
+           projects!inner(name, address)
+         )
+       )`
+    )
+    .eq('id', reportId)
+    .single();
+
+  if (reportError || !report) throw new Error('שגיאה בטעינת נתוני הדוח');
+
+  const apt = report.apartments as unknown as {
+    number: string;
+    floor: number | null;
+    buildings: {
+      name: string;
+      projects: { name: string; address: string | null };
+    };
+  };
+
+  // Fetch defects with photos
+  const { data: defectsData, error: defectsError } = await supabase
+    .from('defects')
+    .select(
+      `id, description, room, category, severity, status, sort_order,
+       standard_ref, recommendation, cost, cost_unit, notes,
+       defect_photos(image_url, sort_order)`
+    )
+    .eq('delivery_report_id', reportId)
+    .order('sort_order')
+    .order('created_at');
+
+  if (defectsError) throw new Error('שגיאה בטעינת ממצאים');
+
+  const defects: PdfDefect[] = (defectsData ?? []).map(
+    (d: Record<string, unknown>, idx: number) => {
+      const photos =
+        (d.defect_photos as Array<{ image_url: string; sort_order: number }>) ??
+        [];
+      return {
+        number: idx + 1,
+        title: d.description as string,
+        location: (d.room as string) ?? '',
+        category: (d.category as string) ?? 'כללי',
+        standardRef: d.standard_ref as string | undefined,
+        recommendation: d.recommendation as string | undefined,
+        cost: d.cost as number | undefined,
+        costLabel: d.cost_unit as string | undefined,
+        note: d.notes as string | undefined,
+        photoUrls: photos
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((p) => p.image_url),
+      };
+    }
+  );
+
+  // Fetch signatures
+  const { data: sigData } = await supabase
+    .from('signatures')
+    .select('signer_type, signer_name, image_url, signed_at')
+    .eq('delivery_report_id', reportId);
+
+  const signatures: PdfSignature[] = (sigData ?? []).map(
+    (s: Record<string, unknown>) => ({
+      signerType: s.signer_type as 'inspector' | 'tenant',
+      signerName: s.signer_name as string,
+      imageUrl: s.image_url as string | undefined,
+      signedAt: s.signed_at as string,
+    })
+  );
+
+  // Client info from report's tenant fields (clients table is org-level, not per-report)
+  const reportRecord = report as Record<string, unknown>;
+
+  return {
+    reportType: report.report_type as 'bedek_bait' | 'delivery',
+    reportNumber: reportId.slice(0, 8).toUpperCase(),
+    reportDate: report.report_date,
+    status: report.status as PdfReportData['status'],
+    inspector: { name: '' }, // Populated from user profile at call site if needed
+    property: {
+      projectName: apt.buildings.projects.name,
+      address: apt.buildings.projects.address ?? undefined,
+      apartmentNumber: apt.number,
+      floor: apt.floor ?? undefined,
+    },
+    client: {
+      name: (reportRecord.tenant_name as string) ?? '',
+      phone: reportRecord.tenant_phone as string | undefined,
+    },
+    defects,
+    signatures,
+    notes: report.notes ?? undefined,
+  };
+}
+
+// --- Hook ---
+
+export function usePdfGeneration(
+  onSuccess?: (message: string) => void,
+  onError?: (message: string) => void
+): UsePdfGenerationResult {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+
+  const generatePdf = useCallback(
+    async (reportId: string): Promise<string | null> => {
+      setIsGenerating(true);
+      try {
+        const data = await fetchFullReportData(reportId);
+
+        // Generate HTML based on report type
+        const html =
+          data.reportType === 'bedek_bait'
+            ? generateBedekBayitHtml(data)
+            : generateProtocolHtml(data);
+
+        // Generate PDF file
+        const { uri } = await Print.printToFileAsync({
+          html,
+          base64: false,
+        });
+
+        // Update pdf_url in Supabase
+        await supabase
+          .from('delivery_reports')
+          .update({ pdf_url: uri })
+          .eq('id', reportId);
+
+        onSuccess?.('הדוח הופק בהצלחה');
+        return uri;
+      } catch {
+        onError?.('שגיאה בהפקת הדוח');
+        return null;
+      } finally {
+        setIsGenerating(false);
+      }
+    },
+    [onSuccess, onError]
+  );
+
+  const sharePdf = useCallback(
+    async (reportId: string, existingPdfUri?: string) => {
+      setIsSharing(true);
+      try {
+        let uri = existingPdfUri;
+
+        // Generate if no existing URI
+        if (!uri) {
+          uri = (await generatePdf(reportId)) ?? undefined;
+        }
+
+        if (!uri) {
+          onError?.('שגיאה בהפקת הדוח לשיתוף');
+          return;
+        }
+
+        if (Platform.OS === 'web') {
+          onError?.('שיתוף אינו נתמך בדפדפן');
+          return;
+        }
+
+        await Share.share({
+          url: uri,
+          title: 'דוח inField',
+        });
+      } catch {
+        // User cancelled share — not an error
+      } finally {
+        setIsSharing(false);
+      }
+    },
+    [generatePdf, onError]
+  );
+
+  return { isGenerating, isSharing, generatePdf, sharePdf };
+}

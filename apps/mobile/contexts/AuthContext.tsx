@@ -10,6 +10,7 @@ import {
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import type { User } from '@infield/shared';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
 // --- Types ---
@@ -55,6 +56,7 @@ function getAuthErrorMessage(errorMessage: string): string {
 // --- Provider ---
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,7 +71,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error) {
-        console.error('Error fetching profile:', error.message);
         return null;
       }
 
@@ -88,7 +89,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return userProfile;
     } catch {
-      console.error('Unexpected error fetching profile');
       return null;
     }
   }, []);
@@ -173,11 +173,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
-  // Sign out
+  // Sign out — clear all cached data to prevent data leak between users
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setProfile(null);
-  }, []);
+    queryClient.clear();
+  }, [queryClient]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

@@ -105,7 +105,7 @@ export function Toast({ message, type, visible, onDismiss }: ToastProps) {
         }}
         accessibilityRole="alert"
       >
-        <Feather name={TOAST_ICONS[type]} size={18} color={COLORS.white} />
+        <Feather name={TOAST_ICONS[type]} size={20} color={COLORS.white} />
         <Text
           style={{
             flex: 1,

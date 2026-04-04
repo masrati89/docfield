@@ -33,6 +33,8 @@ function AnimatedCounter({ value, color }: { value: number; color: string }) {
         fontFamily: 'Rubik-Bold',
         color,
         lineHeight: 26,
+        includeFontPadding: false,
+        textAlignVertical: 'center',
       }}
     >
       {value}

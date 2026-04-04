@@ -33,7 +33,7 @@ export function EmptyState({
         gap: 12,
       }}
     >
-      <Feather name={icon} size={48} color={COLORS.neutral[400]} />
+      <Feather name={icon} size={24} color={COLORS.neutral[400]} />
       <Text
         style={{
           fontSize: 16,

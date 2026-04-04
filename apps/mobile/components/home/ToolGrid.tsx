@@ -1,5 +1,6 @@
 import { View, Text, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
@@ -42,9 +43,10 @@ const TOOLS: ToolItem[] = [
 
 // --- Tool Cell ---
 
-function ToolCell({ tool }: { tool: ToolItem }) {
+function ToolCell({ tool, onPress }: { tool: ToolItem; onPress?: () => void }) {
   return (
     <Pressable
+      onPress={onPress}
       style={({ pressed }) => ({
         flex: 1,
         backgroundColor: pressed ? COLORS.cream[100] : COLORS.cream[50],
@@ -87,7 +89,21 @@ function ToolCell({ tool }: { tool: ToolItem }) {
 
 // --- Component ---
 
-export function ToolGrid() {
+interface ToolGridProps {
+  onToolPress?: (label: string) => void;
+}
+
+export function ToolGrid({ onToolPress }: ToolGridProps) {
+  const router = useRouter();
+
+  const handleToolPress = (label: string) => {
+    if (label === 'מאגר ממצאים') {
+      router.push('/library');
+      return;
+    }
+    onToolPress?.(label);
+  };
+
   return (
     <Animated.View
       entering={FadeInUp.delay(300).duration(400)}
@@ -108,12 +124,24 @@ export function ToolGrid() {
       </Text>
       <View style={{ gap: 8 }}>
         <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
-          <ToolCell tool={TOOLS[0]} />
-          <ToolCell tool={TOOLS[1]} />
+          <ToolCell
+            tool={TOOLS[0]}
+            onPress={() => handleToolPress(TOOLS[0].label)}
+          />
+          <ToolCell
+            tool={TOOLS[1]}
+            onPress={() => handleToolPress(TOOLS[1].label)}
+          />
         </View>
         <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
-          <ToolCell tool={TOOLS[2]} />
-          <ToolCell tool={TOOLS[3]} />
+          <ToolCell
+            tool={TOOLS[2]}
+            onPress={() => handleToolPress(TOOLS[2].label)}
+          />
+          <ToolCell
+            tool={TOOLS[3]}
+            onPress={() => handleToolPress(TOOLS[3].label)}
+          />
         </View>
       </View>
     </Animated.View>

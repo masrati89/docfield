@@ -61,7 +61,7 @@ export const BottomSheetWrapper = forwardRef<
         height: 4,
       }}
       style={{
-        shadowColor: '#141311',
+        shadowColor: 'rgb(60,54,42)',
         shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.12,
         shadowRadius: 20,

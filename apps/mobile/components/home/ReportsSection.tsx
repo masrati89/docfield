@@ -3,7 +3,7 @@ import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
-import { SkeletonBlock } from '@/components/ui';
+import { SkeletonBlock, EmptyState } from '@/components/ui';
 
 // --- Types ---
 
@@ -95,21 +95,38 @@ function ReportRow({
             >
               {report.apartment}
             </Text>
-            <Text style={{ fontSize: 9, color: COLORS.neutral[300] }}>·</Text>
+            <Text
+              style={{
+                fontSize: 10,
+                color: COLORS.neutral[300],
+                includeFontPadding: false,
+              }}
+            >
+              ·
+            </Text>
             <Text
               style={{
                 fontSize: 10,
                 color: COLORS.neutral[400],
                 fontFamily: 'Rubik-Regular',
+                includeFontPadding: false,
               }}
             >
               {typeLabel}
             </Text>
-            <Text style={{ fontSize: 9, color: COLORS.neutral[300] }}>·</Text>
+            <Text
+              style={{
+                fontSize: 10,
+                color: COLORS.neutral[300],
+                includeFontPadding: false,
+              }}
+            >
+              ·
+            </Text>
             <View
               style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}
             >
-              <Feather name="clock" size={10} color={COLORS.neutral[400]} />
+              <Feather name="clock" size={16} color={COLORS.neutral[400]} />
               <Text
                 style={{
                   fontSize: 10,
@@ -147,7 +164,7 @@ function ReportRow({
             {isDraft ? 'טיוטה' : 'הושלם'}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-            <Feather name="alert-triangle" size={11} color={COLORS.gold[500]} />
+            <Feather name="alert-triangle" size={16} color={COLORS.gold[500]} />
             <Text
               style={{
                 fontSize: 10,
@@ -161,7 +178,7 @@ function ReportRow({
           </View>
         </View>
 
-        <Feather name="chevron-left" size={14} color={COLORS.neutral[300]} />
+        <Feather name="chevron-left" size={16} color={COLORS.neutral[300]} />
       </Pressable>
     </Animated.View>
   );
@@ -228,11 +245,11 @@ export function ReportsSection({
           >
             עוד
           </Text>
-          <Feather name="chevron-left" size={14} color={COLORS.neutral[300]} />
+          <Feather name="chevron-left" size={16} color={COLORS.neutral[300]} />
         </Pressable>
       </View>
 
-      {/* Report rows or loading skeleton */}
+      {/* Report rows, loading skeleton, or empty state */}
       {isLoading ? (
         <View style={{ padding: 16, gap: 12 }}>
           {[0, 1, 2].map((i) => (
@@ -245,6 +262,12 @@ export function ReportsSection({
             </View>
           ))}
         </View>
+      ) : reports.length === 0 ? (
+        <EmptyState
+          icon="file-text"
+          title="אין דוחות עדיין"
+          subtitle="צור בדיקה חדשה כדי להתחיל"
+        />
       ) : (
         reports.map((r, i) => (
           <ReportRow
