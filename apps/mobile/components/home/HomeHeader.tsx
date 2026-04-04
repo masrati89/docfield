@@ -54,7 +54,7 @@ export function HomeHeader({
             justifyContent: 'center',
           }}
         >
-          <Feather name="menu" size={20} color={COLORS.neutral[700]} />
+          <Feather name="menu" size={24} color={COLORS.neutral[700]} />
         </Pressable>
 
         {/* Logo center */}
@@ -100,7 +100,7 @@ export function HomeHeader({
             justifyContent: 'center',
           }}
         >
-          <Feather name="bell" size={20} color={COLORS.neutral[500]} />
+          <Feather name="bell" size={24} color={COLORS.neutral[500]} />
           {/* Notification dot */}
           <View
             style={{

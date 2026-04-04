@@ -1,13 +1,17 @@
 import { useCallback, useRef } from 'react';
 import { Redirect, Tabs } from 'expo-router';
-import { Alert, Platform, View } from 'react-native';
+import { Alert, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 
+const TAB_ICON_SIZE = 22;
+
 export default function AppLayout() {
   const { session, isLoading } = useAuth();
+  const insets = useSafeAreaInsets();
   const resetTimerRef = useRef<() => void>(() => {});
 
   const handleIdleWarning = useCallback(() => {
@@ -27,6 +31,8 @@ export default function AppLayout() {
     return <Redirect href="/(auth)/login" />;
   }
 
+  const bottomPadding = Math.max(insets.bottom, 8);
+
   return (
     <View style={{ flex: 1 }} onTouchStart={resetTimer}>
       <Tabs
@@ -43,8 +49,8 @@ export default function AppLayout() {
             borderTopColor: '#F5EFE6',
             borderTopWidth: 1,
             paddingTop: 6,
-            paddingBottom: Platform.OS === 'ios' ? 22 : 8,
-            height: Platform.OS === 'ios' ? 80 : 60,
+            paddingBottom: bottomPadding,
+            height: 52 + bottomPadding,
           },
         }}
       >
@@ -52,8 +58,8 @@ export default function AppLayout() {
           name="index"
           options={{
             title: 'בית',
-            tabBarIcon: ({ color, size }) => (
-              <Feather name="home" size={size} color={color} />
+            tabBarIcon: ({ color }) => (
+              <Feather name="home" size={TAB_ICON_SIZE} color={color} />
             ),
           }}
         />
@@ -61,8 +67,8 @@ export default function AppLayout() {
           name="reports"
           options={{
             title: 'דוחות',
-            tabBarIcon: ({ color, size }) => (
-              <Feather name="file-text" size={size} color={color} />
+            tabBarIcon: ({ color }) => (
+              <Feather name="file-text" size={TAB_ICON_SIZE} color={color} />
             ),
           }}
         />
@@ -70,8 +76,8 @@ export default function AppLayout() {
           name="projects"
           options={{
             title: 'פרויקטים',
-            tabBarIcon: ({ color, size }) => (
-              <Feather name="folder" size={size} color={color} />
+            tabBarIcon: ({ color }) => (
+              <Feather name="folder" size={TAB_ICON_SIZE} color={color} />
             ),
           }}
         />
@@ -79,11 +85,13 @@ export default function AppLayout() {
           name="settings"
           options={{
             title: 'הגדרות',
-            tabBarIcon: ({ color, size }) => (
-              <Feather name="settings" size={size} color={color} />
+            tabBarIcon: ({ color }) => (
+              <Feather name="settings" size={TAB_ICON_SIZE} color={color} />
             ),
           }}
         />
+        {/* Hide non-tab routes from tab bar */}
+        <Tabs.Screen name="library" options={{ href: null }} />
       </Tabs>
     </View>
   );
