@@ -35,21 +35,8 @@ CREATE TRIGGER set_organizations_updated_at
     BEFORE UPDATE ON organizations
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
--- RLS
+-- RLS enabled here; policies added in 002 after users table exists
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
-
--- SELECT: users see only their own organization
-CREATE POLICY "organizations_select" ON organizations FOR SELECT USING (
-    id = (SELECT organization_id FROM users WHERE id = auth.uid())
-);
-
--- UPDATE: admin only
-CREATE POLICY "organizations_update" ON organizations FOR UPDATE USING (
-    id = (SELECT organization_id FROM users WHERE id = auth.uid())
-    AND EXISTS (
-        SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'
-    )
-);
 
 -- No INSERT policy: organizations are created during onboarding (service role)
 -- No DELETE policy: organizations are never deleted

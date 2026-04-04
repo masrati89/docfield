@@ -27,7 +27,7 @@ export function DashboardLayout() {
         {/* Logo */}
         <div className="p-5 border-b border-cream-200">
           <h1 className="text-xl font-rubik font-bold text-primary-700">
-            inField
+            DocField
           </h1>
           <p className="text-xs font-rubik text-neutral-400 mt-1">
             ניהול דוחות מסירה
@@ -85,14 +85,16 @@ export function DashboardLayout() {
             התנתק
           </button>
           <p className="text-[11px] font-rubik text-neutral-400 text-center mt-2">
-            inField v0.0.1
+            DocField v0.0.1
           </p>
         </div>
       </aside>
 
       {/* Main content — offset by sidebar width */}
       <main className="flex-1 me-[260px]">
-        <Outlet />
+        <div className="mx-auto w-full px-6 max-w-[1200px] md:max-w-[900px] lg:max-w-[1200px]">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

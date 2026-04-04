@@ -4,7 +4,13 @@ export type DefectSeverity = 'critical' | 'medium' | 'low';
 
 export type DefectStatus = 'open' | 'in_progress' | 'fixed' | 'not_fixed';
 
-export type DefectSource = 'checklist' | 'manual' | 'library';
+export type DefectSource = 'checklist' | 'manual' | 'library' | 'inherited';
+
+export type ReviewStatus =
+  | 'pending_review'
+  | 'fixed'
+  | 'not_fixed'
+  | 'partially_fixed';
 
 export interface Defect extends TenantEntity {
   deliveryReportId: string;
@@ -16,6 +22,9 @@ export interface Defect extends TenantEntity {
   status: DefectStatus;
   source: DefectSource;
   sortOrder: number;
+  sourceDefectId?: string;
+  reviewStatus?: ReviewStatus;
+  reviewNote?: string;
 }
 
 export interface DefectPhoto extends BaseEntity {

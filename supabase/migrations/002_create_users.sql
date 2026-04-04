@@ -84,3 +84,18 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+
+-- ===========================================
+-- DEFERRED: organizations RLS policies (from 001)
+-- Moved here because they reference the users table
+-- ===========================================
+CREATE POLICY "organizations_select" ON organizations FOR SELECT USING (
+    id = (SELECT organization_id FROM users WHERE id = auth.uid())
+);
+
+CREATE POLICY "organizations_update" ON organizations FOR UPDATE USING (
+    id = (SELECT organization_id FROM users WHERE id = auth.uid())
+    AND EXISTS (
+        SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'
+    )
+);

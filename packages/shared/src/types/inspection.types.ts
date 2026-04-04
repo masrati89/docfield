@@ -9,7 +9,7 @@ export type ReportType =
 
 export type ReportStatus = 'draft' | 'in_progress' | 'completed' | 'sent';
 
-export type ChecklistResultValue = 'pass' | 'fail' | 'na';
+export type ChecklistResultValue = 'pass' | 'fail' | 'partial' | 'skip' | 'na';
 
 export interface DeliveryReport extends TenantEntity {
   apartmentId: string;
@@ -17,12 +17,15 @@ export interface DeliveryReport extends TenantEntity {
   checklistTemplateId?: string;
   reportType: ReportType;
   roundNumber: number;
+  previousRoundId?: string;
   status: ReportStatus;
   tenantName?: string;
   tenantPhone?: string;
   tenantEmail?: string;
   notes?: string;
   pdfUrl?: string;
+  projectNameFreetext?: string;
+  apartmentLabelFreetext?: string;
   reportDate: string;
   completedAt?: string;
 }

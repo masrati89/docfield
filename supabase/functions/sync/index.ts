@@ -43,19 +43,25 @@ const SYNCED_TABLES = [
 
 interface SyncRequest {
   lastSyncedAt: string | null;
-  changes: Record<string, {
-    created: Record<string, unknown>[];
-    updated: Record<string, unknown>[];
-    deleted: string[];
-  }>;
+  changes: Record<
+    string,
+    {
+      created: Record<string, unknown>[];
+      updated: Record<string, unknown>[];
+      deleted: string[];
+    }
+  >;
 }
 
 interface SyncResponse {
-  changes: Record<string, {
-    created: Record<string, unknown>[];
-    updated: Record<string, unknown>[];
-    deleted: string[];
-  }>;
+  changes: Record<
+    string,
+    {
+      created: Record<string, unknown>[];
+      updated: Record<string, unknown>[];
+      deleted: string[];
+    }
+  >;
   timestamp: string;
 }
 
@@ -72,10 +78,10 @@ serve(async (request: Request) => {
   }
 
   if (request.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { status: 405, headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   // Authenticate
@@ -83,26 +89,29 @@ serve(async (request: Request) => {
   if (!authHeader) {
     return new Response(
       JSON.stringify({ error: 'Missing authorization header' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } },
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
     );
   }
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    { global: { headers: { Authorization: authHeader } } },
+    { global: { headers: { Authorization: authHeader } } }
   );
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
   if (authError || !user) {
-    return new Response(
-      JSON.stringify({ error: 'Unauthorized' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   // Parse request
-  const body: SyncRequest = await request.json();
+  const _body: SyncRequest = await request.json();
   const timestamp = new Date().toISOString();
 
   // TODO: Implement full sync logic
@@ -129,14 +138,11 @@ serve(async (request: Request) => {
     timestamp,
   };
 
-  return new Response(
-    JSON.stringify(response),
-    {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
+  return new Response(JSON.stringify(response), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
     },
-  );
+  });
 });

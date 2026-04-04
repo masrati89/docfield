@@ -2,11 +2,14 @@
   "expo": {
     "name": "inField",
     "slug": "infield",
-    "version": "0.0.1",
+    "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "infield",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.infield.app"

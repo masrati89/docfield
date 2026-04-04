@@ -1,14 +1,48 @@
-export { loginSchema, registerSchema } from './auth.schema';
-export type { LoginInput, RegisterInput } from './auth.schema';
+export {
+  loginSchema,
+  registerSchema,
+  fullRegisterSchema,
+  changePasswordSchema,
+  resetPasswordSchema,
+} from './auth.schema';
+export type {
+  LoginInput,
+  RegisterInput,
+  FullRegisterInput,
+  ChangePasswordInput,
+  ResetPasswordInput,
+} from './auth.schema';
 
-export { createOrganizationSchema, updateOrganizationSchema } from './organization.schema';
-export type { CreateOrganizationInput, UpdateOrganizationInput } from './organization.schema';
+export {
+  createOrganizationSchema,
+  updateOrganizationSchema,
+} from './organization.schema';
+export type {
+  CreateOrganizationInput,
+  UpdateOrganizationInput,
+} from './organization.schema';
 
-export { createProjectSchema, createBuildingSchema, createApartmentSchema } from './project.schema';
-export type { CreateProjectInput, CreateBuildingInput, CreateApartmentInput } from './project.schema';
+export {
+  createProjectSchema,
+  createBuildingSchema,
+  createApartmentSchema,
+} from './project.schema';
+export type {
+  CreateProjectInput,
+  CreateBuildingInput,
+  CreateApartmentInput,
+} from './project.schema';
 
-export { createReportSchema, updateReportSchema, checklistResultSchema } from './inspection.schema';
-export type { CreateReportInput, UpdateReportInput, ChecklistResultInput } from './inspection.schema';
+export {
+  createReportSchema,
+  updateReportSchema,
+  checklistResultSchema,
+} from './inspection.schema';
+export type {
+  CreateReportInput,
+  UpdateReportInput,
+  ChecklistResultInput,
+} from './inspection.schema';
 
 export { createDefectSchema, updateDefectSchema } from './defect.schema';
 export type { CreateDefectInput, UpdateDefectInput } from './defect.schema';

@@ -9,7 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -25,9 +25,12 @@ import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
 
 import { COLORS } from '@infield/ui';
-import { loginSchema } from '@infield/shared';
+import { loginSchema, resetPasswordSchema } from '@infield/shared';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { Toast } from '@/components/ui/Toast';
+import { useToast } from '@/hooks/useToast';
 
 // --- Field error type ---
 
@@ -39,6 +42,7 @@ interface FieldErrors {
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
+  const { toast, showToast, hideToast } = useToast();
 
   // Form state
   const [email, setEmail] = useState('');
@@ -46,6 +50,12 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Forgot password state
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
 
   // Refs for focus management
   const passwordInputRef = useRef<TextInput>(null);
@@ -161,6 +171,7 @@ export default function LoginScreen() {
         if (Platform.OS !== 'web') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
+        router.replace('/(app)');
       }
     } finally {
       setIsSubmitting(false);
@@ -183,9 +194,54 @@ export default function LoginScreen() {
     handleSubmit();
   }, [handleSubmit]);
 
+  // Handle forgot password
+  const handleResetPassword = useCallback(async () => {
+    setResetError('');
+
+    const result = resetPasswordSchema.safeParse({ email: resetEmail.trim() });
+    if (!result.success) {
+      const firstError = result.error.errors[0];
+      setResetError(firstError?.message ?? 'אימייל לא תקין');
+      return;
+    }
+
+    setIsResetting(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        resetEmail.trim()
+      );
+
+      if (error) {
+        setResetError('אירעה שגיאה. נסה שוב מאוחר יותר');
+        return;
+      }
+
+      // Success
+      setShowForgotPassword(false);
+      setResetEmail('');
+      setResetError('');
+      showToast('נשלח אימייל לאיפוס סיסמה', 'success');
+    } catch {
+      setResetError('בעיית תקשורת. בדוק את החיבור לאינטרנט');
+    } finally {
+      setIsResetting(false);
+    }
+  }, [resetEmail, showToast]);
+
   return (
     <SafeAreaView className="flex-1 bg-cream-50">
       <StatusBar style="dark" />
+
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          visible={!!toast}
+          onDismiss={hideToast}
+        />
+      )}
 
       <KeyboardAvoidingView
         className="flex-1"
@@ -229,7 +285,7 @@ export default function LoginScreen() {
                 >
                   <Feather
                     name="alert-circle"
-                    size={18}
+                    size={20}
                     color={COLORS.danger[500]}
                   />
                   <Text className="text-[13px] font-rubik text-danger-700 me-[8px] flex-1">
@@ -285,7 +341,7 @@ export default function LoginScreen() {
                   >
                     <Feather
                       name="alert-circle"
-                      size={14}
+                      size={16}
                       color={COLORS.danger[700]}
                     />
                     <Text className="text-[13px] font-rubik text-danger-700 me-[4px]">
@@ -368,7 +424,7 @@ export default function LoginScreen() {
                   >
                     <Feather
                       name="alert-circle"
-                      size={14}
+                      size={16}
                       color={COLORS.danger[700]}
                     />
                     <Text className="text-[13px] font-rubik text-danger-700 me-[4px]">
@@ -377,6 +433,97 @@ export default function LoginScreen() {
                   </Animated.View>
                 )}
               </View>
+
+              {/* Forgot password link */}
+              <View className="items-start mb-[16px]">
+                <Pressable
+                  onPress={() => {
+                    setShowForgotPassword(!showForgotPassword);
+                    setResetEmail(email);
+                    setResetError('');
+                  }}
+                  hitSlop={8}
+                >
+                  <Text className="text-[13px] font-rubik text-primary-500">
+                    שכחתי סיסמה
+                  </Text>
+                </Pressable>
+              </View>
+
+              {/* Forgot password inline form */}
+              {showForgotPassword && (
+                <Animated.View
+                  entering={FadeInUp.duration(200)}
+                  className="bg-cream-100 border border-cream-200 rounded-[10px] p-[16px] mb-[16px]"
+                >
+                  <Text className="text-[14px] font-rubik-medium text-neutral-700 text-right mb-[12px]">
+                    איפוס סיסמה
+                  </Text>
+                  <Text className="text-[13px] font-rubik text-neutral-500 text-right mb-[12px]">
+                    הזן את כתובת האימייל שלך ונשלח לך קישור לאיפוס
+                  </Text>
+
+                  <TextInput
+                    value={resetEmail}
+                    onChangeText={(text) => {
+                      setResetEmail(text);
+                      if (resetError) setResetError('');
+                    }}
+                    onSubmitEditing={handleResetPassword}
+                    placeholder="name@example.com"
+                    placeholderTextColor={COLORS.neutral[400]}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    textContentType="emailAddress"
+                    returnKeyType="done"
+                    editable={!isResetting}
+                    className={`
+                      h-[50px] rounded-[10px] px-[16px]
+                      text-[16px] font-rubik text-neutral-700
+                      bg-cream-50
+                      ${resetError ? 'border-[1.5px] border-danger-500' : 'border-[1.5px] border-cream-300'}
+                      ${isResetting ? 'opacity-50' : ''}
+                    `}
+                    style={{ textAlign: 'right', writingDirection: 'ltr' }}
+                  />
+
+                  {resetError && (
+                    <Animated.View
+                      entering={FadeInUp.duration(200)}
+                      className="flex-row items-center mt-[4px]"
+                    >
+                      <Feather
+                        name="alert-circle"
+                        size={16}
+                        color={COLORS.danger[700]}
+                      />
+                      <Text className="text-[13px] font-rubik text-danger-700 me-[4px]">
+                        {resetError}
+                      </Text>
+                    </Animated.View>
+                  )}
+
+                  <Pressable
+                    onPress={handleResetPassword}
+                    disabled={isResetting}
+                    className={`
+                      bg-primary-500 h-[44px] rounded-[10px]
+                      items-center justify-center mt-[12px]
+                      active:bg-primary-600
+                      ${isResetting ? 'opacity-50' : ''}
+                    `}
+                  >
+                    {isResetting ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text className="text-white text-[14px] font-rubik-semibold">
+                        שלח קישור איפוס
+                      </Text>
+                    )}
+                  </Pressable>
+                </Animated.View>
+              )}
 
               {/* Submit button */}
               <Animated.View style={buttonAnimatedStyle}>
