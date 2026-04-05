@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 
 import { COLORS } from '@infield/ui';
+import { AnnotationEditor } from '@/components/camera';
+import type { AnnotationLayer } from '@/lib/annotations';
 
 // --- Constants ---
 
@@ -17,12 +20,15 @@ export interface PhotoItem {
   isUploading?: boolean;
   dbId?: string; // defect_photos row ID, set after saving to DB
   storagePath?: string; // storage path for deletion
+  annotations?: AnnotationLayer;
 }
 
 interface PhotoGridProps {
   photos: PhotoItem[];
   onAddPhoto: () => void;
+  onPickFromGallery?: () => void;
   onDeletePhoto: (id: string) => void;
+  onUpdateAnnotations?: (id: string, annotations: AnnotationLayer) => void;
   maxReached?: boolean;
 }
 
@@ -31,10 +37,20 @@ interface PhotoGridProps {
 export function PhotoGrid({
   photos,
   onAddPhoto,
+  onPickFromGallery,
   onDeletePhoto,
+  onUpdateAnnotations,
   maxReached,
 }: PhotoGridProps) {
   const isMaxReached = maxReached ?? photos.length >= MAX_PHOTOS;
+  const [editingPhoto, setEditingPhoto] = useState<PhotoItem | null>(null);
+
+  const handleAnnotationSave = (annotations: AnnotationLayer) => {
+    if (editingPhoto && onUpdateAnnotations) {
+      onUpdateAnnotations(editingPhoto.id, annotations);
+    }
+    setEditingPhoto(null);
+  };
 
   return (
     <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 6 }}>
@@ -42,8 +58,13 @@ export function PhotoGrid({
         const imageUri = ph.localUri ?? ph.publicUrl;
 
         return (
-          <View
+          <Pressable
             key={ph.id}
+            onPress={() => {
+              if (onUpdateAnnotations && imageUri) {
+                setEditingPhoto(ph);
+              }
+            }}
             style={{
               width: 64,
               height: 64,
@@ -85,6 +106,25 @@ export function PhotoGrid({
               </View>
             )}
 
+            {/* Annotation indicator */}
+            {ph.annotations && ph.annotations.annotations.length > 0 && (
+              <View
+                style={{
+                  position: 'absolute',
+                  bottom: 2,
+                  left: 2,
+                  width: 14,
+                  height: 14,
+                  borderRadius: 7,
+                  backgroundColor: COLORS.primary[500],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Feather name="edit-2" size={8} color="#FFFFFF" />
+              </View>
+            )}
+
             {/* Remove button */}
             <Pressable
               onPress={() => onDeletePhoto(ph.id)}
@@ -104,11 +144,11 @@ export function PhotoGrid({
             >
               <Feather name="x" size={16} color="#FFFFFF" />
             </Pressable>
-          </View>
+          </Pressable>
         );
       })}
 
-      {/* Add photo button */}
+      {/* Camera button */}
       {!isMaxReached && (
         <Pressable
           onPress={onAddPhoto}
@@ -134,9 +174,53 @@ export function PhotoGrid({
               fontFamily: 'Rubik-Medium',
             }}
           >
-            הוסף תמונה
+            צלם
           </Text>
         </Pressable>
+      )}
+
+      {/* Gallery button */}
+      {!isMaxReached && onPickFromGallery && (
+        <Pressable
+          onPress={onPickFromGallery}
+          style={({ pressed }) => ({
+            width: 64,
+            height: 64,
+            borderRadius: 8,
+            borderWidth: 2,
+            borderStyle: 'dashed',
+            borderColor: COLORS.gold[300],
+            backgroundColor: pressed ? COLORS.gold[100] : COLORS.cream[50],
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 3,
+          })}
+        >
+          <Feather name="image" size={20} color={COLORS.gold[700]} />
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: '500',
+              color: COLORS.gold[700],
+              fontFamily: 'Rubik-Medium',
+            }}
+          >
+            גלריה
+          </Text>
+        </Pressable>
+      )}
+
+      {/* Annotation editor modal */}
+      {editingPhoto && (
+        <AnnotationEditor
+          visible={!!editingPhoto}
+          imageUri={editingPhoto.localUri ?? editingPhoto.publicUrl ?? ''}
+          imageWidth={1200}
+          imageHeight={900}
+          initialAnnotations={editingPhoto.annotations}
+          onSave={handleAnnotationSave}
+          onClose={() => setEditingPhoto(null)}
+        />
       )}
     </View>
   );

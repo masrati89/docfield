@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -16,17 +16,22 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
+import * as ImagePicker from 'expo-image-picker';
+
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
-import { ROOM_TYPES } from '@infield/shared';
+import { ROOM_TYPES, DEFECT_CATEGORIES } from '@infield/shared';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/useToast';
 import { Button, Toast } from '@/components/ui';
-import { CameraCapture } from '@/components/camera/CameraCapture';
+import { CameraCapture } from '@/components/camera';
+import type { CapturedPhoto } from '@/lib/annotations';
+import type { AnnotationLayer } from '@/lib/annotations';
 
+import { useDefectLibrary } from '@/hooks/useDefectLibrary';
 import {
   FormField,
-  CategoryPicker,
+  ComboField,
   CostSection,
   PhotoGrid,
 } from '@/components/defect';
@@ -53,6 +58,7 @@ export default function AddDefectScreen() {
   const [category, setCategory] = useState(initialCategory ?? '');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [standardRef, setStandardRef] = useState('');
   const [recommendation, setRecommendation] = useState('');
   const [costUnit, setCostUnit] = useState('fixed');
   const [costAmount, setCostAmount] = useState('');
@@ -66,11 +72,38 @@ export default function AddDefectScreen() {
 
   const organizationId = profile?.organizationId ?? '';
 
+  // Defect library for autocomplete suggestions
+  const { allItems: libraryItems } = useDefectLibrary();
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const suggestions = useMemo(() => {
+    if (!description.trim() || description.trim().length < 2) return [];
+    const query = description.trim().toLowerCase();
+    return libraryItems
+      .filter((item) => item.title.toLowerCase().includes(query))
+      .slice(0, 5);
+  }, [description, libraryItems]);
+
+  const handleSelectSuggestion = useCallback(
+    (item: (typeof libraryItems)[0]) => {
+      setDescription(item.title);
+      if (item.category && !category) setCategory(item.category);
+      if (item.location && !location) setLocation(item.location);
+      if (item.standardRef && !standardRef) setStandardRef(item.standardRef);
+      if (item.recommendation && !recommendation)
+        setRecommendation(item.recommendation);
+      setShowSuggestions(false);
+    },
+    [category, location, standardRef, recommendation]
+  );
+
   // Dirty check — warn if user tries to leave with unsaved changes
+  // Exclude initialCategory from dirty check since it's pre-filled
   const isDirty =
-    !!category ||
+    (!!category && category !== (initialCategory ?? '')) ||
     !!description.trim() ||
     !!location ||
+    !!standardRef.trim() ||
     !!recommendation.trim() ||
     !!costAmount ||
     !!costQty ||
@@ -111,12 +144,13 @@ export default function AddDefectScreen() {
     category,
     description,
     location,
+    standardRef,
     recommendation,
     costAmount || costQty,
     note,
     photos.length > 0,
   ].filter(Boolean).length;
-  const totalFields = 7;
+  const totalFields = 8;
   const canSave = !!category && description.trim().length > 0;
 
   const handleAddPhoto = useCallback(() => {
@@ -127,25 +161,49 @@ export default function AddDefectScreen() {
     setCameraVisible(true);
   }, [photos.length, showToast]);
 
-  const handleCameraCapture = useCallback(
-    (result: { localUri: string; publicUrl: string }) => {
-      if (photos.length >= MAX_PHOTOS) {
-        showToast('ניתן להוסיף עד 10 תמונות', 'error');
-        setCameraVisible(false);
-        return;
-      }
+  const handlePickFromGallery = useCallback(async () => {
+    if (photos.length >= MAX_PHOTOS) {
+      showToast('ניתן להוסיף עד 10 תמונות', 'error');
+      return;
+    }
 
-      const newPhoto: PhotoItem = {
-        id: String(Date.now()),
-        localUri: result.localUri,
-        publicUrl: result.publicUrl,
-        isUploading: false,
-      };
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+      allowsMultipleSelection: true,
+      selectionLimit: MAX_PHOTOS - photos.length,
+    });
 
-      setPhotos((prev) => [...prev, newPhoto]);
-      setCameraVisible(false);
+    if (result.canceled || !result.assets) return;
+
+    const newPhotos: PhotoItem[] = result.assets.map((asset, i) => ({
+      id: String(Date.now() + i),
+      localUri: asset.uri,
+      publicUrl: asset.uri,
+      isUploading: false,
+    }));
+
+    setPhotos((prev) => [...prev, ...newPhotos].slice(0, MAX_PHOTOS));
+  }, [photos.length, showToast]);
+
+  const handlePhotosConfirmed = useCallback((captured: CapturedPhoto[]) => {
+    const newPhotos: PhotoItem[] = captured.map((photo, i) => ({
+      id: String(Date.now() + i),
+      localUri: photo.uri,
+      isUploading: false,
+      annotations: photo.annotations,
+    }));
+    setPhotos((prev) => [...prev, ...newPhotos].slice(0, MAX_PHOTOS));
+    setCameraVisible(false);
+  }, []);
+
+  const handleUpdateAnnotations = useCallback(
+    (photoId: string, annotations: AnnotationLayer) => {
+      setPhotos((prev) =>
+        prev.map((p) => (p.id === photoId ? { ...p, annotations } : p))
+      );
     },
-    [photos.length, showToast]
+    []
   );
 
   const handleDeletePhoto = useCallback(
@@ -195,6 +253,7 @@ export default function AddDefectScreen() {
           description,
           room: location || null,
           category: category || null,
+          standard_reference: standardRef.trim() || null,
           severity: 'medium',
           source: 'manual',
         })
@@ -208,22 +267,53 @@ export default function AddDefectScreen() {
 
       const defectId = defectData.id as string;
 
-      // Insert photo records into defect_photos
+      // Upload and insert photo records into defect_photos
       if (photos.length > 0) {
-        const photoRows = photos.map((photo, index) => ({
-          defect_id: defectId,
-          organization_id: organizationId,
-          image_url: photo.publicUrl ?? '',
-          sort_order: index,
-        }));
+        for (let i = 0; i < photos.length; i++) {
+          const photo = photos[i];
+          let imageUrl = photo.publicUrl ?? '';
 
-        const { error: photosError } = await supabase
-          .from('defect_photos')
-          .insert(photoRows);
+          // Upload local photos that don't have a publicUrl yet
+          if (photo.localUri && !photo.publicUrl) {
+            try {
+              const uuid = String(Date.now()) + '_' + i;
+              const filePath = `${organizationId}/${reportId}/${uuid}.jpg`;
+              const response = await fetch(photo.localUri);
+              const blob = await response.blob();
 
-        if (photosError) {
-          // Defect saved but photos failed — notify but don't block
-          showToast('הממצא נשמר, אך חלק מהתמונות לא נשמרו', 'error');
+              const { error: uploadError } = await supabase.storage
+                .from('defect-photos')
+                .upload(filePath, blob, {
+                  contentType: 'image/jpeg',
+                  upsert: false,
+                });
+
+              if (uploadError) throw uploadError;
+
+              const {
+                data: { publicUrl },
+              } = supabase.storage.from('defect-photos').getPublicUrl(filePath);
+
+              imageUrl = publicUrl;
+            } catch {
+              showToast('חלק מהתמונות לא הועלו', 'error');
+              continue;
+            }
+          }
+
+          const { error: insertError } = await supabase
+            .from('defect_photos')
+            .insert({
+              defect_id: defectId,
+              organization_id: organizationId,
+              image_url: imageUrl,
+              sort_order: i,
+              annotations_json: photo.annotations ?? null,
+            });
+
+          if (insertError) {
+            showToast('הממצא נשמר, אך חלק מהתמונות לא נשמרו', 'error');
+          }
         }
       }
 
@@ -242,6 +332,7 @@ export default function AddDefectScreen() {
     description,
     location,
     category,
+    standardRef,
     photos,
     router,
     showToast,
@@ -271,10 +362,10 @@ export default function AddDefectScreen() {
       {/* Camera Modal */}
       <CameraCapture
         visible={cameraVisible}
-        onCapture={handleCameraCapture}
         onClose={() => setCameraVisible(false)}
-        organizationId={organizationId}
-        reportId={reportId ?? ''}
+        onPhotosConfirmed={handlePhotosConfirmed}
+        initialPhotoCount={photos.length}
+        maxPhotos={MAX_PHOTOS}
       />
 
       {/* Header */}
@@ -351,7 +442,28 @@ export default function AddDefectScreen() {
               {filledCount}/{totalFields}
             </Text>
             <Pressable
-              onPress={() => router.back()}
+              onPress={() => {
+                if (!isDirty || savedRef.current) {
+                  savedRef.current = true;
+                  router.back();
+                } else {
+                  Alert.alert(
+                    'שינויים שלא נשמרו',
+                    'יש שינויים שלא נשמרו. לצאת בלי לשמור?',
+                    [
+                      { text: 'ביטול', style: 'cancel' },
+                      {
+                        text: 'צא בלי לשמור',
+                        style: 'destructive',
+                        onPress: () => {
+                          savedRef.current = true;
+                          router.back();
+                        },
+                      },
+                    ]
+                  );
+                }
+              }}
               style={{
                 width: 30,
                 height: 30,
@@ -379,7 +491,13 @@ export default function AddDefectScreen() {
         >
           {/* 1. Category */}
           <FormField label="קטגוריה" required filled={!!category} icon="grid">
-            <CategoryPicker selected={category} onSelect={setCategory} />
+            <ComboField
+              value={category}
+              onSelect={setCategory}
+              options={DEFECT_CATEGORIES.map((c) => c.label)}
+              placeholder="הקלד או בחר קטגוריה..."
+              allowCustom
+            />
           </FormField>
 
           {/* 2. Description */}
@@ -391,7 +509,15 @@ export default function AddDefectScreen() {
           >
             <TextInput
               value={description}
-              onChangeText={setDescription}
+              onChangeText={(text) => {
+                setDescription(text);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => {
+                // Delay hiding to allow suggestion tap
+                setTimeout(() => setShowSuggestions(false), 200);
+              }}
               placeholder="תאר את הממצא..."
               placeholderTextColor={COLORS.neutral[400]}
               multiline
@@ -414,54 +540,100 @@ export default function AddDefectScreen() {
                 maxHeight: 100,
               }}
             />
+
+            {/* Autocomplete suggestions from defect library */}
+            {showSuggestions && suggestions.length > 0 && (
+              <View
+                style={{
+                  marginTop: 4,
+                  borderRadius: BORDER_RADIUS.md,
+                  borderWidth: 1,
+                  borderColor: COLORS.cream[200],
+                  backgroundColor: COLORS.cream[50],
+                  overflow: 'hidden',
+                }}
+              >
+                {suggestions.map((item) => (
+                  <Pressable
+                    key={item.id}
+                    onPress={() => handleSelectSuggestion(item)}
+                    style={({ pressed }) => ({
+                      paddingVertical: 10,
+                      paddingHorizontal: 12,
+                      borderBottomWidth: 1,
+                      borderBottomColor: COLORS.cream[200],
+                      backgroundColor: pressed
+                        ? COLORS.primary[50]
+                        : 'transparent',
+                    })}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontFamily: 'Rubik-Regular',
+                        color: COLORS.neutral[700],
+                        textAlign: 'right',
+                      }}
+                      numberOfLines={1}
+                    >
+                      {item.title}
+                    </Text>
+                    {item.category ? (
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontFamily: 'Rubik-Regular',
+                          color: COLORS.neutral[400],
+                          textAlign: 'right',
+                          marginTop: 2,
+                        }}
+                      >
+                        {item.category}
+                        {item.location ? ` · ${item.location}` : ''}
+                      </Text>
+                    ) : null}
+                  </Pressable>
+                ))}
+              </View>
+            )}
           </FormField>
 
           {/* 3. Location */}
           <FormField label="מיקום" filled={!!location} icon="map-pin">
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{
-                flexDirection: 'row-reverse',
-                gap: 6,
-                paddingVertical: 2,
+            <ComboField
+              value={location}
+              onSelect={setLocation}
+              options={locationLabels}
+              placeholder="הקלד או בחר מיקום..."
+              allowCustom
+            />
+          </FormField>
+
+          {/* 4. Israeli Standard */}
+          <FormField label="תקן ישראלי" filled={!!standardRef} icon="book-open">
+            <TextInput
+              value={standardRef}
+              onChangeText={setStandardRef}
+              placeholder='לדוגמה: ת"י 1205.1'
+              placeholderTextColor={COLORS.neutral[400]}
+              style={{
+                paddingVertical: 9,
+                paddingHorizontal: 12,
+                borderRadius: BORDER_RADIUS.md,
+                borderWidth: 1,
+                borderColor: standardRef
+                  ? COLORS.primary[200]
+                  : COLORS.cream[300],
+                backgroundColor: standardRef
+                  ? COLORS.primary[50]
+                  : COLORS.cream[50],
+                fontSize: 14,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.neutral[800],
+                textAlign: 'right',
+                minHeight: 42,
               }}
-            >
-              {locationLabels.map((loc) => {
-                const isSelected = location === loc;
-                return (
-                  <Pressable
-                    key={loc}
-                    onPress={() => setLocation(isSelected ? '' : loc)}
-                    style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 16,
-                      backgroundColor: isSelected
-                        ? COLORS.primary[500]
-                        : 'transparent',
-                      borderWidth: 1,
-                      borderColor: isSelected
-                        ? COLORS.primary[500]
-                        : COLORS.cream[300],
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        fontWeight: isSelected ? '600' : '400',
-                        color: isSelected ? '#FFFFFF' : COLORS.neutral[600],
-                        fontFamily: isSelected
-                          ? 'Rubik-SemiBold'
-                          : 'Rubik-Regular',
-                      }}
-                    >
-                      {loc}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+            />
           </FormField>
 
           {/* Separator */}
@@ -473,7 +645,7 @@ export default function AddDefectScreen() {
             }}
           />
 
-          {/* 4. Recommendation */}
+          {/* 5. Recommendation */}
           <FormField label="המלצה לתיקון" filled={!!recommendation} icon="tool">
             <TextInput
               value={recommendation}
@@ -554,7 +726,9 @@ export default function AddDefectScreen() {
             <PhotoGrid
               photos={photos}
               onAddPhoto={handleAddPhoto}
+              onPickFromGallery={handlePickFromGallery}
               onDeletePhoto={handleDeletePhoto}
+              onUpdateAnnotations={handleUpdateAnnotations}
             />
           </FormField>
 
