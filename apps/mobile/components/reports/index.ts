@@ -12,3 +12,4 @@ export {
   STATUS_CHIPS,
 } from './reportsConstants';
 export type { StatusFilter, SortBy, TypeFilter } from './reportsConstants';
+export { PrePdfSummary } from './PrePdfSummary';
