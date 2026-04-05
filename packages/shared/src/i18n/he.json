@@ -261,5 +261,27 @@
     "generatePdf": "הפק PDF",
     "continueToSignature": "המשך לחתימה",
     "back": "חזרה"
+  },
+  "camera": {
+    "badge": "תמונות",
+    "confirm": "אשר",
+    "editPhoto": "ערוך",
+    "retake": "צלם שוב",
+    "done": "סיום",
+    "reviewTitle": "סקירת תמונות",
+    "confirmAll": "אשר הכל",
+    "deleteConfirm": "למחוק את התמונה?",
+    "deleteConfirmBody": "פעולה זו אינה הפיכה",
+    "maxPhotos": "ניתן להוסיף עד 10 תמונות",
+    "annotationTitle": "עריכת תמונה",
+    "toolArrow": "חץ",
+    "toolCircle": "עיגול",
+    "toolUnderline": "קו",
+    "toolText": "טקסט",
+    "undo": "בטל",
+    "saveAnnotation": "שמור",
+    "cancelAnnotation": "ביטול",
+    "textPlaceholder": "הקלד טקסט...",
+    "noAnnotations": "אין סימונים"
   }
 }

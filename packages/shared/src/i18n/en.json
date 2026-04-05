@@ -261,5 +261,27 @@
     "generatePdf": "Generate PDF",
     "continueToSignature": "Continue to signature",
     "back": "Back"
+  },
+  "camera": {
+    "badge": "Photos",
+    "confirm": "Confirm",
+    "editPhoto": "Edit",
+    "retake": "Retake",
+    "done": "Done",
+    "reviewTitle": "Review Photos",
+    "confirmAll": "Confirm All",
+    "deleteConfirm": "Delete photo?",
+    "deleteConfirmBody": "This action cannot be undone",
+    "maxPhotos": "Maximum 10 photos allowed",
+    "annotationTitle": "Edit Photo",
+    "toolArrow": "Arrow",
+    "toolCircle": "Circle",
+    "toolUnderline": "Line",
+    "toolText": "Text",
+    "undo": "Undo",
+    "saveAnnotation": "Save",
+    "cancelAnnotation": "Cancel",
+    "textPlaceholder": "Enter text...",
+    "noAnnotations": "No annotations"
   }
 }
