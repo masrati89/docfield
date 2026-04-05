@@ -1,5 +1,11 @@
 import { useCallback, useState } from 'react';
 import { View, Text, Pressable, Modal, Platform } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  SlideInUp,
+  SlideOutUp,
+} from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
@@ -116,11 +122,13 @@ export function StatusBadge({
       <Modal
         visible={showPicker}
         transparent
-        animationType="fade"
+        animationType="none"
         onRequestClose={handleClose}
       >
-        <Pressable
-          onPress={handleClose}
+        {/* Backdrop */}
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(200)}
           style={{
             flex: 1,
             backgroundColor: 'rgba(0,0,0,0.3)',
@@ -129,69 +137,86 @@ export function StatusBadge({
           }}
         >
           <Pressable
-            onPress={(e) => e.stopPropagation()}
+            onPress={handleClose}
             style={{
-              backgroundColor: COLORS.cream[50],
-              borderRadius: 12,
-              padding: 8,
-              minWidth: 180,
-              shadowColor: COLORS.neutral[900],
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.15,
-              shadowRadius: 12,
-              elevation: 8,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
             }}
+          />
+
+          {/* Picker content */}
+          <Animated.View
+            entering={SlideInUp.duration(300).springify()}
+            exiting={SlideOutUp.duration(220)}
           >
-            {STATUS_OPTIONS.map((option) => {
-              const isSelected = option.key === status;
-              return (
-                <Pressable
-                  key={option.key}
-                  onPress={() => handleSelect(option.key)}
-                  style={{
-                    flexDirection: 'row-reverse',
-                    alignItems: 'center',
-                    paddingHorizontal: 12,
-                    paddingVertical: 10,
-                    borderRadius: BORDER_RADIUS.md,
-                    backgroundColor: isSelected
-                      ? COLORS.cream[100]
-                      : 'transparent',
-                  }}
-                >
-                  <View
+            <Pressable
+              onPress={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: COLORS.cream[50],
+                borderRadius: 12,
+                padding: 8,
+                minWidth: 180,
+                shadowColor: COLORS.neutral[900],
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 12,
+                elevation: 8,
+              }}
+            >
+              {STATUS_OPTIONS.map((option) => {
+                const isSelected = option.key === status;
+                return (
+                  <Pressable
+                    key={option.key}
+                    onPress={() => handleSelect(option.key)}
                     style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: option.color,
-                      marginLeft: 8,
-                    }}
-                  />
-                  <Text
-                    style={{
-                      flex: 1,
-                      fontSize: 14,
-                      fontFamily: 'Rubik-Regular',
-                      color: COLORS.neutral[700],
-                      textAlign: 'right',
+                      flexDirection: 'row-reverse',
+                      alignItems: 'center',
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      borderRadius: BORDER_RADIUS.md,
+                      backgroundColor: isSelected
+                        ? COLORS.cream[100]
+                        : 'transparent',
                     }}
                   >
-                    {option.label}
-                  </Text>
-                  {isSelected && (
-                    <Feather
-                      name="check"
-                      size={16}
-                      color={COLORS.primary[500]}
-                      style={{ marginRight: 8 }}
+                    <View
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: option.color,
+                        marginLeft: 8,
+                      }}
                     />
-                  )}
-                </Pressable>
-              );
-            })}
-          </Pressable>
-        </Pressable>
+                    <Text
+                      style={{
+                        flex: 1,
+                        fontSize: 14,
+                        fontFamily: 'Rubik-Regular',
+                        color: COLORS.neutral[700],
+                        textAlign: 'right',
+                      }}
+                    >
+                      {option.label}
+                    </Text>
+                    {isSelected && (
+                      <Feather
+                        name="check"
+                        size={16}
+                        color={COLORS.primary[500]}
+                        style={{ marginRight: 8 }}
+                      />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </Pressable>
+          </Animated.View>
+        </Animated.View>
       </Modal>
     </>
   );

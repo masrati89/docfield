@@ -1,25 +1,22 @@
-import { useCallback, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  Animated,
-  Dimensions,
-  Platform,
-  Modal,
-} from 'react-native';
+import { useCallback } from 'react';
+import { View, Text, Pressable, Platform, Modal } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  SlideInLeft,
+  SlideOutLeft,
+} from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 
+import { COLORS } from '@infield/ui';
 import { useAuth } from '@/contexts/AuthContext';
 
 // --- Constants ---
 
 const MENU_WIDTH = 280;
-const ANIMATION_DURATION_IN = 300;
-const ANIMATION_DURATION_OUT = 250;
-const SCREEN_WIDTH = Dimensions.get('window').width;
 
 // --- Types ---
 
@@ -38,6 +35,7 @@ interface MenuItemData {
 const MENU_ITEMS: MenuItemData[] = [
   { label: 'דאשבורד', icon: 'home', route: '/(app)' },
   { label: 'הדוחות שלי', icon: 'file-text', route: '/(app)/reports' },
+  { label: 'פרויקטים', icon: 'folder', route: '/(app)/projects' },
   { label: 'מאגר ממצאים', icon: 'book-open', route: '/(app)/library' },
   { label: 'הגדרות', icon: 'settings', route: '/(app)/settings' },
   { label: 'עזרה', icon: 'help-circle', route: null, toastMessage: 'בקרוב' },
@@ -46,56 +44,9 @@ const MENU_ITEMS: MenuItemData[] = [
 // --- Component ---
 
 export function SideMenu({ visible, onClose }: SideMenuProps) {
-  const { profile } = useAuth();
+  const { profile, signOut } = useAuth();
   const router = useRouter();
-
-  const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
-  const backdropAnim = useRef(new Animated.Value(0)).current;
-
-  const animateIn = useCallback(() => {
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: SCREEN_WIDTH - MENU_WIDTH,
-        duration: ANIMATION_DURATION_IN,
-        useNativeDriver: true,
-      }),
-      Animated.timing(backdropAnim, {
-        toValue: 1,
-        duration: ANIMATION_DURATION_IN,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [slideAnim, backdropAnim]);
-
-  const animateOut = useCallback(
-    (callback?: () => void) => {
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: SCREEN_WIDTH,
-          duration: ANIMATION_DURATION_OUT,
-          useNativeDriver: true,
-        }),
-        Animated.timing(backdropAnim, {
-          toValue: 0,
-          duration: ANIMATION_DURATION_OUT,
-          useNativeDriver: true,
-        }),
-      ]).start(callback);
-    },
-    [slideAnim, backdropAnim]
-  );
-
-  useEffect(() => {
-    if (visible) {
-      slideAnim.setValue(SCREEN_WIDTH);
-      backdropAnim.setValue(0);
-      animateIn();
-    }
-  }, [visible, animateIn, slideAnim, backdropAnim]);
-
-  const handleClose = useCallback(() => {
-    animateOut(() => onClose());
-  }, [animateOut, onClose]);
+  const insets = useSafeAreaInsets();
 
   const handleMenuPress = useCallback(
     (item: MenuItemData) => {
@@ -104,24 +55,29 @@ export function SideMenu({ visible, onClose }: SideMenuProps) {
       }
 
       if (item.toastMessage) {
-        // For items that show a toast instead of navigating
-        handleClose();
+        onClose();
         return;
       }
 
       if (item.route) {
-        handleClose();
-        // Small delay to let the menu close animation start
+        onClose();
         setTimeout(() => {
           router.push(item.route as never);
         }, 100);
       }
     },
-    [handleClose, router]
+    [onClose, router]
   );
 
+  const handleSignOut = useCallback(() => {
+    onClose();
+    setTimeout(async () => {
+      await signOut();
+    }, 200);
+  }, [onClose, signOut]);
+
   const avatarLetter = profile?.fullName?.charAt(0) ?? '?';
-  const planLabel = 'חינם'; // Placeholder — will come from org/subscription data
+  const planLabel = 'חינם';
 
   if (!visible) return null;
 
@@ -130,57 +86,130 @@ export function SideMenu({ visible, onClose }: SideMenuProps) {
       visible={visible}
       transparent
       animationType="none"
-      onRequestClose={handleClose}
+      onRequestClose={onClose}
       statusBarTranslucent
     >
       {/* Backdrop */}
       <Animated.View
-        className="absolute inset-0"
-        style={{ opacity: backdropAnim, backgroundColor: 'rgba(0,0,0,0.4)' }}
+        entering={FadeIn.duration(200)}
+        exiting={FadeOut.duration(200)}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+        }}
       >
-        <Pressable className="flex-1" onPress={handleClose} />
+        <Pressable style={{ flex: 1 }} onPress={onClose} />
       </Animated.View>
 
-      {/* Menu Panel */}
+      {/* Menu Panel — slides in from the left (RTL: menu is on the right edge) */}
       <Animated.View
-        className="absolute top-0 bottom-0 bg-cream-50"
+        entering={SlideInLeft.duration(320).springify()}
+        exiting={SlideOutLeft.duration(260)}
         style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          right: 0,
           width: MENU_WIDTH,
-          transform: [{ translateX: slideAnim }],
+          backgroundColor: COLORS.cream[50],
+          shadowColor: 'rgb(20,19,17)',
+          shadowOffset: { width: -4, height: 0 },
+          shadowOpacity: 0.15,
+          shadowRadius: 16,
+          elevation: 20,
         }}
       >
         {/* Close Button */}
-        <View className="pt-[52px] pe-[16px] ps-[16px] pb-[8px]">
+        <View
+          style={{
+            paddingTop: insets.top + 12,
+            paddingHorizontal: 16,
+            paddingBottom: 8,
+          }}
+        >
           <Pressable
-            onPress={handleClose}
-            className="w-[36px] h-[36px] rounded-md items-center justify-center bg-cream-100 border border-cream-200 active:bg-cream-200"
+            onPress={onClose}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: COLORS.cream[100],
+              borderWidth: 1,
+              borderColor: COLORS.cream[200],
+            }}
             accessibilityLabel="סגור תפריט"
             accessibilityRole="button"
           >
-            <Feather name="x" size={20} color="#3D3A36" />
+            <Feather name="x" size={20} color={COLORS.neutral[600]} />
           </Pressable>
         </View>
 
         {/* User Info Section */}
-        <View className="px-[16px] pt-[8px] pb-[24px] border-b border-cream-200">
-          <View className="flex-row-reverse items-center gap-[12px]">
+        <View
+          style={{
+            paddingHorizontal: 16,
+            paddingTop: 8,
+            paddingBottom: 24,
+            borderBottomWidth: 1,
+            borderBottomColor: COLORS.cream[200],
+          }}
+        >
+          <View
+            style={{
+              flexDirection: 'row-reverse',
+              alignItems: 'center',
+              gap: 12,
+            }}
+          >
             {/* Avatar */}
-            <View className="w-[40px] h-[40px] rounded-full bg-primary-500 items-center justify-center">
-              <Text className="text-[18px] font-rubik-bold text-white">
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: COLORS.primary[500],
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontFamily: 'Rubik-Bold',
+                  color: '#FFFFFF',
+                }}
+              >
                 {avatarLetter}
               </Text>
             </View>
 
-            {/* Name + Org */}
-            <View className="flex-1">
+            {/* Name + Plan */}
+            <View style={{ flex: 1 }}>
               <Text
-                className="text-[15px] font-rubik-semibold text-neutral-800 text-right"
+                style={{
+                  fontSize: 15,
+                  fontFamily: 'Rubik-SemiBold',
+                  color: COLORS.neutral[800],
+                  textAlign: 'right',
+                }}
                 numberOfLines={1}
               >
                 {profile?.fullName ?? 'משתמש'}
               </Text>
               <Text
-                className="text-[12px] font-rubik text-neutral-500 text-right mt-[2px]"
+                style={{
+                  fontSize: 12,
+                  fontFamily: 'Rubik-Regular',
+                  color: COLORS.neutral[500],
+                  textAlign: 'right',
+                  marginTop: 2,
+                }}
                 numberOfLines={1}
               >
                 {planLabel}
@@ -190,7 +219,7 @@ export function SideMenu({ visible, onClose }: SideMenuProps) {
         </View>
 
         {/* Menu Items */}
-        <View className="pt-[8px]">
+        <View style={{ paddingTop: 8, flex: 1 }}>
           {MENU_ITEMS.map((item) => (
             <MenuItem
               key={item.label}
@@ -198,6 +227,53 @@ export function SideMenu({ visible, onClose }: SideMenuProps) {
               onPress={() => handleMenuPress(item)}
             />
           ))}
+        </View>
+
+        {/* Sign Out */}
+        <View
+          style={{
+            borderTopWidth: 1,
+            borderTopColor: COLORS.cream[200],
+            paddingBottom: Math.max(insets.bottom, 20),
+          }}
+        >
+          <Pressable
+            onPress={handleSignOut}
+            style={({ pressed }) => ({
+              flexDirection: 'row-reverse',
+              alignItems: 'center',
+              gap: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              backgroundColor: pressed ? COLORS.cream[100] : 'transparent',
+            })}
+            accessibilityRole="menuitem"
+            accessibilityLabel="התנתקות"
+          >
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: COLORS.danger[50],
+              }}
+            >
+              <Feather name="log-out" size={20} color={COLORS.danger[500]} />
+            </View>
+            <Text
+              style={{
+                fontSize: 15,
+                fontFamily: 'Rubik-Medium',
+                color: COLORS.danger[500],
+                textAlign: 'right',
+                flex: 1,
+              }}
+            >
+              התנתקות
+            </Text>
+          </Pressable>
         </View>
       </Animated.View>
     </Modal>
@@ -215,14 +291,38 @@ function MenuItem({ item, onPress }: MenuItemProps) {
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row-reverse items-center gap-[12px] px-[16px] py-[14px] active:bg-cream-100"
+      style={({ pressed }) => ({
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        gap: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        backgroundColor: pressed ? COLORS.cream[100] : 'transparent',
+      })}
       accessibilityRole="menuitem"
       accessibilityLabel={item.label}
     >
-      <View className="w-[36px] h-[36px] rounded-md items-center justify-center bg-cream-100">
-        <Feather name={item.icon} size={20} color="#1B7A44" />
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 8,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: COLORS.cream[100],
+        }}
+      >
+        <Feather name={item.icon} size={20} color={COLORS.primary[500]} />
       </View>
-      <Text className="text-[15px] font-rubik-medium text-neutral-700 text-right flex-1">
+      <Text
+        style={{
+          fontSize: 15,
+          fontFamily: 'Rubik-Medium',
+          color: COLORS.neutral[700],
+          textAlign: 'right',
+          flex: 1,
+        }}
+      >
         {item.label}
       </Text>
     </Pressable>

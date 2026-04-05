@@ -8,7 +8,11 @@ import {
   Modal,
 } from 'react-native';
 import Animated, {
+  FadeIn,
+  FadeOut,
   FadeInUp,
+  FadeInDown,
+  FadeOutDown,
   useSharedValue,
   useAnimatedStyle,
   withSpring,
@@ -100,16 +104,28 @@ export function SignOutButton({ onSignOut, onError }: SignOutButtonProps) {
       <Modal
         visible={showConfirm}
         transparent
-        animationType="fade"
+        animationType="none"
         onRequestClose={() => setShowConfirm(false)}
       >
-        <Pressable
-          onPress={() => setShowConfirm(false)}
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(200)}
           className="flex-1 items-center justify-center"
           style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
         >
           <Pressable
-            onPress={() => {}}
+            onPress={() => setShowConfirm(false)}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+            }}
+          />
+          <Animated.View
+            entering={FadeInDown.duration(300).springify()}
+            exiting={FadeOutDown.duration(220)}
             style={{ backgroundColor: COLORS.cream[50] }}
             className="mx-[32px] w-[85%] max-w-[340px] rounded-[12px] p-[24px]"
           >
@@ -142,8 +158,8 @@ export function SignOutButton({ onSignOut, onError }: SignOutButtonProps) {
                 </Text>
               </Pressable>
             </View>
-          </Pressable>
-        </Pressable>
+          </Animated.View>
+        </Animated.View>
       </Modal>
     </>
   );
