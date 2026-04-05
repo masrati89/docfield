@@ -5,6 +5,8 @@ import { Platform, Share } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { generateBedekBayitHtml, generateProtocolHtml } from '@/lib/pdf';
 import type { PdfReportData, PdfDefect, PdfSignature } from '@/lib/pdf';
+import { renderAnnotationsToImage } from '@/lib/annotations';
+import type { AnnotationLayer } from '@/lib/annotations';
 
 // --- Types ---
 
@@ -67,7 +69,7 @@ async function fetchFullReportData(
     .select(
       `id, description, room, category, severity, status, sort_order,
        standard_ref, recommendation, cost, cost_unit, notes,
-       defect_photos(image_url, sort_order)`
+       defect_photos(image_url, sort_order, annotations_json)`
     )
     .eq('delivery_report_id', reportId)
     .order('sort_order')
@@ -75,11 +77,33 @@ async function fetchFullReportData(
 
   if (defectsError) throw new Error('שגיאה בטעינת ממצאים');
 
-  const defects: PdfDefect[] = (defectsData ?? []).map(
-    (d: Record<string, unknown>, idx: number) => {
+  const defects: PdfDefect[] = await Promise.all(
+    (defectsData ?? []).map(async (d: Record<string, unknown>, idx: number) => {
       const photos =
-        (d.defect_photos as Array<{ image_url: string; sort_order: number }>) ??
-        [];
+        (d.defect_photos as Array<{
+          image_url: string;
+          sort_order: number;
+          annotations_json: unknown;
+        }>) ?? [];
+      const sortedPhotos = photos.sort((a, b) => a.sort_order - b.sort_order);
+      const photoUrls: string[] = [];
+      for (const photo of sortedPhotos) {
+        if (photo.annotations_json) {
+          try {
+            const layer = photo.annotations_json as unknown as AnnotationLayer;
+            const composited = await renderAnnotationsToImage(
+              photo.image_url,
+              layer
+            );
+            photoUrls.push(composited);
+          } catch {
+            // Fallback to original if compositing fails
+            photoUrls.push(photo.image_url);
+          }
+        } else {
+          photoUrls.push(photo.image_url);
+        }
+      }
       return {
         number: idx + 1,
         title: d.description as string,
@@ -90,11 +114,9 @@ async function fetchFullReportData(
         cost: d.cost as number | undefined,
         costLabel: d.cost_unit as string | undefined,
         note: d.notes as string | undefined,
-        photoUrls: photos
-          .sort((a, b) => a.sort_order - b.sort_order)
-          .map((p) => p.image_url),
+        photoUrls,
       };
-    }
+    })
   );
 
   // Fetch signatures
