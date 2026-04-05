@@ -7,6 +7,8 @@ export interface User extends TenantEntity {
   fullName: string;
   role: UserRole;
   phone?: string;
+  signatureUrl?: string;
+  stampUrl?: string;
   isActive: boolean;
 }
 

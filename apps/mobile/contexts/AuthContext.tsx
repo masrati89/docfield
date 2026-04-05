@@ -82,6 +82,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fullName: data.full_name,
         role: data.role,
         phone: data.phone ?? undefined,
+        signatureUrl: data.signature_url ?? undefined,
+        stampUrl: data.stamp_url ?? undefined,
         isActive: data.is_active,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
