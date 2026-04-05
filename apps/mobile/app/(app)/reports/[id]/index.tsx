@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -14,12 +14,14 @@ import * as Haptics from 'expo-haptics';
 
 import { COLORS } from '@infield/ui';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Toast } from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
 import { usePdfGeneration } from '@/hooks/usePdfGeneration';
 import { useReportStatus } from '@/hooks/useReportStatus';
 import { useReport } from '@/hooks/useReport';
+import { useSignature } from '@/hooks/useSignature';
 import { STATUS_CONFIG } from '@/components/reports/reportDetailConstants';
 import { CategoryAccordion } from '@/components/reports/CategoryAccordion';
 import { ReportTabBar } from '@/components/reports/ReportTabBar';
@@ -28,16 +30,21 @@ import { ReportDetailsSection } from '@/components/reports/ReportDetailsSection'
 import { ReportHeaderBar } from '@/components/reports/ReportHeaderBar';
 import { ReportActionsBar } from '@/components/reports/ReportActionsBar';
 import { ReportInfoCard } from '@/components/reports/ReportInfoCard';
+import { PrePdfSummary } from '@/components/reports/PrePdfSummary';
+import { TenantSignatureScreen } from '@/components/reports/TenantSignatureScreen';
 import type {
   CategoryGroup,
   TabKey,
 } from '@/components/reports/reportDetailConstants';
+
+type ReportStatus = 'draft' | 'in_progress' | 'completed' | 'sent';
 
 export default function ReportDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { toast, showToast, hideToast } = useToast();
+  const { profile } = useAuth();
 
   const {
     report,
@@ -46,6 +53,13 @@ export default function ReportDetailScreen() {
     error: hasError,
     refetch,
   } = useReport(id);
+
+  // Protocol mesira → checklist is the main page
+  useEffect(() => {
+    if (report?.reportType === 'protocol_mesira' && id) {
+      router.replace(`/(app)/reports/${id}/checklist`);
+    }
+  }, [report?.reportType, id, router]);
 
   // Refetch when screen regains focus (e.g., after adding a defect)
   useFocusEffect(
@@ -58,7 +72,10 @@ export default function ReportDetailScreen() {
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
     {}
   );
-  const [pdfUri, setPdfUri] = useState<string | null>(null);
+  const [_pdfUri, setPdfUri] = useState<string | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
+  const [showTenantSignature, setShowTenantSignature] = useState(false);
+  const [pdfAction, setPdfAction] = useState<'generate' | 'share'>('generate');
 
   const { isGenerating, isSharing, generatePdf, sharePdf } = usePdfGeneration(
     (msg) => showToast(msg, 'success'),
@@ -77,6 +94,21 @@ export default function ReportDetailScreen() {
     },
     (msg) => showToast(msg, 'error'),
     () => refetch()
+  );
+
+  const {
+    saveTenantSignature,
+    getTenantSignature,
+    isUploading: isSignatureUploading,
+  } = useSignature();
+
+  const inspectorProfile = useMemo(
+    () => ({
+      name: profile?.fullName ?? '',
+      signatureUrl: profile?.signatureUrl,
+      stampUrl: profile?.stampUrl,
+    }),
+    [profile]
   );
 
   // Group defects by category
@@ -180,36 +212,114 @@ export default function ReportDetailScreen() {
     ? `${report.address ?? report.projectName}, דירה ${report.apartmentNumber}`
     : '';
 
-  const handleGeneratePdf = useCallback(async () => {
+  const handleGeneratePdf = useCallback(() => {
     if (!id) return;
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    const uri = await generatePdf(id);
-    if (uri) setPdfUri(uri);
-  }, [id, generatePdf]);
+    setPdfAction('generate');
+    setShowSummary(true);
+  }, [id]);
 
-  const handleSharePdf = useCallback(async () => {
+  const handleSharePdf = useCallback(() => {
     if (!id) return;
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    await sharePdf(id, pdfUri ?? undefined);
-  }, [id, pdfUri, sharePdf]);
+    setPdfAction('share');
+    setShowSummary(true);
+  }, [id]);
 
-  const handleStatusAction = useCallback(() => {
-    if (!id || !report) return;
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  // Summary → generate PDF (bedek bayit) or continue to signature (delivery)
+  const handleSummaryGenerate = useCallback(async () => {
+    if (!id) return;
+    setShowSummary(false);
+    if (!profile?.signatureUrl) {
+      showToast('לא הוגדרה חתימה — הגדר בהגדרות', 'info');
     }
-    if (report.status === 'draft') {
-      transitionToDraft(id);
-    } else if (report.status === 'in_progress') {
-      markCompleted(id);
-    } else if (report.status === 'completed') {
-      reopenForEditing(id);
+    if (pdfAction === 'share') {
+      await sharePdf(id, inspectorProfile);
+    } else {
+      const uri = await generatePdf(id, inspectorProfile);
+      if (uri) setPdfUri(uri);
     }
-  }, [id, report, transitionToDraft, markCompleted, reopenForEditing]);
+  }, [
+    id,
+    pdfAction,
+    profile,
+    inspectorProfile,
+    generatePdf,
+    sharePdf,
+    showToast,
+  ]);
+
+  const handleContinueToSignature = useCallback(async () => {
+    if (!id) return;
+    const existing = await getTenantSignature(id);
+    if (existing) {
+      showToast('חתימת דייר קיימת', 'info');
+      setShowSummary(false);
+      if (pdfAction === 'share') {
+        await sharePdf(id, inspectorProfile);
+      } else {
+        const uri = await generatePdf(id, inspectorProfile);
+        if (uri) setPdfUri(uri);
+      }
+      return;
+    }
+    setShowSummary(false);
+    setShowTenantSignature(true);
+  }, [
+    id,
+    pdfAction,
+    inspectorProfile,
+    getTenantSignature,
+    generatePdf,
+    sharePdf,
+    showToast,
+  ]);
+
+  const handleTenantSign = useCallback(
+    async (name: string, base64Png: string) => {
+      if (!id) return;
+      await saveTenantSignature(id, name, base64Png);
+      setShowTenantSignature(false);
+      if (pdfAction === 'share') {
+        await sharePdf(id, inspectorProfile);
+      } else {
+        const uri = await generatePdf(id, inspectorProfile);
+        if (uri) setPdfUri(uri);
+      }
+    },
+    [
+      id,
+      pdfAction,
+      inspectorProfile,
+      saveTenantSignature,
+      generatePdf,
+      sharePdf,
+    ]
+  );
+
+  const handleStatusChange = useCallback(
+    (newStatus: ReportStatus) => {
+      if (!id || !report) return;
+      if (newStatus === 'completed') {
+        markCompleted(id);
+      } else if (report.status === 'completed' && newStatus === 'in_progress') {
+        reopenForEditing(id);
+      } else if (newStatus === 'in_progress') {
+        transitionToDraft(id);
+      } else {
+        supabase
+          .from('delivery_reports')
+          .update({ status: newStatus })
+          .eq('id', id)
+          .then(() => refetch());
+      }
+    },
+    [id, report, markCompleted, reopenForEditing, transitionToDraft, refetch]
+  );
 
   const handleCamera = useCallback(() => {
     if (Platform.OS !== 'web') {
@@ -223,9 +333,6 @@ export default function ReportDetailScreen() {
     }
     router.push('/(app)/library');
   }, [router]);
-
-  const isCompleted =
-    report?.status === 'completed' || report?.status === 'sent';
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.cream[50] }}>
@@ -243,7 +350,10 @@ export default function ReportDetailScreen() {
       <ReportHeaderBar
         subtitle={subtitle}
         topInset={insets.top}
+        status={(report?.status as ReportStatus) ?? 'draft'}
+        isStatusUpdating={isStatusUpdating}
         onBack={() => router.back()}
+        onStatusChange={handleStatusChange}
       />
 
       {isLoading ? (
@@ -356,22 +466,39 @@ export default function ReportDetailScreen() {
             </View>
           </ScrollView>
 
+          <ReportActionsBar
+            bottomInset={insets.bottom}
+            defectsCount={defects.length}
+            isGenerating={isGenerating}
+            isSharing={isSharing}
+            onGeneratePdf={handleGeneratePdf}
+            onSharePdf={handleSharePdf}
+            onChecklist={navigateToChecklist}
+            onAddDefect={() => navigateToAddDefect()}
+            onCamera={handleCamera}
+            onLibrary={handleLibrary}
+          />
+
+          {/* Summary modal */}
           {report && (
-            <ReportActionsBar
+            <PrePdfSummary
+              visible={showSummary}
               report={report}
-              bottomInset={insets.bottom}
-              defectsCount={defects.length}
-              isCompleted={isCompleted}
-              isGenerating={isGenerating}
-              isSharing={isSharing}
-              isStatusUpdating={isStatusUpdating}
-              onStatusAction={handleStatusAction}
-              onGeneratePdf={handleGeneratePdf}
-              onSharePdf={handleSharePdf}
-              onChecklist={navigateToChecklist}
-              onAddDefect={() => navigateToAddDefect()}
-              onCamera={handleCamera}
-              onLibrary={handleLibrary}
+              defects={defects}
+              onGeneratePdf={handleSummaryGenerate}
+              onContinueToSignature={handleContinueToSignature}
+              onClose={() => setShowSummary(false)}
+            />
+          )}
+
+          {/* Tenant signature modal (delivery only) */}
+          {report && (
+            <TenantSignatureScreen
+              visible={showTenantSignature}
+              initialName={report.tenantName ?? ''}
+              isUploading={isSignatureUploading}
+              onSign={handleTenantSign}
+              onClose={() => setShowTenantSignature(false)}
             />
           )}
         </>

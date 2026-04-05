@@ -8,16 +8,32 @@ import type { PdfReportData, PdfDefect, PdfSignature } from '@/lib/pdf';
 
 // --- Types ---
 
+interface InspectorProfile {
+  name: string;
+  signatureUrl?: string;
+  stampUrl?: string;
+}
+
 interface UsePdfGenerationResult {
   isGenerating: boolean;
   isSharing: boolean;
-  generatePdf: (reportId: string) => Promise<string | null>;
-  sharePdf: (reportId: string, existingPdfUri?: string) => Promise<void>;
+  generatePdf: (
+    reportId: string,
+    inspector?: InspectorProfile
+  ) => Promise<string | null>;
+  sharePdf: (
+    reportId: string,
+    inspector?: InspectorProfile,
+    existingPdfUri?: string
+  ) => Promise<void>;
 }
 
 // --- Fetcher ---
 
-async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
+async function fetchFullReportData(
+  reportId: string,
+  inspector?: InspectorProfile
+): Promise<PdfReportData> {
   // Fetch report with relations
   const { data: report, error: reportError } = await supabase
     .from('delivery_reports')
@@ -96,6 +112,21 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
     })
   );
 
+  // Add inspector signature from user profile if not already in signatures table
+  if (inspector?.signatureUrl) {
+    const hasInspectorSig = signatures.some(
+      (s) => s.signerType === 'inspector'
+    );
+    if (!hasInspectorSig) {
+      signatures.push({
+        signerType: 'inspector',
+        signerName: inspector.name,
+        imageUrl: inspector.signatureUrl,
+        signedAt: new Date().toISOString(),
+      });
+    }
+  }
+
   // Client info from report's tenant fields (clients table is org-level, not per-report)
   const reportRecord = report as Record<string, unknown>;
 
@@ -104,7 +135,7 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
     reportNumber: reportId.slice(0, 8).toUpperCase(),
     reportDate: report.report_date,
     status: report.status as PdfReportData['status'],
-    inspector: { name: '' }, // Populated from user profile at call site if needed
+    inspector: { name: inspector?.name ?? '' },
     property: {
       projectName: apt.buildings.projects.name,
       address: apt.buildings.projects.address ?? undefined,
@@ -118,6 +149,7 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
     defects,
     signatures,
     notes: report.notes ?? undefined,
+    stampUrl: inspector?.stampUrl,
   };
 }
 
@@ -131,10 +163,13 @@ export function usePdfGeneration(
   const [isSharing, setIsSharing] = useState(false);
 
   const generatePdf = useCallback(
-    async (reportId: string): Promise<string | null> => {
+    async (
+      reportId: string,
+      inspector?: InspectorProfile
+    ): Promise<string | null> => {
       setIsGenerating(true);
       try {
-        const data = await fetchFullReportData(reportId);
+        const data = await fetchFullReportData(reportId, inspector);
 
         // Generate HTML based on report type
         const html =
@@ -167,14 +202,18 @@ export function usePdfGeneration(
   );
 
   const sharePdf = useCallback(
-    async (reportId: string, existingPdfUri?: string) => {
+    async (
+      reportId: string,
+      inspector?: InspectorProfile,
+      existingPdfUri?: string
+    ) => {
       setIsSharing(true);
       try {
         let uri = existingPdfUri;
 
         // Generate if no existing URI
         if (!uri) {
-          uri = (await generatePdf(reportId)) ?? undefined;
+          uri = (await generatePdf(reportId, inspector)) ?? undefined;
         }
 
         if (!uri) {
