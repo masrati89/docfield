@@ -13,41 +13,93 @@ import * as Linking from 'expo-linking';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as Crypto from 'expo-crypto';
+import * as Haptics from 'expo-haptics';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
-import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/useToast';
+import { CameraPreview } from './CameraPreview';
+import { AnnotationEditor } from './AnnotationEditor';
+
+import type { CapturedPhoto, AnnotationLayer } from '@/lib/annotations';
 
 // --- Types ---
 
 interface CameraCaptureProps {
   visible: boolean;
-  onCapture: (result: { localUri: string; publicUrl: string }) => void;
   onClose: () => void;
-  organizationId: string;
-  reportId: string;
+  onPhotosConfirmed: (photos: CapturedPhoto[]) => void;
+  initialPhotoCount?: number;
+  maxPhotos?: number;
+}
+
+interface PendingPreview {
+  uri: string;
+  width: number;
+  height: number;
 }
 
 // --- Constants ---
 
 const MAX_IMAGE_DIMENSION = 1200;
 const JPEG_QUALITY = 0.7;
-const STORAGE_BUCKET = 'defect-photos';
+const DEFAULT_MAX_PHOTOS = 20;
 
 // --- Component ---
 
 export function CameraCapture({
   visible,
-  onCapture,
   onClose,
-  organizationId,
-  reportId,
+  onPhotosConfirmed,
+  initialPhotoCount = 0,
+  maxPhotos = DEFAULT_MAX_PHOTOS,
 }: CameraCaptureProps) {
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [isProcessing, setIsProcessing] = useState(false);
   const { showToast } = useToast();
+
+  // Continuous capture state
+  const [capturedPhotos, setCapturedPhotos] = useState<CapturedPhoto[]>([]);
+  const [previewPhoto, setPreviewPhoto] = useState<PendingPreview | null>(null);
+  const [showAnnotationEditor, setShowAnnotationEditor] = useState(false);
+  const [pendingAnnotations, setPendingAnnotations] = useState<
+    AnnotationLayer | undefined
+  >(undefined);
+
+  const totalCount = initialPhotoCount + capturedPhotos.length;
+  const isAtMax = totalCount >= maxPhotos;
+
+  // --- Helpers ---
+
+  const resizePhoto = useCallback(async (localUri: string) => {
+    const context = ImageManipulator.manipulate(localUri);
+    const imageRef = await context
+      .resize({ width: MAX_IMAGE_DIMENSION })
+      .renderAsync();
+
+    const result = await imageRef.saveAsync({
+      compress: JPEG_QUALITY,
+      format: SaveFormat.JPEG,
+    });
+
+    return result;
+  }, []);
+
+  const resetState = useCallback(() => {
+    setCapturedPhotos([]);
+    setPreviewPhoto(null);
+    setShowAnnotationEditor(false);
+    setPendingAnnotations(undefined);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    resetState();
+    onClose();
+  }, [resetState, onClose]);
+
+  // --- Permissions ---
 
   const handleRequestPermission = useCallback(async () => {
     try {
@@ -61,76 +113,97 @@ export function CameraCapture({
     Linking.openSettings();
   }, []);
 
-  const processAndUpload = useCallback(
-    async (localUri: string) => {
-      // Resize image using the new contextual API
-      const context = ImageManipulator.manipulate(localUri);
-      const imageRef = await context
-        .resize({ width: MAX_IMAGE_DIMENSION })
-        .renderAsync();
-
-      const result = await imageRef.saveAsync({
-        compress: JPEG_QUALITY,
-        format: SaveFormat.JPEG,
-      });
-
-      const resizedUri = result.uri;
-
-      // Generate unique filename
-      const uuid = Crypto.randomUUID();
-      const filePath = `${organizationId}/${reportId}/${uuid}.jpg`;
-
-      // Read the file and upload
-      const response = await fetch(resizedUri);
-      const blob = await response.blob();
-
-      const { error } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .upload(filePath, blob, {
-          contentType: 'image/jpeg',
-          upsert: false,
-        });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
-
-      return { localUri: resizedUri, publicUrl };
-    },
-    [organizationId, reportId]
-  );
+  // --- Capture ---
 
   const handleCapture = useCallback(async () => {
     if (!cameraRef.current || isProcessing) return;
 
+    if (isAtMax) {
+      showToast(`הגעת למקסימום של ${maxPhotos} תמונות`, 'error');
+      return;
+    }
+
     setIsProcessing(true);
     try {
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.8,
-      });
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
 
       if (!photo?.uri) {
         throw new Error('No photo captured');
       }
 
-      const result = await processAndUpload(photo.uri);
-      onCapture(result);
-      onClose();
+      const resized = await resizePhoto(photo.uri);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      setPreviewPhoto({
+        uri: resized.uri,
+        width: resized.width,
+        height: resized.height,
+      });
+      setPendingAnnotations(undefined);
     } catch {
-      showToast('לא הצלחנו להעלות את התמונה. נסה שוב', 'error');
+      showToast('לא הצלחנו לצלם את התמונה. נסה שוב', 'error');
     } finally {
       setIsProcessing(false);
     }
-  }, [isProcessing, processAndUpload, onCapture, onClose, showToast]);
+  }, [isProcessing, isAtMax, resizePhoto, showToast, maxPhotos]);
 
-  // Permission not yet determined
+  // --- Preview actions ---
+
+  const handlePreviewConfirm = useCallback(() => {
+    if (!previewPhoto) return;
+
+    const newPhoto: CapturedPhoto = {
+      id: Crypto.randomUUID(),
+      uri: previewPhoto.uri,
+      width: previewPhoto.width,
+      height: previewPhoto.height,
+      annotations: pendingAnnotations,
+    };
+
+    setCapturedPhotos((prev) => [...prev, newPhoto]);
+    setPreviewPhoto(null);
+    setPendingAnnotations(undefined);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, [previewPhoto, pendingAnnotations]);
+
+  const handlePreviewEdit = useCallback(() => {
+    setShowAnnotationEditor(true);
+  }, []);
+
+  const handlePreviewRetake = useCallback(() => {
+    setPreviewPhoto(null);
+    setPendingAnnotations(undefined);
+  }, []);
+
+  // --- Annotation editor actions ---
+
+  const handleAnnotationSave = useCallback((annotations: AnnotationLayer) => {
+    setPendingAnnotations(annotations);
+    setShowAnnotationEditor(false);
+  }, []);
+
+  const handleAnnotationClose = useCallback(() => {
+    setShowAnnotationEditor(false);
+  }, []);
+
+  // --- Done ---
+
+  const handleDone = useCallback(() => {
+    if (capturedPhotos.length === 0) return;
+    const photos = capturedPhotos;
+    resetState();
+    onPhotosConfirmed(photos);
+  }, [capturedPhotos, resetState, onPhotosConfirmed]);
+
+  // --- Permission screens ---
+
   if (!permission) {
     return (
-      <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <Modal
+        visible={visible}
+        animationType="slide"
+        onRequestClose={handleClose}
+      >
         <View style={[styles.container, { paddingTop: insets.top }]}>
           <ActivityIndicator size="large" color={COLORS.primary[500]} />
         </View>
@@ -138,14 +211,17 @@ export function CameraCapture({
     );
   }
 
-  // Permission denied
   if (!permission.granted) {
     return (
-      <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <Modal
+        visible={visible}
+        animationType="slide"
+        onRequestClose={handleClose}
+      >
         <View style={[styles.container, { paddingTop: insets.top }]}>
           {/* Close button */}
           <Pressable
-            onPress={onClose}
+            onPress={handleClose}
             style={[styles.closeButton, { top: insets.top + 16, start: 16 }]}
           >
             <Feather name="x" size={24} color={COLORS.neutral[800]} />
@@ -191,9 +267,10 @@ export function CameraCapture({
     );
   }
 
-  // Camera view
+  // --- Camera view ---
+
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" onRequestClose={handleClose}>
       <View style={styles.cameraContainer}>
         <CameraView
           ref={cameraRef}
@@ -202,9 +279,9 @@ export function CameraCapture({
           mode="picture"
         />
 
-        {/* Close button - top start (RTL: top-left) */}
+        {/* Close button — top start (RTL: top-left) */}
         <Pressable
-          onPress={onClose}
+          onPress={handleClose}
           style={[
             styles.cameraCloseButton,
             { top: insets.top + 16, start: 16 },
@@ -214,14 +291,56 @@ export function CameraCapture({
           <Feather name="x" size={24} color={COLORS.white} />
         </Pressable>
 
-        {/* Capture button - bottom center */}
+        {/* Badge counter — top end (RTL: top-right) */}
+        {totalCount > 0 && (
+          <Animated.View
+            entering={FadeIn.duration(200)}
+            style={[styles.badgeContainer, { top: insets.top + 16, end: 16 }]}
+          >
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{totalCount}</Text>
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Done button — below badge, top end */}
+        {capturedPhotos.length > 0 && (
+          <Animated.View
+            entering={FadeIn.duration(200)}
+            style={[
+              styles.doneButtonContainer,
+              { top: insets.top + 68, end: 16 },
+            ]}
+          >
+            <Pressable
+              onPress={handleDone}
+              style={({ pressed }) => [
+                styles.doneButton,
+                pressed && styles.doneButtonPressed,
+              ]}
+            >
+              <Text style={styles.doneButtonText}>סיום</Text>
+            </Pressable>
+          </Animated.View>
+        )}
+
+        {/* Capture area — bottom center */}
         <View
           style={[
             styles.captureArea,
             { paddingBottom: Math.max(insets.bottom + 16, 32) },
           ]}
         >
-          {isProcessing ? (
+          {isAtMax ? (
+            <View style={styles.maxReachedContainer}>
+              <Text style={styles.maxReachedText}>
+                הגעת למקסימום של {maxPhotos} תמונות
+              </Text>
+              <Pressable onPress={handleDone} style={styles.doneButtonLarge}>
+                <Text style={styles.doneButtonLargeText}>סיום וחזרה</Text>
+              </Pressable>
+            </View>
+          ) : isProcessing ? (
             <View style={styles.captureButtonOuter}>
               <View style={styles.captureButtonProcessing}>
                 <ActivityIndicator size="small" color={COLORS.white} />
@@ -239,7 +358,30 @@ export function CameraCapture({
             </Pressable>
           )}
         </View>
+
+        {/* CameraPreview overlay */}
+        {previewPhoto && (
+          <CameraPreview
+            uri={previewPhoto.uri}
+            onConfirm={handlePreviewConfirm}
+            onEdit={handlePreviewEdit}
+            onRetake={handlePreviewRetake}
+          />
+        )}
       </View>
+
+      {/* Annotation editor — opens as full-screen modal inside */}
+      {previewPhoto && (
+        <AnnotationEditor
+          visible={showAnnotationEditor}
+          imageUri={previewPhoto.uri}
+          imageWidth={previewPhoto.width}
+          imageHeight={previewPhoto.height}
+          initialAnnotations={pendingAnnotations}
+          onSave={handleAnnotationSave}
+          onClose={handleAnnotationClose}
+        />
+      )}
     </Modal>
   );
 }
@@ -323,6 +465,51 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 10,
   },
+  badgeContainer: {
+    position: 'absolute',
+    zIndex: 10,
+  },
+  badge: {
+    minWidth: 36,
+    height: 36,
+    borderRadius: BORDER_RADIUS.full,
+    backgroundColor: COLORS.primary[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    shadowColor: 'rgba(20, 19, 17, 0.4)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  badgeText: {
+    fontSize: 16,
+    fontFamily: 'Rubik-Bold',
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  doneButtonContainer: {
+    position: 'absolute',
+    zIndex: 10,
+  },
+  doneButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: 'rgba(20, 19, 17, 0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  doneButtonPressed: {
+    transform: [{ scale: 0.97 }],
+  },
+  doneButtonText: {
+    fontSize: 14,
+    fontFamily: 'Rubik-SemiBold',
+    fontWeight: '600',
+    color: COLORS.white,
+  },
   captureArea: {
     position: 'absolute',
     bottom: 0,
@@ -357,5 +544,28 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary[500],
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  maxReachedContainer: {
+    alignItems: 'center',
+    gap: 12,
+  },
+  maxReachedText: {
+    fontSize: 13,
+    fontFamily: 'Rubik-Regular',
+    color: COLORS.white,
+    opacity: 0.9,
+    textAlign: 'center',
+  },
+  doneButtonLarge: {
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: COLORS.primary[500],
+  },
+  doneButtonLargeText: {
+    fontSize: 16,
+    fontFamily: 'Rubik-SemiBold',
+    fontWeight: '600',
+    color: COLORS.white,
   },
 });
