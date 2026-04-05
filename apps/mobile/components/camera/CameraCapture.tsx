@@ -6,6 +6,7 @@ import {
   Modal,
   ActivityIndicator,
   StyleSheet,
+  Platform,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
@@ -19,7 +20,14 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
 import { useToast } from '@/hooks/useToast';
 import { CameraPreview } from './CameraPreview';
-import { AnnotationEditor } from './AnnotationEditor';
+
+// Lazy-load AnnotationEditor to avoid loading @shopify/react-native-skia on web
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const AnnotationEditor: React.ComponentType<any> =
+  Platform.OS !== 'web'
+    ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('./AnnotationEditor').AnnotationEditor
+    : () => null;
 
 import type { CapturedPhoto, AnnotationLayer } from '@/lib/annotations';
 

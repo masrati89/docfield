@@ -3,6 +3,7 @@ import {
   Alert,
   Dimensions,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,7 +16,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
-import { AnnotationEditor } from './AnnotationEditor';
+
+// Lazy-load AnnotationEditor to avoid loading @shopify/react-native-skia on web
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const AnnotationEditor: React.ComponentType<any> =
+  Platform.OS !== 'web'
+    ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('./AnnotationEditor').AnnotationEditor
+    : () => null;
 
 import type { CapturedPhoto, AnnotationLayer } from '@/lib/annotations';
 

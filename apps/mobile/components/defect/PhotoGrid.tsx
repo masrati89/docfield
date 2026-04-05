@@ -1,10 +1,23 @@
 import { useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 
 import { COLORS } from '@infield/ui';
-import { AnnotationEditor } from '@/components/camera';
+
+// Lazy-load AnnotationEditor to avoid loading @shopify/react-native-skia on web
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const AnnotationEditor: React.ComponentType<any> =
+  Platform.OS !== 'web'
+    ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/components/camera/AnnotationEditor').AnnotationEditor
+    : () => null;
 import type { AnnotationLayer } from '@/lib/annotations';
 
 // --- Constants ---

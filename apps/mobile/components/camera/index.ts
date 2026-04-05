@@ -1,5 +1,6 @@
 export { CameraCapture } from './CameraCapture';
 export { CameraPreview } from './CameraPreview';
-export { AnnotationEditor } from './AnnotationEditor';
+// AnnotationEditor not exported from barrel — it imports @shopify/react-native-skia
+// which crashes on web. Import conditionally via Platform.OS check + require().
 export { AnnotationToolbar } from './AnnotationToolbar';
 export { PhotoReviewGrid } from './PhotoReviewGrid';
