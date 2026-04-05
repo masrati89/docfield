@@ -105,6 +105,11 @@ export function detailBox(rows: string): string {
   return `<div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:8px;line-height:1.8;">${rows}</div>`;
 }
 
+/**
+ * Render a photo thumbnail for PDF.
+ * If the photo has annotations, the caller should pass the composited image URL
+ * (from renderAnnotationsToImage) instead of the original URL.
+ */
 export function photoHtml(url?: string): string {
   if (url) {
     return `<img src="${url}" style="width:56px;height:42px;border-radius:2px;object-fit:cover;border:1px solid ${PDF.bdrLt};" />`;

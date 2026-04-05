@@ -5,3 +5,4 @@ export type {
   AnnotationLayer,
   CapturedPhoto,
 } from './types';
+export { renderAnnotationsToImage } from './renderAnnotations';

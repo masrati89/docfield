@@ -36,6 +36,7 @@ export interface PdfDefect {
   costLabel?: string;
   note?: string;
   photoUrls?: string[];
+  annotationsJson?: Record<string, unknown>[]; // annotation layers per photo
   annexText?: string;
 }
 
