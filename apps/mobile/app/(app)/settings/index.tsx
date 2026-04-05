@@ -17,6 +17,7 @@ import {
   ProfileSection,
   ChangePasswordSection,
   PreferencesSection,
+  SignatureStampSection,
   InfoSection,
   SignOutButton,
 } from '@/components/settings';
@@ -98,6 +99,15 @@ export default function SettingsScreen() {
 
           {/* 3. Preferences */}
           <PreferencesSection />
+
+          {/* Divider */}
+          <View className="mx-[20px] h-[1px] bg-cream-200 mb-[24px]" />
+
+          {/* 3.5 Signature & Stamp */}
+          <SignatureStampSection
+            onSuccess={(msg) => showToast(msg, 'success')}
+            onError={(msg) => showToast(msg, 'error')}
+          />
 
           {/* Divider */}
           <View className="mx-[20px] h-[1px] bg-cream-200 mb-[24px]" />
