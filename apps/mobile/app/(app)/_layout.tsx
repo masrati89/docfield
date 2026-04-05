@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import { Redirect, Tabs } from 'expo-router';
+import { Redirect, Tabs, useSegments } from 'expo-router';
 import { Alert, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,6 +23,9 @@ export default function AppLayout() {
   const { resetTimer } = useIdleTimeout(handleIdleWarning);
   resetTimerRef.current = resetTimer;
 
+  // All hooks must be called before any early return (Rules of Hooks)
+  const segments = useSegments();
+
   // Still loading — don't redirect yet
   if (isLoading) return null;
 
@@ -32,6 +35,22 @@ export default function AppLayout() {
   }
 
   const bottomPadding = Math.max(insets.bottom, 8);
+
+  // Hide tab bar when inside report detail/editing screens
+  const isInsideReport =
+    segments.includes('reports' as never) &&
+    segments.some((s) => s !== 'reports' && s !== '(app)' && s !== 'index');
+
+  const tabBarStyle = isInsideReport
+    ? { display: 'none' as const }
+    : {
+        backgroundColor: 'rgba(254,253,251,0.92)' as const,
+        borderTopColor: '#F5EFE6',
+        borderTopWidth: 1,
+        paddingTop: 6,
+        paddingBottom: bottomPadding + 4,
+        height: 60 + bottomPadding,
+      };
 
   return (
     <View style={{ flex: 1 }} onTouchStart={resetTimer}>
@@ -44,31 +63,16 @@ export default function AppLayout() {
             fontFamily: 'Rubik-Medium',
             fontSize: 10,
           },
-          tabBarStyle: {
-            backgroundColor: 'rgba(254,253,251,0.92)',
-            borderTopColor: '#F5EFE6',
-            borderTopWidth: 1,
-            paddingTop: 6,
-            paddingBottom: bottomPadding + 4,
-            height: 60 + bottomPadding,
-          },
+          tabBarStyle,
         }}
       >
+        {/* RTL order: rightmost first → leftmost last */}
         <Tabs.Screen
-          name="index"
+          name="settings"
           options={{
-            title: 'בית',
+            title: 'הגדרות',
             tabBarIcon: ({ color }) => (
-              <Feather name="home" size={TAB_ICON_SIZE} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="reports"
-          options={{
-            title: 'דוחות',
-            tabBarIcon: ({ color }) => (
-              <Feather name="file-text" size={TAB_ICON_SIZE} color={color} />
+              <Feather name="settings" size={TAB_ICON_SIZE} color={color} />
             ),
           }}
         />
@@ -82,12 +86,28 @@ export default function AppLayout() {
           }}
         />
         <Tabs.Screen
-          name="settings"
+          name="reports"
           options={{
-            title: 'הגדרות',
+            title: 'דוחות',
             tabBarIcon: ({ color }) => (
-              <Feather name="settings" size={TAB_ICON_SIZE} color={color} />
+              <Feather name="file-text" size={TAB_ICON_SIZE} color={color} />
             ),
+          }}
+        />
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'בית',
+            tabBarIcon: ({ color }) => (
+              <Feather name="home" size={TAB_ICON_SIZE} color={color} />
+            ),
+          }}
+        />
+        {/* Hidden from tab bar — accessible via side menu */}
+        <Tabs.Screen
+          name="library"
+          options={{
+            href: null,
           }}
         />
       </Tabs>
