@@ -4,17 +4,26 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { COLORS } from '@infield/ui';
+import { StatusBadge } from './StatusBadge';
+
+type ReportStatus = 'draft' | 'in_progress' | 'completed' | 'sent';
 
 interface ReportHeaderBarProps {
   subtitle: string;
   topInset: number;
+  status: ReportStatus;
+  isStatusUpdating: boolean;
   onBack: () => void;
+  onStatusChange: (newStatus: ReportStatus) => void;
 }
 
 export function ReportHeaderBar({
   subtitle,
   topInset,
+  status,
+  isStatusUpdating,
   onBack,
+  onStatusChange,
 }: ReportHeaderBarProps) {
   return (
     <View
@@ -55,17 +64,30 @@ export function ReportHeaderBar({
             <Feather name="chevron-right" size={24} color={COLORS.white} />
           </Pressable>
           <View>
-            <Text
+            <View
               style={{
-                fontSize: 18,
-                fontWeight: '700',
-                color: COLORS.white,
-                fontFamily: 'Rubik-Bold',
-                letterSpacing: -0.3,
+                flexDirection: 'row-reverse',
+                alignItems: 'center',
+                gap: 8,
               }}
             >
-              inField
-            </Text>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: '700',
+                  color: COLORS.white,
+                  fontFamily: 'Rubik-Bold',
+                  letterSpacing: -0.3,
+                }}
+              >
+                inField
+              </Text>
+              <StatusBadge
+                status={status}
+                isUpdating={isStatusUpdating}
+                onStatusChange={onStatusChange}
+              />
+            </View>
             {subtitle ? (
               <Text
                 style={{
