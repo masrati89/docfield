@@ -5,8 +5,18 @@ import { Platform, Share } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { generateBedekBayitHtml, generateProtocolHtml } from '@/lib/pdf';
 import type { PdfReportData, PdfDefect, PdfSignature } from '@/lib/pdf';
-import { renderAnnotationsToImage } from '@/lib/annotations';
 import type { AnnotationLayer } from '@/lib/annotations';
+
+// Lazy-load renderAnnotationsToImage to avoid loading @shopify/react-native-skia on web
+
+const getRenderAnnotations = ():
+  | ((uri: string, layer: AnnotationLayer) => Promise<string>)
+  | null => {
+  if (Platform.OS === 'web') return null;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('@/lib/annotations/renderAnnotations')
+    .renderAnnotationsToImage;
+};
 
 // --- Types ---
 
@@ -89,15 +99,18 @@ async function fetchFullReportData(
       const photoUrls: string[] = [];
       for (const photo of sortedPhotos) {
         if (photo.annotations_json) {
-          try {
-            const layer = photo.annotations_json as unknown as AnnotationLayer;
-            const composited = await renderAnnotationsToImage(
-              photo.image_url,
-              layer
-            );
-            photoUrls.push(composited);
-          } catch {
-            // Fallback to original if compositing fails
+          const renderFn = getRenderAnnotations();
+          if (renderFn) {
+            try {
+              const layer =
+                photo.annotations_json as unknown as AnnotationLayer;
+              const composited = await renderFn(photo.image_url, layer);
+              photoUrls.push(composited);
+            } catch {
+              // Fallback to original if compositing fails
+              photoUrls.push(photo.image_url);
+            }
+          } else {
             photoUrls.push(photo.image_url);
           }
         } else {

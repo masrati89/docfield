@@ -5,4 +5,5 @@ export type {
   AnnotationLayer,
   CapturedPhoto,
 } from './types';
-export { renderAnnotationsToImage } from './renderAnnotations';
+// renderAnnotationsToImage not exported from barrel — it imports @shopify/react-native-skia
+// which crashes on web. Import conditionally via Platform.OS check + require().
