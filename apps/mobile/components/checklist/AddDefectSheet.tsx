@@ -15,6 +15,7 @@ import { COLORS, BORDER_RADIUS } from '@infield/ui';
 import { DEFECT_CATEGORIES } from '@infield/shared';
 import { BottomSheetWrapper } from '@/components/ui';
 import { Button } from '@/components/ui';
+import { ComboField } from '@/components/defect/ComboField';
 
 import { CHECKLIST_ROOMS } from './constants';
 
@@ -27,7 +28,7 @@ interface AddDefectSheetProps {
     category: string;
     location: string;
     description: string;
-  }) => void;
+  }) => void | Promise<void>;
 }
 
 // --- Component ---
@@ -41,9 +42,10 @@ export function AddDefectSheet({
   const [category, setCategory] = useState('');
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
-  const categories = DEFECT_CATEGORIES.map((c) => c.label);
-  const locations = CHECKLIST_ROOMS.map((r) => r.name);
+  const categoryLabels = DEFECT_CATEGORIES.map((c) => c.label);
+  const locationLabels = CHECKLIST_ROOMS.map((r) => r.name);
 
   const canSave = !!category && !!description.trim();
 
@@ -52,29 +54,37 @@ export function AddDefectSheet({
       setCategory('');
       setLocation('');
       setDescription('');
+      setIsSaving(false);
     }
   }, [visible]);
 
   const handleClose = useCallback(() => {
-    bottomSheetRef.current?.close();
+    // On web, ref is a View (no .close method) — double optional chaining
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (bottomSheetRef.current as any)?.close?.();
     onClose();
   }, [onClose]);
 
-  const handleSave = useCallback(() => {
-    if (!canSave) return;
+  const handleSave = useCallback(async () => {
+    if (!canSave || isSaving) return;
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    onSave({ category, location, description });
-    handleClose();
-  }, [canSave, category, location, description, onSave, handleClose]);
+    setIsSaving(true);
+    try {
+      await onSave({ category, location, description });
+      handleClose();
+    } finally {
+      setIsSaving(false);
+    }
+  }, [canSave, isSaving, category, location, description, onSave, handleClose]);
 
   if (!visible) return null;
 
   return (
     <BottomSheetWrapper
       ref={bottomSheetRef}
-      snapPoints={['85%']}
+      snapPoints={['90%']}
       onClose={onClose}
     >
       {/* Header */}
@@ -122,13 +132,13 @@ export function AddDefectSheet({
         keyboardShouldPersistTaps="handled"
       >
         {/* Category */}
-        <View style={{ marginBottom: 12 }}>
+        <View style={{ marginBottom: 14 }}>
           <View
             style={{
               flexDirection: 'row-reverse',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: 4,
+              marginBottom: 6,
             }}
           >
             <View
@@ -141,81 +151,42 @@ export function AddDefectSheet({
               <Feather name="grid" size={16} color={COLORS.neutral[400]} />
               <Text
                 style={{
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: '500',
                   color: COLORS.neutral[700],
                   fontFamily: 'Rubik-Medium',
                 }}
               >
-                קטגוריה <Text style={{ color: '#EF4444' }}>*</Text>
+                קטגוריה <Text style={{ color: COLORS.danger[500] }}>*</Text>
               </Text>
             </View>
             {category ? (
               <Feather name="check" size={16} color={COLORS.primary[500]} />
             ) : null}
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{
-              flexDirection: 'row-reverse',
-              gap: 6,
-              paddingVertical: 2,
-            }}
-          >
-            {categories.map((cat) => {
-              const isSelected = category === cat;
-              return (
-                <Pressable
-                  key={cat}
-                  onPress={() => setCategory(isSelected ? '' : cat)}
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    borderRadius: BORDER_RADIUS.md,
-                    borderWidth: 1.5,
-                    borderColor: isSelected
-                      ? COLORS.primary[500]
-                      : COLORS.cream[300],
-                    backgroundColor: isSelected
-                      ? COLORS.primary[50]
-                      : COLORS.cream[50],
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: isSelected ? '600' : '400',
-                      color: isSelected
-                        ? COLORS.primary[500]
-                        : COLORS.neutral[700],
-                      fontFamily: isSelected
-                        ? 'Rubik-SemiBold'
-                        : 'Rubik-Regular',
-                    }}
-                  >
-                    {cat}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+          <ComboField
+            value={category}
+            onSelect={setCategory}
+            options={categoryLabels}
+            placeholder="הקלד או בחר קטגוריה..."
+            allowCustom
+          />
         </View>
 
         {/* Location */}
-        <View style={{ marginBottom: 12 }}>
+        <View style={{ marginBottom: 14 }}>
           <View
             style={{
               flexDirection: 'row-reverse',
               alignItems: 'center',
               gap: 4,
-              marginBottom: 4,
+              marginBottom: 6,
             }}
           >
             <Feather name="map-pin" size={16} color={COLORS.neutral[400]} />
             <Text
               style={{
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: '500',
                 color: COLORS.neutral[500],
                 fontFamily: 'Rubik-Medium',
@@ -224,62 +195,23 @@ export function AddDefectSheet({
               מיקום (חדר)
             </Text>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{
-              flexDirection: 'row-reverse',
-              gap: 6,
-              paddingVertical: 2,
-            }}
-          >
-            {locations.map((loc) => {
-              const isSelected = location === loc;
-              return (
-                <Pressable
-                  key={loc}
-                  onPress={() => setLocation(isSelected ? '' : loc)}
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    borderRadius: BORDER_RADIUS.md,
-                    borderWidth: 1.5,
-                    borderColor: isSelected
-                      ? COLORS.primary[500]
-                      : COLORS.cream[300],
-                    backgroundColor: isSelected
-                      ? COLORS.primary[50]
-                      : COLORS.cream[50],
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: isSelected ? '600' : '400',
-                      color: isSelected
-                        ? COLORS.primary[500]
-                        : COLORS.neutral[700],
-                      fontFamily: isSelected
-                        ? 'Rubik-SemiBold'
-                        : 'Rubik-Regular',
-                    }}
-                  >
-                    {loc}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+          <ComboField
+            value={location}
+            onSelect={setLocation}
+            options={locationLabels}
+            placeholder="הקלד או בחר מיקום..."
+            allowCustom
+          />
         </View>
 
         {/* Description */}
-        <View style={{ marginBottom: 12 }}>
+        <View style={{ marginBottom: 14 }}>
           <View
             style={{
               flexDirection: 'row-reverse',
               alignItems: 'center',
               gap: 4,
-              marginBottom: 4,
+              marginBottom: 6,
             }}
           >
             <Feather
@@ -289,13 +221,13 @@ export function AddDefectSheet({
             />
             <Text
               style={{
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: '500',
                 color: COLORS.neutral[700],
                 fontFamily: 'Rubik-Medium',
               }}
             >
-              תיאור הליקוי <Text style={{ color: '#EF4444' }}>*</Text>
+              תיאור הליקוי <Text style={{ color: COLORS.danger[500] }}>*</Text>
             </Text>
           </View>
           <TextInput
@@ -305,6 +237,7 @@ export function AddDefectSheet({
             placeholderTextColor={COLORS.neutral[400]}
             multiline
             numberOfLines={3}
+            maxLength={500}
             style={{
               paddingVertical: 10,
               paddingHorizontal: 12,
@@ -366,9 +299,10 @@ export function AddDefectSheet({
         }}
       >
         <Button
-          label="הוסף ליקוי"
+          label={isSaving ? 'שומר...' : 'הוסף ליקוי'}
           onPress={handleSave}
-          disabled={!canSave}
+          disabled={!canSave || isSaving}
+          loading={isSaving}
           size="lg"
         />
       </View>

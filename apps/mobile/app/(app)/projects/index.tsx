@@ -9,8 +9,10 @@ import Fuse from 'fuse.js';
 
 import { COLORS } from '@infield/ui';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { SideMenu } from '@/components/ui/SideMenu';
 import { BottomSheetWrapper } from '@/components/ui/BottomSheetWrapper';
 import { useProjects } from '@/hooks/useProjects';
+import { useSideMenu } from '@/hooks/useSideMenu';
 import {
   Header,
   SearchBar,
@@ -21,6 +23,7 @@ import {
   SkeletonCardList,
   ErrorState,
   FAB,
+  NewProjectSheet,
 } from '@/components/projects';
 import type { StatusFilter, SortBy } from '@/components/projects';
 import type { ProjectItem } from '@/hooks/useProjects';
@@ -37,6 +40,9 @@ export default function ProjectsScreen() {
 
   const sheetRef = useRef<BottomSheetType>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [newProjectOpen, setNewProjectOpen] = useState(false);
+  const newProjectSheetRef = useRef<BottomSheetType>(null);
+  const { isOpen: menuOpen, open: openMenu, close: closeMenu } = useSideMenu();
 
   const hasActiveSort = sortBy !== 'name';
 
@@ -104,7 +110,8 @@ export default function ProjectsScreen() {
   }, []);
 
   const closeSheet = useCallback(() => {
-    sheetRef.current?.close();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (sheetRef.current as any)?.close?.();
   }, []);
 
   // --- Render ---
@@ -144,7 +151,7 @@ export default function ProjectsScreen() {
                 : 'עדיין לא יצרת פרויקטים.\nלחץ על + כדי להתחיל.'
             }
             ctaLabel="פרויקט חדש"
-            onCta={() => {}}
+            onCta={() => setNewProjectOpen(true)}
           />
         </View>
       );
@@ -176,7 +183,11 @@ export default function ProjectsScreen() {
         renderItem={() => null}
         ListHeaderComponent={
           <>
-            <Header count={filtered.length} total={projects.length} />
+            <Header
+              count={filtered.length}
+              total={projects.length}
+              onMenu={openMenu}
+            />
             <SearchBar value={search} onChange={setSearch} />
             <FilterChips
               statusFilter={statusFilter}
@@ -199,7 +210,7 @@ export default function ProjectsScreen() {
         }
       />
 
-      <FAB onPress={() => {}} />
+      <FAB onPress={() => setNewProjectOpen(true)} />
 
       {sheetOpen && (
         <BottomSheetWrapper
@@ -211,6 +222,26 @@ export default function ProjectsScreen() {
             sortBy={sortBy}
             setSortBy={setSortBy}
             onClose={closeSheet}
+          />
+        </BottomSheetWrapper>
+      )}
+
+      <SideMenu visible={menuOpen} onClose={closeMenu} />
+
+      {newProjectOpen && (
+        <BottomSheetWrapper
+          ref={newProjectSheetRef}
+          enableDynamicSizing
+          onClose={() => setNewProjectOpen(false)}
+        >
+          <NewProjectSheet
+            onClose={() => {
+              setNewProjectOpen(false);
+            }}
+            onCreated={() => {
+              refetch();
+              setNewProjectOpen(false);
+            }}
           />
         </BottomSheetWrapper>
       )}

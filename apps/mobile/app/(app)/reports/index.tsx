@@ -9,10 +9,13 @@ import Fuse from 'fuse.js';
 import { useRouter } from 'expo-router';
 
 import { COLORS } from '@infield/ui';
+import { NewInspectionWizard } from '@/components/wizard';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { SideMenu } from '@/components/ui/SideMenu';
 import { BottomSheetWrapper } from '@/components/ui/BottomSheetWrapper';
 import { useReports } from '@/hooks/useReports';
 import { useDeleteReport } from '@/hooks/useDeleteReport';
+import { useSideMenu } from '@/hooks/useSideMenu';
 import type { ReportItem } from '@/hooks/useReports';
 
 import {
@@ -40,6 +43,8 @@ export default function ReportsScreen() {
 
   const sheetRef = useRef<BottomSheetType>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
+  const { isOpen: menuOpen, open: openMenu, close: closeMenu } = useSideMenu();
 
   const hasActiveFilters = typeFilter !== 'all' || sortBy !== 'date';
 
@@ -120,7 +125,8 @@ export default function ReportsScreen() {
   }, []);
 
   const closeSheet = useCallback(() => {
-    sheetRef.current?.close();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (sheetRef.current as any)?.close?.();
   }, []);
 
   // --- Handlers ---
@@ -238,7 +244,11 @@ export default function ReportsScreen() {
         renderItem={() => null}
         ListHeaderComponent={
           <>
-            <Header count={filtered.length} total={reports.length} />
+            <Header
+              count={filtered.length}
+              total={reports.length}
+              onMenu={openMenu}
+            />
             <SearchBar value={search} onChange={setSearch} />
             <FilterChips
               statusFilter={statusFilter}
@@ -265,7 +275,14 @@ export default function ReportsScreen() {
         }
       />
 
-      <FAB onPress={() => router.push('/(app)/projects')} />
+      <FAB onPress={() => setShowWizard(true)} />
+
+      <NewInspectionWizard
+        visible={showWizard}
+        onClose={() => setShowWizard(false)}
+      />
+
+      <SideMenu visible={menuOpen} onClose={closeMenu} />
 
       {sheetOpen && (
         <BottomSheetWrapper
