@@ -330,7 +330,7 @@ export default function ApartmentsScreen() {
 
         const { data: bld } = await supabase
           .from('buildings')
-          .select('name, projects!inner(name, address)')
+          .select('name, projects(name, address)')
           .eq('id', resolvedBuildingId)
           .single();
 

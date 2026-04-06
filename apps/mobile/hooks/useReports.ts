@@ -28,7 +28,7 @@ async function fetchReports(): Promise<ReportItem[]> {
     .from('delivery_reports')
     .select(
       `id, report_type, status, updated_at, report_date,
-       apartments!inner(number, buildings!inner(name, projects!inner(name))),
+       apartments(number, buildings(name, projects(name))),
        defects(id)`
     )
     .order('updated_at', { ascending: false });

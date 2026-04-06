@@ -44,9 +44,9 @@ async function fetchProjects(): Promise<ProjectItem[]> {
   const { data: defectsData } = await supabase
     .from('defects')
     .select(
-      `id, delivery_reports!inner(
-        apartments!inner(
-          buildings!inner(project_id)
+      `id, delivery_reports(
+        apartments(
+          buildings(project_id)
         )
       )`
     )

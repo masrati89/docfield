@@ -51,11 +51,11 @@ async function fetchFullReportData(
     .from('delivery_reports')
     .select(
       `id, report_type, status, tenant_name, tenant_phone, report_date, notes,
-       apartments!inner(
+       apartments(
          number, floor,
-         buildings!inner(
+         buildings(
            name,
-           projects!inner(name, address)
+           projects(name, address)
          )
        )`
     )
@@ -71,7 +71,7 @@ async function fetchFullReportData(
       name: string;
       projects: { name: string; address: string | null };
     };
-  };
+  } | null;
 
   // Fetch defects with photos
   const { data: defectsData, error: defectsError } = await supabase
@@ -172,10 +172,10 @@ async function fetchFullReportData(
     status: report.status as PdfReportData['status'],
     inspector: { name: inspector?.name ?? '' },
     property: {
-      projectName: apt.buildings.projects.name,
-      address: apt.buildings.projects.address ?? undefined,
-      apartmentNumber: apt.number,
-      floor: apt.floor ?? undefined,
+      projectName: apt?.buildings?.projects?.name ?? '',
+      address: apt?.buildings?.projects?.address ?? undefined,
+      apartmentNumber: apt?.number ?? '',
+      floor: apt?.floor ?? undefined,
     },
     client: {
       name: (reportRecord.tenant_name as string) ?? '',

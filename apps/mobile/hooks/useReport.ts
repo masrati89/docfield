@@ -43,12 +43,12 @@ export const reportKeys = {
 // --- Fetcher ---
 
 async function fetchReport(id: string): Promise<ReportDetail> {
-  // Fetch report with apartment → building → project
+  // Fetch report with apartment → building → project (left join — apartment_id can be null)
   const { data: reportData, error: reportError } = await supabase
     .from('delivery_reports')
     .select(
       `id, report_type, status, tenant_name, report_date, notes,
-       apartments!inner(number, buildings!inner(name, projects!inner(name, address)))`
+       apartments(number, buildings(name, projects(name, address)))`
     )
     .eq('id', id)
     .single();
@@ -61,7 +61,7 @@ async function fetchReport(id: string): Promise<ReportDetail> {
       name: string;
       projects: { name: string; address: string | null };
     };
-  };
+  } | null;
 
   const report: ReportInfo = {
     id: reportData.id,
@@ -70,10 +70,10 @@ async function fetchReport(id: string): Promise<ReportDetail> {
     tenantName: reportData.tenant_name,
     reportDate: reportData.report_date,
     notes: reportData.notes,
-    projectName: apt.buildings.projects.name,
-    buildingName: apt.buildings.name,
-    apartmentNumber: apt.number,
-    address: apt.buildings.projects.address,
+    projectName: apt?.buildings?.projects?.name ?? '',
+    buildingName: apt?.buildings?.name ?? '',
+    apartmentNumber: apt?.number ?? '',
+    address: apt?.buildings?.projects?.address ?? null,
   };
 
   // Fetch defects with photo count
