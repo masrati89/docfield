@@ -42,7 +42,7 @@ export default function ProjectsScreen() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const newProjectSheetRef = useRef<BottomSheetType>(null);
-  const { isOpen: menuOpen, open: openMenu, close: closeMenu } = useSideMenu();
+  const { isOpen: menuOpen, open: _openMenu, close: closeMenu } = useSideMenu();
 
   const hasActiveSort = sortBy !== 'name';
 
@@ -183,11 +183,7 @@ export default function ProjectsScreen() {
         renderItem={() => null}
         ListHeaderComponent={
           <>
-            <Header
-              count={filtered.length}
-              total={projects.length}
-              onMenu={openMenu}
-            />
+            <Header count={filtered.length} total={projects.length} />
             <SearchBar value={search} onChange={setSearch} />
             <FilterChips
               statusFilter={statusFilter}

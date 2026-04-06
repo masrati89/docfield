@@ -79,7 +79,7 @@ function ProjectRow({
           >
             {project.name}
           </Text>
-          <Feather name="chevron-left" size={16} color={COLORS.neutral[300]} />
+          <Feather name="chevron-left" size={14} color={COLORS.neutral[300]} />
         </View>
 
         {/* Row 2: address */}
@@ -91,7 +91,7 @@ function ProjectRow({
             marginBottom: 7,
           }}
         >
-          <Feather name="map-pin" size={16} color={COLORS.neutral[400]} />
+          <Feather name="map-pin" size={12} color={COLORS.neutral[400]} />
           <Text
             style={{
               fontSize: 11,
@@ -217,7 +217,7 @@ export function ProjectsSection({
           >
             עוד
           </Text>
-          <Feather name="chevron-left" size={16} color={COLORS.neutral[300]} />
+          <Feather name="chevron-left" size={14} color={COLORS.neutral[300]} />
         </Pressable>
       </View>
 

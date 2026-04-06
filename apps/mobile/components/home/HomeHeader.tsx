@@ -9,6 +9,7 @@ import { COLORS, BORDER_RADIUS, SHADOWS } from '@infield/ui';
 
 interface HomeHeaderProps {
   userName: string;
+  notificationCount?: number;
   onNewInspection?: () => void;
   onBell?: () => void;
   onMenu?: () => void;
@@ -18,6 +19,7 @@ interface HomeHeaderProps {
 
 export function HomeHeader({
   userName,
+  notificationCount = 0,
   onNewInspection,
   onBell,
   onMenu,
@@ -101,20 +103,36 @@ export function HomeHeader({
           }}
         >
           <Feather name="bell" size={24} color={COLORS.neutral[500]} />
-          {/* Notification dot */}
-          <View
-            style={{
-              position: 'absolute',
-              top: 6,
-              right: 7,
-              width: 6,
-              height: 6,
-              borderRadius: 3,
-              backgroundColor: COLORS.danger[500],
-              borderWidth: 1.5,
-              borderColor: COLORS.cream[50],
-            }}
-          />
+          {/* Notification badge — only visible when there are unread notifications */}
+          {notificationCount > 0 && (
+            <View
+              style={{
+                position: 'absolute',
+                top: 2,
+                right: 2,
+                minWidth: 14,
+                height: 14,
+                borderRadius: 7,
+                backgroundColor: COLORS.danger[500],
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 1.5,
+                borderColor: COLORS.cream[50],
+                paddingHorizontal: 2,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 8,
+                  color: 'white',
+                  fontWeight: '700',
+                  fontFamily: 'Rubik-Bold',
+                }}
+              >
+                {notificationCount > 9 ? '9+' : notificationCount}
+              </Text>
+            </View>
+          )}
         </Pressable>
       </Animated.View>
 
@@ -139,32 +157,7 @@ export function HomeHeader({
           >
             {`שלום, ${userName}`}
           </Text>
-          <View
-            style={{
-              flexDirection: 'row-reverse',
-              alignItems: 'center',
-              gap: 4,
-              marginTop: 1,
-            }}
-          >
-            <View
-              style={{
-                width: 5,
-                height: 5,
-                borderRadius: 2.5,
-                backgroundColor: COLORS.success[500],
-              }}
-            />
-            <Text
-              style={{
-                fontSize: 10,
-                color: COLORS.neutral[400],
-                fontFamily: 'Rubik-Regular',
-              }}
-            >
-              מסונכרן
-            </Text>
-          </View>
+          {/* Sync indicator — hidden until offline sync is implemented */}
         </View>
 
         <View style={{ flex: 1 }} />

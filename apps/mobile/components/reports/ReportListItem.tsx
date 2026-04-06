@@ -1,6 +1,7 @@
 import { View, Text, Platform, I18nManager } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import {
   useSharedValue,
   useAnimatedStyle,
@@ -21,11 +22,13 @@ import {
 export function ReportRow({
   item,
   isLast,
+  index = 0,
   onPress,
   onDelete,
 }: {
   item: ReportItem;
   isLast: boolean;
+  index?: number;
   onPress?: () => void;
   onDelete?: (id: string) => void;
 }) {
@@ -36,97 +39,80 @@ export function ReportRow({
   }));
 
   return (
-    <AnimatedPressable
-      onPressIn={() => {
-        scale.value = withSpring(0.98, { damping: 15, stiffness: 150 });
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, { damping: 15, stiffness: 150 });
-      }}
-      onPress={() => {
-        haptic();
-        onPress?.();
-      }}
-      onLongPress={() => {
-        if (Platform.OS !== 'web') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        }
-        onDelete?.(item.id);
-      }}
-      style={[
-        {
-          flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse',
-          alignItems: 'center',
-          paddingVertical: 12,
-          paddingHorizontal: 16,
-          borderBottomWidth: isLast ? 0 : 1,
-          borderBottomColor: COLORS.cream[200],
-        },
-        animStyle,
-      ]}
-    >
-      {/* Status dot */}
-      <View
-        style={{
-          width: 7,
-          height: 7,
-          borderRadius: 3.5,
-          backgroundColor: st.dot,
-          marginEnd: 6,
+    <Animated.View entering={FadeInUp.delay(60 * index).duration(200)}>
+      <AnimatedPressable
+        onPressIn={() => {
+          scale.value = withSpring(0.98, { damping: 15, stiffness: 150 });
         }}
-      />
-
-      {/* Content */}
-      <View style={{ flex: 1 }}>
-        <Text
-          style={{
-            fontSize: 13,
-            fontFamily: 'Rubik-SemiBold',
-            color: COLORS.neutral[800],
-            textAlign: 'right',
-            writingDirection: 'rtl',
-            marginBottom: 2,
-          }}
-          numberOfLines={1}
-        >
-          {item.project}
-        </Text>
-        <View
-          style={{
+        onPressOut={() => {
+          scale.value = withSpring(1, { damping: 15, stiffness: 150 });
+        }}
+        onPress={() => {
+          haptic();
+          onPress?.();
+        }}
+        onLongPress={() => {
+          if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }
+          onDelete?.(item.id);
+        }}
+        style={[
+          {
             flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse',
             alignItems: 'center',
-            gap: 5,
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            borderBottomWidth: isLast ? 0 : 1,
+            borderBottomColor: COLORS.cream[200],
+          },
+          animStyle,
+        ]}
+      >
+        {/* Status dot */}
+        <View
+          style={{
+            width: 7,
+            height: 7,
+            borderRadius: 3.5,
+            backgroundColor: st.dot,
+            marginEnd: 6,
           }}
-        >
+        />
+
+        {/* Content */}
+        <View style={{ flex: 1 }}>
           <Text
             style={{
-              fontSize: 11,
-              fontFamily: 'Rubik-Regular',
-              color: COLORS.neutral[500],
+              fontSize: 13,
+              fontFamily: 'Rubik-SemiBold',
+              color: COLORS.neutral[800],
+              textAlign: 'right',
+              writingDirection: 'rtl',
+              marginBottom: 2,
             }}
             numberOfLines={1}
           >
-            {item.apartment}
+            {item.project}
           </Text>
-          <Text style={{ fontSize: 10, color: COLORS.neutral[300] }}>·</Text>
-          <Text
-            style={{
-              fontSize: 10,
-              fontFamily: 'Rubik-Regular',
-              color: COLORS.neutral[400],
-            }}
-          >
-            {TYPE_LABELS[item.reportType]}
-          </Text>
-          <Text style={{ fontSize: 10, color: COLORS.neutral[300] }}>·</Text>
           <View
             style={{
               flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse',
               alignItems: 'center',
-              gap: 3,
+              gap: 5,
             }}
           >
-            <Feather name="clock" size={16} color={COLORS.neutral[400]} />
+            <Text
+              style={{
+                fontSize: 11,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.neutral[500],
+              }}
+              numberOfLines={1}
+            >
+              {item.apartment}
+            </Text>
+            <Text style={{ fontSize: 10, color: COLORS.neutral[300] }}>·</Text>
             <Text
               style={{
                 fontSize: 10,
@@ -134,56 +120,75 @@ export function ReportRow({
                 color: COLORS.neutral[400],
               }}
             >
-              {formatRelativeTime(item.updatedAt)}
+              {TYPE_LABELS[item.reportType]}
+            </Text>
+            <Text style={{ fontSize: 10, color: COLORS.neutral[300] }}>·</Text>
+            <View
+              style={{
+                flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse',
+                alignItems: 'center',
+                gap: 3,
+              }}
+            >
+              <Feather name="clock" size={10} color={COLORS.neutral[400]} />
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontFamily: 'Rubik-Regular',
+                  color: COLORS.neutral[400],
+                }}
+              >
+                {formatRelativeTime(item.updatedAt)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Status badge + defect count */}
+        <View style={{ alignItems: 'center', gap: 3, marginStart: 8 }}>
+          <View
+            style={{
+              backgroundColor: st.bg,
+              borderRadius: 5,
+              paddingHorizontal: 7,
+              paddingVertical: 2,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 10,
+                fontFamily: 'Rubik-SemiBold',
+                color: st.color,
+              }}
+            >
+              {st.label}
+            </Text>
+          </View>
+          <View
+            style={{
+              flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse',
+              alignItems: 'center',
+              gap: 2,
+            }}
+          >
+            <Feather name="alert-triangle" size={10} color={COLORS.gold[500]} />
+            <Text
+              style={{
+                fontSize: 10,
+                fontFamily: 'Inter',
+                fontWeight: '500',
+                color: COLORS.neutral[500],
+              }}
+            >
+              {item.defectCount}
             </Text>
           </View>
         </View>
-      </View>
 
-      {/* Status badge + defect count */}
-      <View style={{ alignItems: 'center', gap: 3, marginStart: 8 }}>
-        <View
-          style={{
-            backgroundColor: st.bg,
-            borderRadius: 5,
-            paddingHorizontal: 7,
-            paddingVertical: 2,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 10,
-              fontFamily: 'Rubik-SemiBold',
-              color: st.color,
-            }}
-          >
-            {st.label}
-          </Text>
-        </View>
-        <View
-          style={{
-            flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse',
-            alignItems: 'center',
-            gap: 2,
-          }}
-        >
-          <Feather name="alert-triangle" size={16} color={COLORS.gold[500]} />
-          <Text
-            style={{
-              fontSize: 10,
-              fontFamily: 'Inter',
-              fontWeight: '500',
-              color: COLORS.neutral[500],
-            }}
-          >
-            {item.defectCount}
-          </Text>
-        </View>
-      </View>
-
-      {/* Chevron */}
-      <Feather name="chevron-left" size={16} color={COLORS.neutral[300]} />
-    </AnimatedPressable>
+        {/* Chevron */}
+        <Feather name="chevron-left" size={14} color={COLORS.neutral[300]} />
+      </AnimatedPressable>
+    </Animated.View>
   );
 }
 

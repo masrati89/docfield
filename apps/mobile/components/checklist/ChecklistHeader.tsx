@@ -16,6 +16,10 @@ interface ChecklistHeaderProps {
   total: number;
   defectCount: number;
   roomCount: number;
+  onPreview?: () => void;
+  onShare?: () => void;
+  onSettings?: () => void;
+  onDownload?: () => void;
 }
 
 // --- Component ---
@@ -30,6 +34,10 @@ export function ChecklistHeader({
   total,
   defectCount,
   roomCount,
+  onPreview,
+  onShare,
+  onSettings,
+  onDownload,
 }: ChecklistHeaderProps) {
   return (
     <View
@@ -149,29 +157,29 @@ export function ChecklistHeader({
 
             {/* Toolbar buttons */}
             <View style={{ flexDirection: 'row-reverse', gap: 4 }}>
-              {(['eye', 'share', 'settings', 'download'] as const).map(
-                (icon) => (
-                  <Pressable
-                    key={icon}
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 8,
-                      borderWidth: 1,
-                      borderColor: COLORS.cream[200],
-                      backgroundColor: COLORS.cream[50],
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Feather
-                      name={icon}
-                      size={20}
-                      color={COLORS.neutral[500]}
-                    />
-                  </Pressable>
-                )
-              )}
+              {[
+                { icon: 'eye' as const, handler: onPreview },
+                { icon: 'share' as const, handler: onShare },
+                { icon: 'settings' as const, handler: onSettings },
+                { icon: 'download' as const, handler: onDownload },
+              ].map(({ icon, handler }) => (
+                <Pressable
+                  key={icon}
+                  onPress={handler}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: COLORS.cream[200],
+                    backgroundColor: COLORS.cream[50],
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Feather name={icon} size={20} color={COLORS.neutral[500]} />
+                </Pressable>
+              ))}
             </View>
           </View>
 

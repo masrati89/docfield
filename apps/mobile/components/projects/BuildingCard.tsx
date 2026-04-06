@@ -1,7 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, {
+  FadeInUp,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
 
@@ -34,6 +40,19 @@ export const BuildingCard = React.memo(function BuildingCard({
       ? Math.round((building.completedApts / building.totalApts) * 100)
       : 0;
   const isFull = pct === 100;
+
+  const progressWidth = useSharedValue(0);
+
+  useEffect(() => {
+    progressWidth.value = withTiming(pct, {
+      duration: 600,
+      easing: Easing.bezier(0.22, 1, 0.36, 1),
+    });
+  }, [pct, progressWidth]);
+
+  const animatedProgressStyle = useAnimatedStyle(() => ({
+    width: `${progressWidth.value}%`,
+  }));
 
   return (
     <Animated.View entering={FadeInUp.delay(60 * index).duration(200)}>
@@ -199,15 +218,17 @@ export const BuildingCard = React.memo(function BuildingCard({
                 overflow: 'hidden',
               }}
             >
-              <View
-                style={{
-                  width: `${pct}%`,
-                  height: '100%',
-                  borderRadius: 2,
-                  backgroundColor: isFull
-                    ? COLORS.primary[500]
-                    : COLORS.gold[500],
-                }}
+              <Animated.View
+                style={[
+                  {
+                    height: '100%',
+                    borderRadius: 2,
+                    backgroundColor: isFull
+                      ? COLORS.primary[500]
+                      : COLORS.gold[500],
+                  },
+                  animatedProgressStyle,
+                ]}
               />
             </View>
             <Text

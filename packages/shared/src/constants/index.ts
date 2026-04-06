@@ -22,3 +22,6 @@ export type { UserRoleValue } from './roles';
 
 export { CHECKLIST_TEMPLATES } from './checklistTemplates';
 export type { ChecklistTemplateValue } from './checklistTemplates';
+
+export { ISRAELI_STANDARDS } from './standards';
+export type { IsraeliStandard, StandardSection } from './standards';

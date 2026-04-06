@@ -44,7 +44,7 @@ export default function ReportsScreen() {
   const sheetRef = useRef<BottomSheetType>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
-  const { isOpen: menuOpen, open: openMenu, close: closeMenu } = useSideMenu();
+  const { isOpen: menuOpen, open: _openMenu, close: closeMenu } = useSideMenu();
 
   const hasActiveFilters = typeFilter !== 'all' || sortBy !== 'date';
 
@@ -144,6 +144,7 @@ export default function ReportsScreen() {
     ({ item, index }: { item: ReportItem; index: number }) => (
       <ReportRow
         item={item}
+        index={index}
         isLast={sortBy === 'project' ? false : index === filtered.length - 1}
         onPress={() => handleReportPress(item.id)}
         onDelete={handleDeleteReport}
@@ -197,6 +198,7 @@ export default function ReportsScreen() {
                   <ReportRow
                     key={item.id}
                     item={item}
+                    index={i}
                     isLast={i === group.data.length - 1}
                     onPress={() => handleReportPress(item.id)}
                     onDelete={handleDeleteReport}
@@ -244,11 +246,7 @@ export default function ReportsScreen() {
         renderItem={() => null}
         ListHeaderComponent={
           <>
-            <Header
-              count={filtered.length}
-              total={reports.length}
-              onMenu={openMenu}
-            />
+            <Header count={filtered.length} total={reports.length} />
             <SearchBar value={search} onChange={setSearch} />
             <FilterChips
               statusFilter={statusFilter}

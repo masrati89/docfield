@@ -16,4 +16,6 @@ export {
 export { SortSheetContent } from './ProjectsSortSheet';
 export { SkeletonCardList, ErrorState } from './ProjectsLoadingState';
 export { FAB } from './ProjectsFAB';
+export { NewProjectSheet } from './NewProjectSheet';
+export { AddBuildingSheet } from './AddBuildingSheet';
 export type { StatusFilter, SortBy } from './projectsConstants';

@@ -126,7 +126,7 @@ function ReportRow({
             <View
               style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}
             >
-              <Feather name="clock" size={16} color={COLORS.neutral[400]} />
+              <Feather name="clock" size={10} color={COLORS.neutral[400]} />
               <Text
                 style={{
                   fontSize: 10,
@@ -164,7 +164,7 @@ function ReportRow({
             {isDraft ? 'טיוטה' : 'הושלם'}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-            <Feather name="alert-triangle" size={16} color={COLORS.gold[500]} />
+            <Feather name="alert-triangle" size={10} color={COLORS.gold[500]} />
             <Text
               style={{
                 fontSize: 10,
@@ -178,7 +178,7 @@ function ReportRow({
           </View>
         </View>
 
-        <Feather name="chevron-left" size={16} color={COLORS.neutral[300]} />
+        <Feather name="chevron-left" size={14} color={COLORS.neutral[300]} />
       </Pressable>
     </Animated.View>
   );
@@ -245,7 +245,7 @@ export function ReportsSection({
           >
             עוד
           </Text>
-          <Feather name="chevron-left" size={16} color={COLORS.neutral[300]} />
+          <Feather name="chevron-left" size={14} color={COLORS.neutral[300]} />
         </Pressable>
       </View>
 

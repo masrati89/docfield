@@ -135,7 +135,7 @@ export const ApartmentRow = React.memo(function ApartmentRow({
           >
             {apartment.tenantName ? (
               <>
-                <Feather name="user" size={16} color={COLORS.neutral[400]} />
+                <Feather name="user" size={12} color={COLORS.neutral[400]} />
                 <Text
                   style={{
                     fontSize: 10,
@@ -171,7 +171,7 @@ export const ApartmentRow = React.memo(function ApartmentRow({
                 </Text>
                 <Feather
                   name="file-text"
-                  size={16}
+                  size={12}
                   color={COLORS.neutral[400]}
                 />
                 <Text
@@ -221,7 +221,7 @@ export const ApartmentRow = React.memo(function ApartmentRow({
             >
               <Feather
                 name="alert-triangle"
-                size={16}
+                size={10}
                 color={COLORS.gold[500]}
               />
               <Text
@@ -238,7 +238,7 @@ export const ApartmentRow = React.memo(function ApartmentRow({
           ) : null}
         </View>
 
-        <Feather name="chevron-left" size={16} color={COLORS.neutral[300]} />
+        <Feather name="chevron-left" size={14} color={COLORS.neutral[300]} />
       </Pressable>
     </Animated.View>
   );

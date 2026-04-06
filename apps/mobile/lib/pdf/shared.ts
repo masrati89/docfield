@@ -139,6 +139,14 @@ export function signatureBoxHtml(
   `;
 }
 
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 export function formatCurrency(amount: number): string {
   return `\u20AA${amount.toLocaleString('he-IL')}`;
 }

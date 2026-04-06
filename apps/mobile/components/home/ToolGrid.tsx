@@ -1,6 +1,5 @@
 import { View, Text, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
@@ -94,13 +93,7 @@ interface ToolGridProps {
 }
 
 export function ToolGrid({ onToolPress }: ToolGridProps) {
-  const router = useRouter();
-
   const handleToolPress = (label: string) => {
-    if (label === 'מאגר ממצאים') {
-      router.push('/library');
-      return;
-    }
     onToolPress?.(label);
   };
 

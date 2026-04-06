@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { View, Text } from 'react-native';
 import Animated, {
   FadeInDown,
   useSharedValue,
   withTiming,
+  useAnimatedReaction,
+  runOnJS,
   Easing,
 } from 'react-native-reanimated';
 
@@ -14,6 +16,18 @@ import { SkeletonBlock } from '@/components/ui';
 
 function AnimatedCounter({ value, color }: { value: number; color: string }) {
   const animatedValue = useSharedValue(0);
+  const [displayValue, setDisplayValue] = useState(0);
+
+  const updateDisplay = useCallback((v: number) => {
+    setDisplayValue(Math.round(v));
+  }, []);
+
+  useAnimatedReaction(
+    () => animatedValue.value,
+    (current) => {
+      runOnJS(updateDisplay)(current);
+    }
+  );
 
   useEffect(() => {
     animatedValue.value = 0;
@@ -23,8 +37,6 @@ function AnimatedCounter({ value, color }: { value: number; color: string }) {
     });
   }, [value, animatedValue]);
 
-  // Since we can't easily interpolate text in Reanimated,
-  // use a simple approach with state
   return (
     <Text
       style={{
@@ -37,7 +49,7 @@ function AnimatedCounter({ value, color }: { value: number; color: string }) {
         textAlignVertical: 'center',
       }}
     >
-      {value}
+      {displayValue}
     </Text>
   );
 }

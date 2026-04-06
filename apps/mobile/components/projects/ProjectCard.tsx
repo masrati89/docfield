@@ -118,7 +118,7 @@ export function ProjectCard({
           >
             {item.name}
           </Text>
-          <Feather name="chevron-left" size={16} color={COLORS.neutral[300]} />
+          <Feather name="chevron-left" size={14} color={COLORS.neutral[300]} />
         </View>
 
         {/* Row 2: Address */}
@@ -130,7 +130,7 @@ export function ProjectCard({
             marginBottom: 10,
           }}
         >
-          <Feather name="map-pin" size={16} color={COLORS.neutral[400]} />
+          <Feather name="map-pin" size={12} color={COLORS.neutral[400]} />
           <Text
             style={{
               fontSize: 11,
@@ -228,7 +228,7 @@ export function ProjectCard({
             >
               <Feather
                 name={item.buildingsCount > 1 ? 'grid' : 'home'}
-                size={16}
+                size={12}
                 color={COLORS.neutral[400]}
               />
               <Text
@@ -251,7 +251,7 @@ export function ProjectCard({
               >
                 <Feather
                   name="alert-triangle"
-                  size={16}
+                  size={10}
                   color={COLORS.gold[500]}
                 />
                 <Text
@@ -287,7 +287,7 @@ export function ProjectCard({
             >
               {formatRelativeTime(item.updatedAt)}
             </Text>
-            <Feather name="calendar" size={16} color={COLORS.neutral[400]} />
+            <Feather name="calendar" size={12} color={COLORS.neutral[400]} />
           </View>
         </View>
       </View>

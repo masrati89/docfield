@@ -1,7 +1,14 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  FadeInDown,
+  FadeOutUp,
+} from 'react-native-reanimated';
 
 import { COLORS, BORDER_RADIUS, SHADOWS } from '@infield/ui';
 
@@ -77,6 +84,16 @@ export function RoomAccordion({
         : COLORS.primary[500]
       : COLORS.cream[200];
   const badgeColor = counts.done > 0 ? '#FFFFFF' : COLORS.neutral[500];
+
+  const rotation = useSharedValue(isOpen ? 180 : 0);
+
+  useEffect(() => {
+    rotation.value = withTiming(isOpen ? 180 : 0, { duration: 200 });
+  }, [isOpen, rotation]);
+
+  const chevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
 
   return (
     <View
@@ -253,16 +270,16 @@ export function RoomAccordion({
         </View>
 
         {/* Chevron */}
-        <Feather
-          name={isOpen ? 'chevron-up' : 'chevron-down'}
-          size={16}
-          color={COLORS.neutral[400]}
-        />
+        <Animated.View style={chevronStyle}>
+          <Feather name="chevron-down" size={16} color={COLORS.neutral[400]} />
+        </Animated.View>
       </Pressable>
 
       {/* Progress bar (when open) */}
       {isOpen && counts.total > 0 ? (
-        <View
+        <Animated.View
+          entering={FadeInDown.duration(250)}
+          exiting={FadeOutUp.duration(200)}
           style={{
             flexDirection: 'row-reverse',
             alignItems: 'center',
@@ -301,12 +318,14 @@ export function RoomAccordion({
           >
             {counts.done}/{counts.total}
           </Text>
-        </View>
+        </Animated.View>
       ) : null}
 
       {/* Accordion content */}
       {isOpen ? (
-        <View
+        <Animated.View
+          entering={FadeInDown.duration(250)}
+          exiting={FadeOutUp.duration(200)}
           style={{
             borderTopWidth: 1,
             borderTopColor: COLORS.cream[200],
@@ -334,7 +353,7 @@ export function RoomAccordion({
               />
             );
           })}
-        </View>
+        </Animated.View>
       ) : null}
     </View>
   );

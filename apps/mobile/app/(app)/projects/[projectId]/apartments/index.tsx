@@ -5,11 +5,19 @@ import {
   FlatList,
   Pressable,
   I18nManager,
+  Platform,
   RefreshControl,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type BottomSheetType from '@gorhom/bottom-sheet';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
@@ -18,8 +26,13 @@ import { SkeletonBlock, EmptyState } from '@/components/ui';
 import { BottomSheetWrapper } from '@/components/ui/BottomSheetWrapper';
 import { Toast } from '@/components/ui/Toast';
 import { SubHeader, ProgressStrip, ApartmentRow } from '@/components/projects';
+import { NewInspectionWizard } from '@/components/wizard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/useToast';
+
+import type { WizardPrefill } from '@/components/wizard/NewInspectionWizard.types';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 import type { ApartmentItem } from '@/components/projects';
 
@@ -265,11 +278,19 @@ export default function ApartmentsScreen() {
   const router = useRouter();
   const { profile } = useAuth();
   const { toast, showToast, hideToast } = useToast();
+  const insets = useSafeAreaInsets();
+
+  // Wizard state
+  const [showWizard, setShowWizard] = useState(false);
+  const [wizardPrefill, setWizardPrefill] = useState<WizardPrefill | undefined>(
+    undefined
+  );
 
   const [info, setInfo] = useState<ScreenInfo | null>(null);
   const [apartments, setApartments] = useState<ApartmentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [apartmentReports, setApartmentReports] = useState<ApartmentReportMap>(
     {}
   );
@@ -287,6 +308,7 @@ export default function ApartmentsScreen() {
     async (silent = false) => {
       if (!projectId) return;
       if (!silent) setIsLoading(true);
+      setError(null);
       try {
         // If no buildingId was provided (single-building project), resolve it
         let resolvedBuildingId = buildingId;
@@ -324,7 +346,7 @@ export default function ApartmentsScreen() {
         const { data: apts } = await supabase
           .from('apartments')
           .select(
-            'id, number, floor, rooms_count, status, delivery_reports(id, defects(id))'
+            'id, number, floor, rooms_count, status, delivery_reports(id, tenant_name, defects(id))'
           )
           .eq('building_id', resolvedBuildingId)
           .order('floor')
@@ -336,6 +358,7 @@ export default function ApartmentsScreen() {
             const reps =
               (a.delivery_reports as Array<{
                 id: string;
+                tenant_name: string | null;
                 defects: Array<{ id: string }>;
               }>) ?? [];
             const defectCount = reps.reduce(
@@ -354,7 +377,8 @@ export default function ApartmentsScreen() {
               floor: a.floor as number | null,
               roomsCount: a.rooms_count as number | null,
               status: (a.status as string) ?? 'pending',
-              tenantName: null,
+              tenantName:
+                reps.length > 0 ? (reps[0].tenant_name ?? null) : null,
               defects: defectCount,
               reports: reps.length,
             };
@@ -363,7 +387,7 @@ export default function ApartmentsScreen() {
         setApartments(mapped);
         setApartmentReports(reportMap);
       } catch {
-        // Silent fail — shows empty state
+        setError('שגיאה בטעינת הדירות');
       } finally {
         setIsLoading(false);
         setIsRefreshing(false);
@@ -458,6 +482,24 @@ export default function ApartmentsScreen() {
     sheetRef.current?.close();
   }, []);
 
+  // FAB press — open wizard with project/building prefill
+  const handleFabPress = useCallback(() => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setWizardPrefill({
+      projectId: projectId ?? undefined,
+      projectName: info?.projectName ?? undefined,
+      buildingName: info?.buildingName ?? undefined,
+    });
+    setShowWizard(true);
+  }, [projectId, info]);
+
+  const fabScale = useSharedValue(1);
+  const fabAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: fabScale.value }],
+  }));
+
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.cream[100] }}>
       <StatusBar style="dark" />
@@ -500,6 +542,14 @@ export default function ApartmentsScreen() {
             </View>
           ))}
         </View>
+      ) : error ? (
+        <EmptyState
+          icon="alert-circle"
+          title={error}
+          subtitle="לא ניתן היה לטעון את רשימת הדירות"
+          ctaLabel="נסה שוב"
+          onCta={() => fetchData()}
+        />
       ) : (
         <FlatList
           data={floorGroups}
@@ -537,7 +587,7 @@ export default function ApartmentsScreen() {
             />
           }
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          contentContainerStyle={{ paddingBottom: 88 + insets.bottom }}
         />
       )}
 
@@ -557,6 +607,45 @@ export default function ApartmentsScreen() {
           />
         </BottomSheetWrapper>
       )}
+
+      {/* FAB — New Inspection */}
+      <AnimatedPressable
+        onPress={handleFabPress}
+        onPressIn={() => {
+          fabScale.value = withSpring(0.92, { damping: 15, stiffness: 150 });
+        }}
+        onPressOut={() => {
+          fabScale.value = withSpring(1, { damping: 15, stiffness: 150 });
+        }}
+        style={[
+          {
+            position: 'absolute',
+            bottom: 24 + insets.bottom,
+            left: 16,
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            backgroundColor: COLORS.primary[500],
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#1B7A44',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 16,
+            elevation: 8,
+          },
+          fabAnimStyle,
+        ]}
+      >
+        <Feather name="plus" size={24} color={COLORS.white} />
+      </AnimatedPressable>
+
+      {/* New Inspection Wizard */}
+      <NewInspectionWizard
+        visible={showWizard}
+        onClose={() => setShowWizard(false)}
+        prefill={wizardPrefill}
+      />
 
       {toast && (
         <Toast

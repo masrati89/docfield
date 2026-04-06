@@ -19,7 +19,11 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
-import { ROOM_TYPES, DEFECT_CATEGORIES } from '@infield/shared';
+import {
+  ROOM_TYPES,
+  DEFECT_CATEGORIES,
+  ISRAELI_STANDARDS,
+} from '@infield/shared';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/useToast';
@@ -40,7 +44,16 @@ import type { PhotoItem } from '@/components/defect/PhotoGrid';
 
 // --- Constants ---
 
-const MAX_PHOTOS = 10;
+const MAX_PHOTOS = 20;
+
+const RECOMMENDATION_SUGGESTIONS = [
+  'החלפת אטם',
+  'פירוק סיפון וניקוי',
+  'החלפת אריח',
+  'החלפת ידית/צילינדר',
+  'הרחבת טיח ומילוי מחדש',
+  'תיקון שיפוע ניקוז',
+];
 
 // --- Screen ---
 
@@ -59,6 +72,7 @@ export default function AddDefectScreen() {
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
   const [standardRef, setStandardRef] = useState('');
+  const [standardDisplay, setStandardDisplay] = useState('');
   const [recommendation, setRecommendation] = useState('');
   const [costUnit, setCostUnit] = useState('fixed');
   const [costAmount, setCostAmount] = useState('');
@@ -66,6 +80,9 @@ export default function AddDefectScreen() {
   const [costPerUnit, setCostPerUnit] = useState('');
   const [note, setNote] = useState('');
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [entrySource, setEntrySource] = useState<'direct' | 'library'>(
+    'direct'
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [cameraVisible, setCameraVisible] = useState(false);
   const savedRef = useRef(false);
@@ -73,8 +90,9 @@ export default function AddDefectScreen() {
   const organizationId = profile?.organizationId ?? '';
 
   // Defect library for autocomplete suggestions
-  const { allItems: libraryItems } = useDefectLibrary();
+  const { allItems: libraryItems, addItem, isAdding } = useDefectLibrary();
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [addedToLibrary, setAddedToLibrary] = useState(false);
 
   const suggestions = useMemo(() => {
     if (!description.trim() || description.trim().length < 2) return [];
@@ -84,18 +102,78 @@ export default function AddDefectScreen() {
       .slice(0, 5);
   }, [description, libraryItems]);
 
+  // Build a lookup map for standard descriptions (used by suggestion + standard picker)
+  const standardDescMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const std of ISRAELI_STANDARDS) {
+      for (const sec of std.sections) {
+        const key = `${std.name} סעיף ${sec.code} — ${sec.title}`;
+        map.set(key, sec.desc);
+      }
+    }
+    return map;
+  }, []);
+
   const handleSelectSuggestion = useCallback(
     (item: (typeof libraryItems)[0]) => {
       setDescription(item.title);
       if (item.category && !category) setCategory(item.category);
       if (item.location && !location) setLocation(item.location);
-      if (item.standardRef && !standardRef) setStandardRef(item.standardRef);
+      if (item.standardRef && !standardRef) {
+        setStandardRef(item.standardRef);
+        setStandardDisplay(standardDescMap.get(item.standardRef) ?? '');
+      }
       if (item.recommendation && !recommendation)
         setRecommendation(item.recommendation);
       setShowSuggestions(false);
+      setEntrySource('library');
     },
-    [category, location, standardRef, recommendation]
+    [category, location, standardRef, recommendation, standardDescMap]
   );
+
+  // "Add to Library" handler
+  const handleAddToLibrary = useCallback(async () => {
+    if (!description.trim() || isAdding) return;
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    try {
+      await addItem({
+        title: description.trim(),
+        category: category || '',
+        location: location || '',
+        standardRef: standardRef.trim() || null,
+        recommendation: recommendation.trim() || null,
+        cost: costAmount ? parseFloat(costAmount) : null,
+        costUnit: costUnit || null,
+        notes: note.trim() || null,
+      });
+      setAddedToLibrary(true);
+      showToast('נוסף למאגר בהצלחה', 'success');
+      setTimeout(() => setAddedToLibrary(false), 2000);
+    } catch {
+      showToast('שגיאה בהוספה למאגר', 'error');
+    }
+  }, [
+    description,
+    category,
+    location,
+    standardRef,
+    recommendation,
+    costAmount,
+    costUnit,
+    note,
+    isAdding,
+    addItem,
+    showToast,
+  ]);
+
+  // Show "Add to Library" when description has text and no exact match in library
+  const showAddToLibrary = useMemo(() => {
+    if (!description.trim() || description.trim().length < 2) return false;
+    const query = description.trim().toLowerCase();
+    return !libraryItems.some((item) => item.title.toLowerCase() === query);
+  }, [description, libraryItems]);
 
   // Dirty check — warn if user tries to leave with unsaved changes
   // Exclude initialCategory from dirty check since it's pre-filled
@@ -155,7 +233,7 @@ export default function AddDefectScreen() {
 
   const handleAddPhoto = useCallback(() => {
     if (photos.length >= MAX_PHOTOS) {
-      showToast('ניתן להוסיף עד 10 תמונות', 'error');
+      showToast('ניתן להוסיף עד 20 תמונות', 'error');
       return;
     }
     setCameraVisible(true);
@@ -163,7 +241,7 @@ export default function AddDefectScreen() {
 
   const handlePickFromGallery = useCallback(async () => {
     if (photos.length >= MAX_PHOTOS) {
-      showToast('ניתן להוסיף עד 10 תמונות', 'error');
+      showToast('ניתן להוסיף עד 20 תמונות', 'error');
       return;
     }
 
@@ -340,6 +418,21 @@ export default function AddDefectScreen() {
 
   const locationLabels = ROOM_TYPES.map((r) => r.label);
 
+  // Build flattened standard options for ComboField
+  const standardOptions = useMemo(() => {
+    return ISRAELI_STANDARDS.flatMap((std) =>
+      std.sections.map((sec) => `${std.name} סעיף ${sec.code} — ${sec.title}`)
+    );
+  }, []);
+
+  const handleSelectStandard = useCallback(
+    (value: string) => {
+      setStandardRef(value);
+      setStandardDisplay(standardDescMap.get(value) ?? '');
+    },
+    [standardDescMap]
+  );
+
   return (
     <View
       style={{
@@ -424,6 +517,28 @@ export default function AddDefectScreen() {
             >
               הוספת ממצא
             </Text>
+            {entrySource === 'library' && (
+              <View
+                style={{
+                  backgroundColor: COLORS.primary[50],
+                  borderRadius: BORDER_RADIUS.sm,
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                  borderWidth: 1,
+                  borderColor: COLORS.primary[200],
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 11,
+                    color: COLORS.primary[600],
+                    fontFamily: 'Rubik-Medium',
+                  }}
+                >
+                  מהמאגר
+                </Text>
+              </View>
+            )}
           </View>
           <View
             style={{
@@ -443,6 +558,23 @@ export default function AddDefectScreen() {
             </Text>
             <Pressable
               onPress={() => {
+                // If filled from library, first press resets form back to direct entry
+                if (entrySource === 'library') {
+                  setCategory(initialCategory ?? '');
+                  setDescription('');
+                  setLocation('');
+                  setStandardRef('');
+                  setStandardDisplay('');
+                  setRecommendation('');
+                  setCostUnit('fixed');
+                  setCostAmount('');
+                  setCostQty('');
+                  setCostPerUnit('');
+                  setNote('');
+                  setPhotos([]);
+                  setEntrySource('direct');
+                  return;
+                }
                 if (!isDirty || savedRef.current) {
                   savedRef.current = true;
                   router.back();
@@ -596,6 +728,48 @@ export default function AddDefectScreen() {
                 ))}
               </View>
             )}
+
+            {/* Add to Library button */}
+            {showAddToLibrary && !showSuggestions && (
+              <Pressable
+                onPress={handleAddToLibrary}
+                disabled={isAdding || addedToLibrary}
+                style={{
+                  flexDirection: 'row-reverse',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  borderRadius: BORDER_RADIUS.sm,
+                  borderWidth: 1,
+                  borderStyle: 'dashed',
+                  borderColor: addedToLibrary
+                    ? COLORS.primary[500]
+                    : COLORS.primary[300],
+                  backgroundColor: addedToLibrary
+                    ? COLORS.primary[100]
+                    : COLORS.primary[50],
+                  marginTop: 8,
+                  opacity: isAdding ? 0.6 : 1,
+                }}
+              >
+                <Feather
+                  name={addedToLibrary ? 'check-circle' : 'plus-circle'}
+                  size={14}
+                  color={COLORS.primary[500]}
+                />
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: COLORS.primary[500],
+                    fontFamily: 'Rubik-Medium',
+                  }}
+                >
+                  {addedToLibrary ? 'נוסף!' : 'הוסף למאגר'}
+                </Text>
+              </Pressable>
+            )}
           </FormField>
 
           {/* 3. Location */}
@@ -611,29 +785,38 @@ export default function AddDefectScreen() {
 
           {/* 4. Israeli Standard */}
           <FormField label="תקן ישראלי" filled={!!standardRef} icon="book-open">
-            <TextInput
+            <ComboField
               value={standardRef}
-              onChangeText={setStandardRef}
-              placeholder='לדוגמה: ת"י 1205.1'
-              placeholderTextColor={COLORS.neutral[400]}
-              style={{
-                paddingVertical: 9,
-                paddingHorizontal: 12,
-                borderRadius: BORDER_RADIUS.md,
-                borderWidth: 1,
-                borderColor: standardRef
-                  ? COLORS.primary[200]
-                  : COLORS.cream[300],
-                backgroundColor: standardRef
-                  ? COLORS.primary[50]
-                  : COLORS.cream[50],
-                fontSize: 14,
-                fontFamily: 'Rubik-Regular',
-                color: COLORS.neutral[800],
-                textAlign: 'right',
-                minHeight: 42,
-              }}
+              onSelect={handleSelectStandard}
+              options={standardOptions}
+              placeholder="חפש תקן ישראלי..."
+              allowCustom
             />
+            {standardDisplay ? (
+              <View
+                style={{
+                  marginTop: 8,
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  borderRightWidth: 3,
+                  borderRightColor: COLORS.primary[500],
+                  backgroundColor: COLORS.primary[50],
+                  borderRadius: BORDER_RADIUS.sm,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: COLORS.neutral[600],
+                    fontFamily: 'Rubik-Regular',
+                    textAlign: 'right',
+                    lineHeight: 18,
+                  }}
+                >
+                  {standardDisplay}
+                </Text>
+              </View>
+            ) : null}
           </FormField>
 
           {/* Separator */}
@@ -647,30 +830,12 @@ export default function AddDefectScreen() {
 
           {/* 5. Recommendation */}
           <FormField label="המלצה לתיקון" filled={!!recommendation} icon="tool">
-            <TextInput
+            <ComboField
               value={recommendation}
-              onChangeText={setRecommendation}
-              placeholder="המלצת תיקון..."
-              placeholderTextColor={COLORS.neutral[400]}
-              multiline
-              style={{
-                paddingVertical: 9,
-                paddingHorizontal: 12,
-                borderRadius: BORDER_RADIUS.md,
-                borderWidth: 1,
-                borderColor: recommendation
-                  ? COLORS.primary[200]
-                  : COLORS.cream[300],
-                backgroundColor: recommendation
-                  ? COLORS.primary[50]
-                  : COLORS.cream[50],
-                fontSize: 14,
-                fontFamily: 'Rubik-Regular',
-                color: COLORS.neutral[800],
-                textAlign: 'right',
-                minHeight: 42,
-                maxHeight: 80,
-              }}
+              onSelect={setRecommendation}
+              options={RECOMMENDATION_SUGGESTIONS}
+              placeholder="הקלד או בחר המלצה..."
+              allowCustom
             />
           </FormField>
 

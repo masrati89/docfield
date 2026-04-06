@@ -119,7 +119,7 @@ export function DefectRow({ defect, isLast, onDelete }: DefectRowProps) {
                 gap: 3,
               }}
             >
-              <Feather name="map-pin" size={16} color={COLORS.neutral[400]} />
+              <Feather name="map-pin" size={12} color={COLORS.neutral[400]} />
               <Text
                 style={{
                   fontSize: 10,
@@ -132,6 +132,27 @@ export function DefectRow({ defect, isLast, onDelete }: DefectRowProps) {
             </View>
           )}
         </View>
+        {defect.standardRef && (
+          <View
+            style={{
+              flexDirection: 'row-reverse',
+              alignItems: 'center',
+              gap: 4,
+              marginTop: 2,
+            }}
+          >
+            <Feather name="book-open" size={12} color={COLORS.neutral[400]} />
+            <Text
+              style={{
+                fontSize: 11,
+                color: COLORS.neutral[500],
+                fontFamily: 'Rubik-Regular',
+              }}
+            >
+              {defect.standardRef}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Photo count */}
@@ -144,7 +165,7 @@ export function DefectRow({ defect, isLast, onDelete }: DefectRowProps) {
             flexShrink: 0,
           }}
         >
-          <Feather name="camera" size={16} color={COLORS.neutral[400]} />
+          <Feather name="camera" size={12} color={COLORS.neutral[400]} />
           <Text
             style={{
               fontSize: 10,

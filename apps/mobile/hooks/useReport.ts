@@ -25,6 +25,7 @@ export interface DefectItem {
   category: string | null;
   severity: string;
   status: string;
+  standardRef: string | null;
   photoCount: number;
 }
 
@@ -79,7 +80,7 @@ async function fetchReport(id: string): Promise<ReportDetail> {
   const { data: defectsData, error: defectsError } = await supabase
     .from('defects')
     .select(
-      'id, description, room, category, severity, status, defect_photos(id)'
+      'id, description, room, category, severity, status, standard_ref, defect_photos(id)'
     )
     .eq('delivery_report_id', id)
     .order('sort_order')
@@ -97,6 +98,7 @@ async function fetchReport(id: string): Promise<ReportDetail> {
         category: d.category as string | null,
         severity: d.severity as string,
         status: d.status as string,
+        standardRef: d.standard_ref as string | null,
         photoCount: photos.length,
       };
     }

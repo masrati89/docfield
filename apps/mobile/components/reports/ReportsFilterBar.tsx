@@ -9,7 +9,10 @@ import type { StatusFilter, SortBy, TypeFilter } from './reportsConstants';
 
 export function Header({ count, total }: { count: number; total: number }) {
   return (
-    <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+    <Animated.View
+      entering={FadeInDown.duration(200)}
+      style={{ paddingHorizontal: 16, paddingTop: 8 }}
+    >
       <View
         style={{
           flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse',
@@ -36,7 +39,7 @@ export function Header({ count, total }: { count: number; total: number }) {
           {count === total ? `${total}` : `${count}/${total}`}
         </Text>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -48,7 +51,8 @@ export function SearchBar({
   onChange: (v: string) => void;
 }) {
   return (
-    <View
+    <Animated.View
+      entering={FadeInDown.delay(50).duration(200)}
       style={{
         marginHorizontal: 16,
         marginTop: 10,
@@ -86,7 +90,7 @@ export function SearchBar({
         }}
       />
       <Feather name="search" size={16} color={COLORS.neutral[400]} />
-    </View>
+    </Animated.View>
   );
 }
 
@@ -102,7 +106,8 @@ export function FilterChips({
   onOpenSort: () => void;
 }) {
   return (
-    <View
+    <Animated.View
+      entering={FadeInDown.delay(100).duration(200)}
       style={{
         flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse',
         alignItems: 'center',
@@ -192,7 +197,7 @@ export function FilterChips({
           />
         )}
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }
 

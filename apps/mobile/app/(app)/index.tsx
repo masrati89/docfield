@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { View, ScrollView, RefreshControl } from 'react-native';
+import { Alert, View, ScrollView, RefreshControl } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -8,8 +8,9 @@ import { COLORS } from '@infield/ui';
 import { useAuth } from '@/contexts/AuthContext';
 import { useReports } from '@/hooks/useReports';
 import { useProjects } from '@/hooks/useProjects';
-import { NewInspectionSheet } from '@/components/ui/NewInspectionSheet';
+import { NewInspectionWizard } from '@/components/wizard';
 import { SideMenu } from '@/components/ui/SideMenu';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { useSideMenu } from '@/hooks/useSideMenu';
 
 import {
@@ -70,17 +71,20 @@ export default function HomeScreen() {
     reports: allReports,
     isLoading: reportsLoading,
     isRefreshing: reportsRefreshing,
+    error: reportsError,
     refetch: refetchReports,
   } = useReports();
   const {
     projects: allProjects,
     isLoading: projectsLoading,
     isRefreshing: projectsRefreshing,
+    error: projectsError,
     refetch: refetchProjects,
   } = useProjects();
 
   const isLoading = reportsLoading || projectsLoading;
   const isRefreshing = reportsRefreshing || projectsRefreshing;
+  const bothFailed = reportsError && projectsError && !isLoading;
 
   const handleRefresh = useCallback(async () => {
     await Promise.all([refetchReports(), refetchProjects()]);
@@ -150,7 +154,7 @@ export default function HomeScreen() {
       <StatusBar style="dark" />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={bothFailed ? { flex: 1 } : { paddingBottom: 20 }}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -163,51 +167,91 @@ export default function HomeScreen() {
         <HomeHeader
           userName={userName}
           onNewInspection={handleNewInspection}
-          onBell={() => {}}
+          onBell={() => Alert.alert('בקרוב', 'פיצ׳ר זה יהיה זמין בקרוב')}
           onMenu={handleOpenMenu}
         />
 
-        {/* Separator */}
-        <View
-          style={{
-            height: 1,
-            backgroundColor: COLORS.cream[200],
-            marginHorizontal: 16,
-            marginTop: 12,
-          }}
-        />
+        {bothFailed ? (
+          <EmptyState
+            icon="alert-circle"
+            title="שגיאה בטעינה"
+            subtitle="לא הצלחנו לטעון את הנתונים"
+            ctaLabel="נסה שוב"
+            onCta={handleRefresh}
+          />
+        ) : (
+          <>
+            {/* Separator */}
+            <View
+              style={{
+                height: 1,
+                backgroundColor: COLORS.cream[200],
+                marginHorizontal: 16,
+                marginTop: 12,
+              }}
+            />
 
-        <StatsStrip
-          draftsCount={draftsCount}
-          completedCount={completedCount}
-          isLoading={isLoading}
-        />
+            <StatsStrip
+              draftsCount={draftsCount}
+              completedCount={completedCount}
+              isLoading={isLoading}
+            />
 
-        <ReportsSection
-          reports={reports}
-          isLoading={isLoading}
-          onViewAll={() => router.push('/(app)/reports')}
-          onReportPress={(id) => router.push(`/(app)/reports/${id}`)}
-        />
+            {reportsError && !reportsLoading ? (
+              <View style={{ marginHorizontal: 16, marginTop: 16 }}>
+                <EmptyState
+                  icon="alert-circle"
+                  title="שגיאה בטעינת דוחות"
+                  subtitle="לא הצלחנו לטעון את הדוחות"
+                  ctaLabel="נסה שוב"
+                  onCta={refetchReports}
+                />
+              </View>
+            ) : (
+              <ReportsSection
+                reports={reports}
+                isLoading={isLoading}
+                onViewAll={() => router.push('/(app)/reports')}
+                onReportPress={(id) => router.push(`/(app)/reports/${id}`)}
+              />
+            )}
 
-        <ProjectsSection
-          projects={projects}
-          isLoading={isLoading}
-          onViewAll={() => router.push('/(app)/projects')}
-          onProjectPress={(id) => {
-            const project = projects.find((p) => p.id === id);
-            if (project && project.buildingsCount <= 1) {
-              router.push(`/(app)/projects/${id}/apartments`);
-            } else {
-              router.push(`/(app)/projects/${id}/buildings`);
-            }
-          }}
-        />
+            {projectsError && !projectsLoading ? (
+              <View style={{ marginHorizontal: 16, marginTop: 16 }}>
+                <EmptyState
+                  icon="alert-circle"
+                  title="שגיאה בטעינת פרויקטים"
+                  subtitle="לא הצלחנו לטעון את הפרויקטים"
+                  ctaLabel="נסה שוב"
+                  onCta={refetchProjects}
+                />
+              </View>
+            ) : (
+              <ProjectsSection
+                projects={projects}
+                isLoading={isLoading}
+                onViewAll={() => router.push('/(app)/projects')}
+                onProjectPress={(id) => {
+                  const project = projects.find((p) => p.id === id);
+                  if (project && project.buildingsCount <= 1) {
+                    router.push(`/(app)/projects/${id}/apartments`);
+                  } else {
+                    router.push(`/(app)/projects/${id}/buildings`);
+                  }
+                }}
+              />
+            )}
 
-        <ToolGrid onToolPress={() => {}} />
+            <ToolGrid
+              onToolPress={() =>
+                Alert.alert('בקרוב', 'פיצ׳ר זה יהיה זמין בקרוב')
+              }
+            />
+          </>
+        )}
       </ScrollView>
 
-      <NewInspectionSheet
+      <NewInspectionWizard
         visible={showNewInspection}
         onClose={() => setShowNewInspection(false)}
       />

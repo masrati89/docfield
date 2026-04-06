@@ -1,5 +1,12 @@
+import { useEffect } from 'react';
 import { View, Text } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
 
@@ -16,6 +23,19 @@ interface ProgressStripProps {
 export function ProgressStrip({ completed, total, label }: ProgressStripProps) {
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
   const isFull = pct === 100;
+
+  const progressWidth = useSharedValue(0);
+
+  useEffect(() => {
+    progressWidth.value = withTiming(pct, {
+      duration: 600,
+      easing: Easing.bezier(0.22, 1, 0.36, 1),
+    });
+  }, [pct, progressWidth]);
+
+  const animatedProgressStyle = useAnimatedStyle(() => ({
+    width: `${progressWidth.value}%`,
+  }));
 
   return (
     <Animated.View
@@ -66,13 +86,17 @@ export function ProgressStrip({ completed, total, label }: ProgressStripProps) {
             overflow: 'hidden',
           }}
         >
-          <View
-            style={{
-              width: `${pct}%`,
-              height: '100%',
-              borderRadius: 3,
-              backgroundColor: isFull ? COLORS.primary[500] : COLORS.gold[500],
-            }}
+          <Animated.View
+            style={[
+              {
+                height: '100%',
+                borderRadius: 3,
+                backgroundColor: isFull
+                  ? COLORS.primary[500]
+                  : COLORS.gold[500],
+              },
+              animatedProgressStyle,
+            ]}
           />
         </View>
         <Text

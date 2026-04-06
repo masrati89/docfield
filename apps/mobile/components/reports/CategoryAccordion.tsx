@@ -7,6 +7,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   FadeInDown,
+  FadeOutUp,
 } from 'react-native-reanimated';
 
 import { COLORS, BORDER_RADIUS, SHADOWS } from '@infield/ui';
@@ -182,7 +183,11 @@ export function CategoryAccordion({
 
       {/* Defect rows (only when open) */}
       {isOpen && group.defects.length > 0 && (
-        <View style={{ borderTopWidth: 1, borderTopColor: COLORS.cream[200] }}>
+        <Animated.View
+          entering={FadeInDown.duration(250)}
+          exiting={FadeOutUp.duration(200)}
+          style={{ borderTopWidth: 1, borderTopColor: COLORS.cream[200] }}
+        >
           {group.defects.map((defect, di) => (
             <DefectRow
               key={defect.id}
@@ -191,7 +196,7 @@ export function CategoryAccordion({
               onDelete={onDeleteDefect}
             />
           ))}
-        </View>
+        </Animated.View>
       )}
     </Animated.View>
   );
