@@ -135,7 +135,7 @@ export default function HomeScreen() {
     [allProjects]
   );
 
-  const userName = profile?.fullName?.split(' ')[0] ?? '';
+  const userName = profile?.firstName || profile?.fullName?.split(' ')[0] || '';
 
   const handleOpenMenu = useCallback(() => {
     openMenu();
