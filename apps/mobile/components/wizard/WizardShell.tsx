@@ -22,6 +22,7 @@ import { StepProject } from './StepProject';
 import { StepBuildings } from './StepBuildings';
 import { StepApartmentCounts } from './StepApartmentCounts';
 import { StepApartment } from './StepApartment';
+import { StepClientDetails } from './StepClientDetails';
 import { StepProtocol } from './StepProtocol';
 
 import type {
@@ -38,6 +39,7 @@ const STEP_TITLES: Record<WizardStepId, string> = {
   buildings: 'הגדרת בניינים',
   apartment_counts: 'מספר דירות',
   apartment: 'בחירת דירה',
+  client_details: 'פרטי מזמין',
   protocol: 'מצב פרוטוקול',
 };
 
@@ -255,6 +257,29 @@ export function WizardShell({
           </Pressable>
         )}
 
+        {/* Skip button (client details — optional) */}
+        {currentStepId === 'client_details' && (
+          <Pressable
+            onPress={handleNext}
+            style={{
+              alignItems: 'center',
+              paddingVertical: 8,
+              marginBottom: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                fontFamily: 'Rubik-Medium',
+                color: COLORS.neutral[500],
+                textDecorationLine: 'underline',
+              }}
+            >
+              דלג - ללא פרטי מזמין
+            </Text>
+          </Pressable>
+        )}
+
         {/* Skip button (apartment step — optional per FLOW_SPEC §3) */}
         {currentStepId === 'apartment' && !isStepPrefilled('apartment') && (
           <Pressable
@@ -354,6 +379,8 @@ function renderStep(
       return <StepApartmentCounts {...props} />;
     case 'apartment':
       return <StepApartment {...props} />;
+    case 'client_details':
+      return <StepClientDetails {...props} />;
     case 'protocol':
       return <StepProtocol {...props} />;
   }

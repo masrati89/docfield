@@ -42,6 +42,9 @@ function createInitialState(prefill?: WizardPrefill): WizardState {
         }
       : null,
     apartmentFreetext: '',
+    tenantName: '',
+    tenantPhone: '',
+    tenantEmail: '',
     protocolMode: null,
     selectedTemplate: null,
     isSubmitting: false,
@@ -146,6 +149,12 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
         apartmentFreetext: action.payload,
         selectedApartment: null,
       };
+    case 'SET_TENANT_NAME':
+      return { ...state, tenantName: action.payload };
+    case 'SET_TENANT_PHONE':
+      return { ...state, tenantPhone: action.payload };
+    case 'SET_TENANT_EMAIL':
+      return { ...state, tenantEmail: action.payload };
     case 'SET_PROTOCOL_MODE':
       return {
         ...state,
@@ -194,6 +203,11 @@ function computeVisibleSteps(
     } else if (state.selectedProject && !state.projectSkipped) {
       steps.push('apartment');
     }
+  }
+
+  // Client details step: only for bedek_bait reports
+  if (state.reportType === 'bedek_bait') {
+    steps.push('client_details');
   }
 
   // Protocol step: only for delivery reports
@@ -283,6 +297,9 @@ export function useWizardState(
       case 'apartment':
         // Apartment is optional per FLOW_SPEC §3 — always allow proceeding
         return true;
+      case 'client_details':
+        // Name is required, phone and email are optional
+        return state.tenantName.trim().length >= 2;
       case 'protocol':
         return state.protocolMode !== null;
       default:
@@ -313,12 +330,10 @@ export function useWizardState(
 
   const handleSkipProject = useCallback(() => {
     dispatch({ type: 'SKIP_PROJECT' });
-    // Only auto-submit if bedek_bait (no protocol step remains)
-    // For delivery, the user still needs to pick protocol mode
-    if (state.reportType !== 'delivery') {
-      pendingSubmitRef.current = true;
-    }
-  }, [state.reportType]);
+    // Both report types now have a final step after project skip:
+    // bedek_bait → client_details, delivery → protocol
+    // So we never auto-submit on skip anymore.
+  }, []);
 
   // Submit: create report in DB + navigate
   const handleSubmit = useCallback(async () => {
@@ -471,6 +486,9 @@ export function useWizardState(
           (state.selectedApartment
             ? `דירה ${state.selectedApartment.number}`
             : null),
+        tenant_name: state.tenantName.trim() || null,
+        tenant_phone: state.tenantPhone.trim() || null,
+        tenant_email: state.tenantEmail.trim() || null,
       };
 
       const { data, error } = await supabase

@@ -10,6 +10,7 @@ export type WizardStepId =
   | 'buildings'
   | 'apartment_counts'
   | 'apartment'
+  | 'client_details'
   | 'protocol';
 
 // --- Prefill (from Apartments context) ---
@@ -75,6 +76,10 @@ export interface WizardState {
   // apartment
   selectedApartment: ApartmentOption | null;
   apartmentFreetext: string;
+  // client details (bedek bait)
+  tenantName: string;
+  tenantPhone: string;
+  tenantEmail: string;
   // protocol
   protocolMode: ProtocolMode | null;
   selectedTemplate: ChecklistTemplateValue | null;
@@ -98,6 +103,9 @@ export type WizardAction =
     }
   | { type: 'SET_APARTMENT'; payload: ApartmentOption }
   | { type: 'SET_APARTMENT_FREETEXT'; payload: string }
+  | { type: 'SET_TENANT_NAME'; payload: string }
+  | { type: 'SET_TENANT_PHONE'; payload: string }
+  | { type: 'SET_TENANT_EMAIL'; payload: string }
   | { type: 'SET_PROTOCOL_MODE'; payload: ProtocolMode }
   | { type: 'SET_TEMPLATE'; payload: ChecklistTemplateValue }
   | { type: 'NEXT_STEP' }
