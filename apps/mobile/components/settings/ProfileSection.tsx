@@ -2,6 +2,8 @@ import { View, Text } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import { COLORS } from '@infield/ui';
+import { PROFESSION_LABELS } from '@infield/shared';
+import type { ProfessionValue } from '@infield/shared';
 
 // --- Types ---
 
@@ -9,6 +11,7 @@ interface ProfileSectionProps {
   fullName: string | undefined;
   email: string | undefined;
   role: string | undefined;
+  profession: ProfessionValue | undefined;
   organizationId: string | undefined;
 }
 
@@ -31,6 +34,7 @@ export function ProfileSection({
   fullName,
   email,
   role,
+  profession,
   organizationId,
 }: ProfileSectionProps) {
   return (
@@ -59,7 +63,7 @@ export function ProfileSection({
             {fullName ?? '---'}
           </Text>
           <Text className="text-[14px] font-rubik text-neutral-500 text-right mt-[2px]">
-            {getRoleLabel(role)}
+            {profession ? PROFESSION_LABELS[profession] : getRoleLabel(role)}
           </Text>
         </View>
       </View>

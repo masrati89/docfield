@@ -81,6 +81,7 @@ export default function SettingsScreen() {
             fullName={profile?.fullName}
             email={user?.email}
             role={profile?.role}
+            profession={profile?.profession}
             organizationId={profile?.organizationId}
           />
 
