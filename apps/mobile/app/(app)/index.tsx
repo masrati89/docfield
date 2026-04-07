@@ -1,7 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Alert, View, ScrollView, RefreshControl } from 'react-native';
+import { View, ScrollView, RefreshControl } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import { COLORS } from '@infield/ui';
@@ -9,9 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useReports } from '@/hooks/useReports';
 import { useProjects } from '@/hooks/useProjects';
 import { NewInspectionWizard } from '@/components/wizard';
-import { SideMenu } from '@/components/ui/SideMenu';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { useSideMenu } from '@/hooks/useSideMenu';
 
 import {
   HomeHeader,
@@ -63,7 +60,6 @@ function formatRelativeTime(dateStr: string): string {
 export default function HomeScreen() {
   const { profile } = useAuth();
   const router = useRouter();
-  const { isOpen: menuOpen, open: openMenu, close: closeMenu } = useSideMenu();
   const [showNewInspection, setShowNewInspection] = useState(false);
 
   const {
@@ -137,19 +133,12 @@ export default function HomeScreen() {
 
   const userName = profile?.firstName || profile?.fullName?.split(' ')[0] || '';
 
-  const handleOpenMenu = useCallback(() => {
-    openMenu();
-  }, [openMenu]);
-
   const handleNewInspection = useCallback(() => {
     setShowNewInspection(true);
   }, []);
 
   return (
-    <SafeAreaView
-      edges={['top']}
-      style={{ flex: 1, backgroundColor: COLORS.cream[50] }}
-    >
+    <View style={{ flex: 1, backgroundColor: COLORS.cream[50] }}>
       <StatusBar style="dark" />
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -163,12 +152,7 @@ export default function HomeScreen() {
           />
         }
       >
-        <HomeHeader
-          userName={userName}
-          onNewInspection={handleNewInspection}
-          onBell={() => Alert.alert('בקרוב', 'פיצ׳ר זה יהיה זמין בקרוב')}
-          onMenu={handleOpenMenu}
-        />
+        <HomeHeader userName={userName} onNewInspection={handleNewInspection} />
 
         {bothFailed ? (
           <EmptyState
@@ -248,8 +232,6 @@ export default function HomeScreen() {
         visible={showNewInspection}
         onClose={() => setShowNewInspection(false)}
       />
-
-      <SideMenu visible={menuOpen} onClose={closeMenu} />
-    </SafeAreaView>
+    </View>
   );
 }

@@ -9,11 +9,9 @@ import Fuse from 'fuse.js';
 
 import { COLORS } from '@infield/ui';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { SideMenu } from '@/components/ui/SideMenu';
 import { BottomSheetWrapper } from '@/components/ui/BottomSheetWrapper';
 import { useProjects } from '@/hooks/useProjects';
 import { useDeleteProject } from '@/hooks/useDeleteProject';
-import { useSideMenu } from '@/hooks/useSideMenu';
 import {
   Header,
   SearchBar,
@@ -44,8 +42,6 @@ export default function ProjectsScreen() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const newProjectSheetRef = useRef<BottomSheetType>(null);
-  const { isOpen: menuOpen, open: _openMenu, close: closeMenu } = useSideMenu();
-
   const hasActiveSort = sortBy !== 'name';
 
   const onRefresh = useCallback(() => {
@@ -228,8 +224,6 @@ export default function ProjectsScreen() {
           />
         </BottomSheetWrapper>
       )}
-
-      <SideMenu visible={menuOpen} onClose={closeMenu} />
 
       {newProjectOpen && (
         <BottomSheetWrapper

@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Redirect, Tabs, useSegments } from 'expo-router';
 import { Alert, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -6,6 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
+import { useSideMenu } from '@/hooks/useSideMenu';
+import { SharedTabHeader } from '@/components/ui';
+import { SideMenu } from '@/components/ui/SideMenu';
 
 const TAB_ICON_SIZE = 22;
 
@@ -13,6 +16,8 @@ export default function AppLayout() {
   const { session, isLoading } = useAuth();
   const insets = useSafeAreaInsets();
   const resetTimerRef = useRef<() => void>(() => {});
+  const { isOpen: menuOpen, open: openMenu, close: closeMenu } = useSideMenu();
+  const [_notificationCount] = useState(0);
 
   const handleIdleWarning = useCallback(() => {
     Alert.alert('אזהרת חוסר פעילות', 'תנותק בעוד 5 דקות בגלל חוסר פעילות.', [
@@ -54,6 +59,15 @@ export default function AppLayout() {
 
   return (
     <View style={{ flex: 1 }} onTouchStart={resetTimer}>
+      {/* Persistent header — hidden inside report detail screens */}
+      {!isInsideReport && (
+        <SharedTabHeader
+          notificationCount={_notificationCount}
+          onBell={() => {}}
+          onMenu={openMenu}
+        />
+      )}
+
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -112,6 +126,8 @@ export default function AppLayout() {
           }}
         />
       </Tabs>
+
+      <SideMenu visible={menuOpen} onClose={closeMenu} />
     </View>
   );
 }

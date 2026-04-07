@@ -11,11 +11,9 @@ import { useRouter } from 'expo-router';
 import { COLORS } from '@infield/ui';
 import { NewInspectionWizard } from '@/components/wizard';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { SideMenu } from '@/components/ui/SideMenu';
 import { BottomSheetWrapper } from '@/components/ui/BottomSheetWrapper';
 import { useReports } from '@/hooks/useReports';
 import { useDeleteReport } from '@/hooks/useDeleteReport';
-import { useSideMenu } from '@/hooks/useSideMenu';
 import type { ReportItem } from '@/hooks/useReports';
 
 import {
@@ -44,8 +42,6 @@ export default function ReportsScreen() {
   const sheetRef = useRef<BottomSheetType>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
-  const { isOpen: menuOpen, open: _openMenu, close: closeMenu } = useSideMenu();
-
   const hasActiveFilters =
     typeFilter !== 'all' || statusFilter !== 'all' || sortBy !== 'date';
 
@@ -280,8 +276,6 @@ export default function ReportsScreen() {
         visible={showWizard}
         onClose={() => setShowWizard(false)}
       />
-
-      <SideMenu visible={menuOpen} onClose={closeMenu} />
 
       {sheetOpen && (
         <BottomSheetWrapper
