@@ -241,11 +241,16 @@ export default function RegisterScreen() {
         return;
       }
 
-      // Success
+      // Success — sign out so user must verify email first
+      await supabase.auth.signOut();
+
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-      router.replace('/(app)');
+      router.replace({
+        pathname: '/(auth)/verify-email',
+        params: { email: email.trim() },
+      });
     } catch {
       setErrors({ general: 'בעיית תקשורת. בדוק את החיבור לאינטרנט' });
       triggerShake();
