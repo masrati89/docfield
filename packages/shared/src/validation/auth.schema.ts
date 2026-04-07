@@ -7,6 +7,28 @@ export const loginSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>;
 
+export const PROFESSIONS = [
+  'engineer',
+  'constructor',
+  'inspector',
+  'project_manager',
+  'architect',
+  'building_technician',
+  'site_manager',
+] as const;
+
+export type ProfessionValue = (typeof PROFESSIONS)[number];
+
+export const PROFESSION_LABELS: Record<ProfessionValue, string> = {
+  engineer: 'מהנדס',
+  constructor: 'קונסטרוקטור',
+  inspector: 'מפקח',
+  project_manager: 'מנהל פרויקטים',
+  architect: 'אדריכל',
+  building_technician: 'הנדסאי בניין',
+  site_manager: 'מנהל עבודה',
+};
+
 export const registerSchema = loginSchema.extend({
   fullName: z
     .string()
@@ -22,6 +44,13 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 
 export const fullRegisterSchema = registerSchema
   .extend({
+    firstName: z
+      .string()
+      .min(2, 'שם פרטי חייב להכיל לפחות 2 תווים')
+      .max(50, 'שם פרטי ארוך מדי'),
+    profession: z.enum(PROFESSIONS, {
+      errorMap: () => ({ message: 'נא לבחור תפקיד' }),
+    }),
     orgName: z
       .string()
       .min(2, 'שם ארגון חייב להכיל לפחות 2 תווים')

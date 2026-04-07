@@ -4,6 +4,8 @@ export {
   fullRegisterSchema,
   changePasswordSchema,
   resetPasswordSchema,
+  PROFESSIONS,
+  PROFESSION_LABELS,
 } from './auth.schema';
 export type {
   LoginInput,
@@ -11,6 +13,7 @@ export type {
   FullRegisterInput,
   ChangePasswordInput,
   ResetPasswordInput,
+  ProfessionValue,
 } from './auth.schema';
 
 export {

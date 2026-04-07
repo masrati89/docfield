@@ -25,18 +25,27 @@ import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
 
 import { COLORS } from '@infield/ui';
-import { fullRegisterSchema } from '@infield/shared';
+import {
+  fullRegisterSchema,
+  PROFESSIONS,
+  PROFESSION_LABELS,
+} from '@infield/shared';
+import type { ProfessionValue } from '@infield/shared';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { useOAuth } from '@/hooks/useOAuth';
+import { SocialAuthButtons } from '@/components/auth';
 
 // --- Field error type ---
 
 interface FieldErrors {
+  firstName?: string;
   fullName?: string;
   email?: string;
   password?: string;
   confirmPassword?: string;
+  profession?: string;
   orgName?: string;
   general?: string;
 }
@@ -45,19 +54,31 @@ type FieldKey = keyof FieldErrors;
 
 export default function RegisterScreen() {
   const { signUp } = useAuth();
+  const {
+    signInWithGoogle,
+    signInWithApple,
+    isLoading: oauthLoading,
+    loadingProvider,
+  } = useOAuth();
 
   // Form state
+  const [firstName, setFirstName] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [profession, setProfession] = useState<ProfessionValue | ''>('');
   const [orgName, setOrgName] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showProfessionPicker, setShowProfessionPicker] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Password validation helper
+  const passwordValid =
+    password.length >= 8 && /[A-Z]/.test(password) && /\d/.test(password);
+
   // Refs for focus management
+  const firstNameInputRef = useRef<TextInput>(null);
   const emailInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
   const confirmPasswordInputRef = useRef<TextInput>(null);
@@ -85,6 +106,35 @@ export default function RegisterScreen() {
     );
   }, [shakeX]);
 
+  // OAuth handlers
+  const handleGooglePress = useCallback(async () => {
+    const { error, needsCompletion } = await signInWithGoogle();
+    if (error) {
+      setErrors({ general: error });
+      triggerShake();
+      return;
+    }
+    if (needsCompletion) {
+      router.replace('/(auth)/complete-profile');
+    } else {
+      router.replace('/(app)');
+    }
+  }, [signInWithGoogle, triggerShake]);
+
+  const handleApplePress = useCallback(async () => {
+    const { error, needsCompletion } = await signInWithApple();
+    if (error) {
+      setErrors({ general: error });
+      triggerShake();
+      return;
+    }
+    if (needsCompletion) {
+      router.replace('/(auth)/complete-profile');
+    } else {
+      router.replace('/(app)');
+    }
+  }, [signInWithApple, triggerShake]);
+
   // Clear a single field error
   const clearFieldError = useCallback((field: FieldKey) => {
     setErrors((previous) => {
@@ -100,10 +150,12 @@ export default function RegisterScreen() {
 
     // Validate all fields
     const result = fullRegisterSchema.safeParse({
+      firstName: firstName.trim(),
       fullName: fullName.trim(),
       email: email.trim(),
       password,
       confirmPassword,
+      profession: profession || undefined,
       orgName: orgName.trim(),
     });
 
@@ -153,15 +205,13 @@ export default function RegisterScreen() {
         return;
       }
 
-      // Step 3: Create organization
-      const { data: orgData, error: orgError } = await supabase
-        .from('organizations')
-        .insert({
-          name: orgName.trim(),
-          owner_id: newUser.id,
-        })
-        .select('id')
-        .single();
+      // Step 3: Create organization (generate UUID client-side —
+      // SELECT policy requires user profile, which doesn't exist yet)
+      const newOrgId = crypto.randomUUID();
+      const { error: orgError } = await supabase.from('organizations').insert({
+        id: newOrgId,
+        name: orgName.trim(),
+      });
 
       if (orgError) {
         await supabase.auth.signOut();
@@ -173,16 +223,18 @@ export default function RegisterScreen() {
       // Step 4: Create user profile
       const { error: profileError } = await supabase.from('users').insert({
         id: newUser.id,
-        organization_id: orgData.id,
+        organization_id: newOrgId,
         email: email.trim(),
         full_name: fullName.trim(),
+        first_name: firstName.trim(),
+        profession: profession || null,
         role: 'admin',
         is_active: true,
       });
 
       if (profileError) {
         // Rollback: delete org and sign out
-        await supabase.from('organizations').delete().eq('id', orgData.id);
+        await supabase.from('organizations').delete().eq('id', newOrgId);
         await supabase.auth.signOut();
         setErrors({ general: 'אירעה שגיאה ביצירת הפרופיל. נסה שוב' });
         triggerShake();
@@ -201,10 +253,12 @@ export default function RegisterScreen() {
       setIsSubmitting(false);
     }
   }, [
+    firstName,
     fullName,
     email,
     password,
     confirmPassword,
+    profession,
     orgName,
     signUp,
     triggerShake,
@@ -259,6 +313,19 @@ export default function RegisterScreen() {
               </Text>
             </Animated.View>
 
+            {/* Social auth buttons */}
+            <Animated.View
+              entering={FadeInUp.delay(100).duration(500).springify()}
+              className="w-full mb-[8px]"
+            >
+              <SocialAuthButtons
+                onGooglePress={handleGooglePress}
+                onApplePress={handleApplePress}
+                isLoading={oauthLoading}
+                loadingProvider={loadingProvider}
+              />
+            </Animated.View>
+
             {/* Form */}
             <Animated.View
               entering={FadeInUp.delay(150).duration(500).springify()}
@@ -281,6 +348,52 @@ export default function RegisterScreen() {
                   </Text>
                 </Animated.View>
               )}
+
+              {/* First name */}
+              <View className="mb-[16px]">
+                <Text className="text-[14px] font-rubik text-neutral-700 mb-[6px]">
+                  שם פרטי
+                </Text>
+                <TextInput
+                  ref={firstNameInputRef}
+                  value={firstName}
+                  onChangeText={(text) => {
+                    setFirstName(text);
+                    if (errors.firstName) clearFieldError('firstName');
+                  }}
+                  onSubmitEditing={() => emailInputRef.current?.focus()}
+                  placeholder="ישראל"
+                  placeholderTextColor={COLORS.neutral[400]}
+                  autoCapitalize="words"
+                  autoComplete="given-name"
+                  textContentType="givenName"
+                  returnKeyType="next"
+                  editable={!isSubmitting}
+                  className={`
+                    h-[50px] rounded-[10px] px-[16px]
+                    text-[16px] font-rubik text-neutral-700
+                    bg-cream-50
+                    ${errors.firstName ? 'border-[1.5px] border-danger-500' : 'border-[1.5px] border-cream-300'}
+                    ${isSubmitting ? 'opacity-50' : ''}
+                  `}
+                  style={{ textAlign: 'right', writingDirection: 'rtl' }}
+                />
+                {errors.firstName && (
+                  <Animated.View
+                    entering={FadeInUp.duration(200)}
+                    className="flex-row items-center mt-[4px]"
+                  >
+                    <Feather
+                      name="alert-circle"
+                      size={16}
+                      color={COLORS.danger[700]}
+                    />
+                    <Text className="text-[13px] font-rubik text-danger-700 me-[4px]">
+                      {errors.firstName}
+                    </Text>
+                  </Animated.View>
+                )}
+              </View>
 
               {/* Full name */}
               <View className="mb-[16px]">
@@ -379,48 +492,52 @@ export default function RegisterScreen() {
                 <Text className="text-[14px] font-rubik text-neutral-700 mb-[6px]">
                   סיסמה
                 </Text>
-                <View className="relative">
-                  <TextInput
-                    ref={passwordInputRef}
-                    value={password}
-                    onChangeText={(text) => {
-                      setPassword(text);
-                      if (errors.password) clearFieldError('password');
-                    }}
-                    onSubmitEditing={() =>
-                      confirmPasswordInputRef.current?.focus()
+                <TextInput
+                  ref={passwordInputRef}
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    if (errors.password) clearFieldError('password');
+                  }}
+                  onSubmitEditing={() =>
+                    confirmPasswordInputRef.current?.focus()
+                  }
+                  placeholder="לפחות 8 תווים"
+                  placeholderTextColor={COLORS.neutral[400]}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="new-password"
+                  textContentType="newPassword"
+                  returnKeyType="next"
+                  editable={!isSubmitting}
+                  className={`
+                    h-[50px] rounded-[10px] px-[16px]
+                    text-[16px] font-rubik text-neutral-700
+                    bg-cream-50
+                    ${errors.password ? 'border-[1.5px] border-danger-500' : 'border-[1.5px] border-cream-300'}
+                    ${isSubmitting ? 'opacity-50' : ''}
+                  `}
+                  style={{ textAlign: 'right', writingDirection: 'ltr' }}
+                />
+                {/* Password helper text */}
+                <View className="flex-row-reverse items-center mt-[4px]">
+                  <Feather
+                    name={passwordValid ? 'check-circle' : 'info'}
+                    size={14}
+                    color={
+                      passwordValid ? COLORS.primary[500] : COLORS.neutral[400]
                     }
-                    placeholder="לפחות 8 תווים"
-                    placeholderTextColor={COLORS.neutral[400]}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    autoComplete="new-password"
-                    textContentType="newPassword"
-                    returnKeyType="next"
-                    editable={!isSubmitting}
-                    className={`
-                      h-[50px] rounded-[10px] px-[16px] pe-[48px]
-                      text-[16px] font-rubik text-neutral-700
-                      bg-cream-50
-                      ${errors.password ? 'border-[1.5px] border-danger-500' : 'border-[1.5px] border-cream-300'}
-                      ${isSubmitting ? 'opacity-50' : ''}
-                    `}
-                    style={{ textAlign: 'right', writingDirection: 'ltr' }}
                   />
-                  <Pressable
-                    onPress={() => setShowPassword(!showPassword)}
-                    className="absolute start-[12px] top-[13px] p-[2px]"
-                    hitSlop={8}
-                    accessibilityLabel={
-                      showPassword ? 'הסתר סיסמה' : 'הצג סיסמה'
-                    }
+                  <Text
+                    className="text-[12px] font-rubik me-[4px]"
+                    style={{
+                      color: passwordValid
+                        ? COLORS.primary[500]
+                        : COLORS.neutral[400],
+                    }}
                   >
-                    <Feather
-                      name={showPassword ? 'eye-off' : 'eye'}
-                      size={20}
-                      color={COLORS.neutral[400]}
-                    />
-                  </Pressable>
+                    לפחות 8 תווים, אות גדולה אחת ומספר אחד
+                  </Text>
                 </View>
                 {errors.password && (
                   <Animated.View
@@ -444,48 +561,32 @@ export default function RegisterScreen() {
                 <Text className="text-[14px] font-rubik text-neutral-700 mb-[6px]">
                   אימות סיסמה
                 </Text>
-                <View className="relative">
-                  <TextInput
-                    ref={confirmPasswordInputRef}
-                    value={confirmPassword}
-                    onChangeText={(text) => {
-                      setConfirmPassword(text);
-                      if (errors.confirmPassword)
-                        clearFieldError('confirmPassword');
-                    }}
-                    onSubmitEditing={() => orgNameInputRef.current?.focus()}
-                    placeholder="הקלד סיסמה שוב"
-                    placeholderTextColor={COLORS.neutral[400]}
-                    secureTextEntry={!showConfirmPassword}
-                    autoCapitalize="none"
-                    autoComplete="new-password"
-                    textContentType="newPassword"
-                    returnKeyType="next"
-                    editable={!isSubmitting}
-                    className={`
-                      h-[50px] rounded-[10px] px-[16px] pe-[48px]
-                      text-[16px] font-rubik text-neutral-700
-                      bg-cream-50
-                      ${errors.confirmPassword ? 'border-[1.5px] border-danger-500' : 'border-[1.5px] border-cream-300'}
-                      ${isSubmitting ? 'opacity-50' : ''}
-                    `}
-                    style={{ textAlign: 'right', writingDirection: 'ltr' }}
-                  />
-                  <Pressable
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute start-[12px] top-[13px] p-[2px]"
-                    hitSlop={8}
-                    accessibilityLabel={
-                      showConfirmPassword ? 'הסתר סיסמה' : 'הצג סיסמה'
-                    }
-                  >
-                    <Feather
-                      name={showConfirmPassword ? 'eye-off' : 'eye'}
-                      size={20}
-                      color={COLORS.neutral[400]}
-                    />
-                  </Pressable>
-                </View>
+                <TextInput
+                  ref={confirmPasswordInputRef}
+                  value={confirmPassword}
+                  onChangeText={(text) => {
+                    setConfirmPassword(text);
+                    if (errors.confirmPassword)
+                      clearFieldError('confirmPassword');
+                  }}
+                  onSubmitEditing={() => orgNameInputRef.current?.focus()}
+                  placeholder="הקלד סיסמה שוב"
+                  placeholderTextColor={COLORS.neutral[400]}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="new-password"
+                  textContentType="newPassword"
+                  returnKeyType="next"
+                  editable={!isSubmitting}
+                  className={`
+                    h-[50px] rounded-[10px] px-[16px]
+                    text-[16px] font-rubik text-neutral-700
+                    bg-cream-50
+                    ${errors.confirmPassword ? 'border-[1.5px] border-danger-500' : 'border-[1.5px] border-cream-300'}
+                    ${isSubmitting ? 'opacity-50' : ''}
+                  `}
+                  style={{ textAlign: 'right', writingDirection: 'ltr' }}
+                />
                 {errors.confirmPassword && (
                   <Animated.View
                     entering={FadeInUp.duration(200)}
@@ -498,6 +599,110 @@ export default function RegisterScreen() {
                     />
                     <Text className="text-[13px] font-rubik text-danger-700 me-[4px]">
                       {errors.confirmPassword}
+                    </Text>
+                  </Animated.View>
+                )}
+              </View>
+
+              {/* Profession selector */}
+              <View className="mb-[16px]">
+                <Text className="text-[14px] font-rubik text-neutral-700 mb-[6px]">
+                  תפקיד
+                </Text>
+                <Pressable
+                  onPress={() => setShowProfessionPicker(!showProfessionPicker)}
+                  disabled={isSubmitting}
+                  className={`
+                    h-[50px] rounded-[10px] px-[16px]
+                    flex-row-reverse items-center justify-between
+                    bg-cream-50
+                    ${errors.profession ? 'border-[1.5px] border-danger-500' : 'border-[1.5px] border-cream-300'}
+                    ${isSubmitting ? 'opacity-50' : ''}
+                  `}
+                >
+                  <Text
+                    className="text-[16px] font-rubik"
+                    style={{
+                      color: profession
+                        ? COLORS.neutral[700]
+                        : COLORS.neutral[400],
+                    }}
+                  >
+                    {profession
+                      ? PROFESSION_LABELS[profession]
+                      : 'בחר תפקיד...'}
+                  </Text>
+                  <Feather
+                    name={showProfessionPicker ? 'chevron-up' : 'chevron-down'}
+                    size={20}
+                    color={COLORS.neutral[400]}
+                  />
+                </Pressable>
+
+                {showProfessionPicker && (
+                  <Animated.View
+                    entering={FadeInUp.duration(200)}
+                    className="mt-[4px] rounded-[10px] border-[1px] border-cream-300 bg-cream-50 overflow-hidden"
+                  >
+                    {PROFESSIONS.map((p) => (
+                      <Pressable
+                        key={p}
+                        onPress={() => {
+                          setProfession(p);
+                          setShowProfessionPicker(false);
+                          if (errors.profession) clearFieldError('profession');
+                          if (Platform.OS !== 'web') {
+                            Haptics.impactAsync(
+                              Haptics.ImpactFeedbackStyle.Light
+                            );
+                          }
+                        }}
+                        className={`
+                          h-[44px] px-[16px] flex-row-reverse items-center
+                          border-b-[1px] border-cream-200
+                          ${profession === p ? 'bg-primary-50' : ''}
+                        `}
+                      >
+                        <Text
+                          className="text-[15px] font-rubik flex-1"
+                          style={{
+                            textAlign: 'right',
+                            color:
+                              profession === p
+                                ? COLORS.primary[700]
+                                : COLORS.neutral[700],
+                            fontFamily:
+                              profession === p
+                                ? 'Rubik-SemiBold'
+                                : 'Rubik-Regular',
+                          }}
+                        >
+                          {PROFESSION_LABELS[p]}
+                        </Text>
+                        {profession === p && (
+                          <Feather
+                            name="check"
+                            size={16}
+                            color={COLORS.primary[500]}
+                          />
+                        )}
+                      </Pressable>
+                    ))}
+                  </Animated.View>
+                )}
+
+                {errors.profession && (
+                  <Animated.View
+                    entering={FadeInUp.duration(200)}
+                    className="flex-row items-center mt-[4px]"
+                  >
+                    <Feather
+                      name="alert-circle"
+                      size={16}
+                      color={COLORS.danger[700]}
+                    />
+                    <Text className="text-[13px] font-rubik text-danger-700 me-[4px]">
+                      {errors.profession}
                     </Text>
                   </Animated.View>
                 )}

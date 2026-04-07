@@ -31,6 +31,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Toast } from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
+import { useOAuth } from '@/hooks/useOAuth';
+import { SocialAuthButtons } from '@/components/auth';
 
 // --- Field error type ---
 
@@ -43,11 +45,16 @@ interface FieldErrors {
 export default function LoginScreen() {
   const { signIn } = useAuth();
   const { toast, showToast, hideToast } = useToast();
+  const {
+    signInWithGoogle,
+    signInWithApple,
+    isLoading: oauthLoading,
+    loadingProvider,
+  } = useOAuth();
 
   // Form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -81,6 +88,35 @@ export default function LoginScreen() {
       withTiming(0, { duration: 60 })
     );
   }, [shakeX]);
+
+  // OAuth handlers
+  const handleGooglePress = useCallback(async () => {
+    const { error, needsCompletion } = await signInWithGoogle();
+    if (error) {
+      setErrors({ general: error });
+      triggerShake();
+      return;
+    }
+    if (needsCompletion) {
+      router.replace('/(auth)/complete-profile');
+    } else {
+      router.replace('/(app)');
+    }
+  }, [signInWithGoogle, triggerShake]);
+
+  const handleApplePress = useCallback(async () => {
+    const { error, needsCompletion } = await signInWithApple();
+    if (error) {
+      setErrors({ general: error });
+      triggerShake();
+      return;
+    }
+    if (needsCompletion) {
+      router.replace('/(auth)/complete-profile');
+    } else {
+      router.replace('/(app)');
+    }
+  }, [signInWithApple, triggerShake]);
 
   // Validate single field on blur
   const validateField = useCallback(
@@ -271,6 +307,19 @@ export default function LoginScreen() {
               </Text>
             </Animated.View>
 
+            {/* Social auth buttons */}
+            <Animated.View
+              entering={FadeInUp.delay(100).duration(500).springify()}
+              className="w-full mb-[8px]"
+            >
+              <SocialAuthButtons
+                onGooglePress={handleGooglePress}
+                onApplePress={handleApplePress}
+                isLoading={oauthLoading}
+                loadingProvider={loadingProvider}
+              />
+            </Animated.View>
+
             {/* Form */}
             <Animated.View
               entering={FadeInUp.delay(150).duration(500).springify()}
@@ -356,67 +405,42 @@ export default function LoginScreen() {
                 <Text className="text-[14px] font-rubik text-neutral-700 mb-[6px]">
                   סיסמה
                 </Text>
-                <View className="relative">
-                  <TextInput
-                    ref={passwordInputRef}
-                    value={password}
-                    onChangeText={(text) => {
-                      setPassword(text);
-                      if (errors.password) {
-                        setErrors((previous) => {
-                          const next = { ...previous };
-                          delete next.password;
-                          return next;
-                        });
-                      }
-                    }}
-                    onBlur={() => validateField('password')}
-                    onSubmitEditing={handleSubmit}
-                    placeholder="לפחות 8 תווים"
-                    placeholderTextColor={COLORS.neutral[400]}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    autoComplete="current-password"
-                    textContentType="password"
-                    returnKeyType="done"
-                    editable={!isSubmitting}
-                    className={`
-                      h-[50px] rounded-[10px] px-[16px] pe-[48px]
-                      text-[16px] font-rubik text-neutral-700
-                      bg-cream-50
-                      ${
-                        errors.password
-                          ? 'border-[1.5px] border-danger-500'
-                          : 'border-[1.5px] border-cream-300'
-                      }
-                      ${isSubmitting ? 'opacity-50' : ''}
-                    `}
-                    style={{ textAlign: 'right', writingDirection: 'ltr' }}
-                  />
-                  {/* Show/hide password toggle */}
-                  <Pressable
-                    onPress={() => setShowPassword(!showPassword)}
-                    className="absolute start-[12px] top-[13px] p-[2px]"
-                    hitSlop={8}
-                    accessibilityLabel={
-                      showPassword ? 'הסתר סיסמה' : 'הצג סיסמה'
+                <TextInput
+                  ref={passwordInputRef}
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    if (errors.password) {
+                      setErrors((previous) => {
+                        const next = { ...previous };
+                        delete next.password;
+                        return next;
+                      });
                     }
-                  >
-                    {showPassword ? (
-                      <Feather
-                        name="eye-off"
-                        size={20}
-                        color={COLORS.neutral[400]}
-                      />
-                    ) : (
-                      <Feather
-                        name="eye"
-                        size={20}
-                        color={COLORS.neutral[400]}
-                      />
-                    )}
-                  </Pressable>
-                </View>
+                  }}
+                  onBlur={() => validateField('password')}
+                  onSubmitEditing={handleSubmit}
+                  placeholder="לפחות 8 תווים"
+                  placeholderTextColor={COLORS.neutral[400]}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="current-password"
+                  textContentType="password"
+                  returnKeyType="done"
+                  editable={!isSubmitting}
+                  className={`
+                    h-[50px] rounded-[10px] px-[16px]
+                    text-[16px] font-rubik text-neutral-700
+                    bg-cream-50
+                    ${
+                      errors.password
+                        ? 'border-[1.5px] border-danger-500'
+                        : 'border-[1.5px] border-cream-300'
+                    }
+                    ${isSubmitting ? 'opacity-50' : ''}
+                  `}
+                  style={{ textAlign: 'right', writingDirection: 'ltr' }}
+                />
                 {errors.password && (
                   <Animated.View
                     entering={FadeInUp.duration(200)}
