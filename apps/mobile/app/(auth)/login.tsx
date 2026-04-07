@@ -515,7 +515,7 @@ export default function LoginScreen() {
                     `}
                   >
                     {isResetting ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
+                      <ActivityIndicator size="small" color={COLORS.white} />
                     ) : (
                       <Text className="text-white text-[14px] font-rubik-semibold">
                         שלח קישור איפוס
@@ -540,7 +540,7 @@ export default function LoginScreen() {
                   `}
                 >
                   {isSubmitting ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <ActivityIndicator size="small" color={COLORS.white} />
                   ) : (
                     <Text className="text-white text-[15px] font-rubik-semibold">
                       התחבר

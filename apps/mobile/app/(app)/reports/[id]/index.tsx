@@ -17,6 +17,8 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Toast } from '@/components/ui/Toast';
+import { SideMenu } from '@/components/ui/SideMenu';
+import { useSideMenu } from '@/hooks/useSideMenu';
 import { useToast } from '@/hooks/useToast';
 import { usePdfGeneration } from '@/hooks/usePdfGeneration';
 import { useReportStatus } from '@/hooks/useReportStatus';
@@ -28,10 +30,10 @@ import { ReportTabBar } from '@/components/reports/ReportTabBar';
 import { ReportSkeleton } from '@/components/reports/ReportSkeleton';
 import { ReportDetailsSection } from '@/components/reports/ReportDetailsSection';
 import { ReportHeaderBar } from '@/components/reports/ReportHeaderBar';
-import { ReportActionsBar } from '@/components/reports/ReportActionsBar';
 import { ReportInfoCard } from '@/components/reports/ReportInfoCard';
 import { PrePdfSummary } from '@/components/reports/PrePdfSummary';
 import { TenantSignatureScreen } from '@/components/reports/TenantSignatureScreen';
+import { SearchOverlay } from '@/components/reports/SearchOverlay';
 import type {
   CategoryGroup,
   TabKey,
@@ -45,6 +47,7 @@ export default function ReportDetailScreen() {
   const insets = useSafeAreaInsets();
   const { toast, showToast, hideToast } = useToast();
   const { profile } = useAuth();
+  const { isOpen: menuOpen, open: openMenu, close: closeMenu } = useSideMenu();
 
   const {
     report,
@@ -54,9 +57,9 @@ export default function ReportDetailScreen() {
     refetch,
   } = useReport(id);
 
-  // Protocol mesira → checklist is the main page
+  // Delivery reports → checklist is the main page
   useEffect(() => {
-    if (report?.reportType === 'protocol_mesira' && id) {
+    if (report?.reportType === 'delivery' && id) {
       router.replace(`/(app)/reports/${id}/checklist`);
     }
   }, [report?.reportType, id, router]);
@@ -75,9 +78,10 @@ export default function ReportDetailScreen() {
   const [_pdfUri, setPdfUri] = useState<string | null>(null);
   const [showSummary, setShowSummary] = useState(false);
   const [showTenantSignature, setShowTenantSignature] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const [pdfAction, setPdfAction] = useState<'generate' | 'share'>('generate');
 
-  const { isGenerating, isSharing, generatePdf, sharePdf } = usePdfGeneration(
+  const { generatePdf, sharePdf } = usePdfGeneration(
     (msg) => showToast(msg, 'success'),
     (msg) => showToast(msg, 'error')
   );
@@ -199,13 +203,6 @@ export default function ReportDetailScreen() {
     [id, router]
   );
 
-  const navigateToChecklist = useCallback(() => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    router.push(`/(app)/reports/${id}/checklist`);
-  }, [id, router]);
-
   const statusConfig =
     STATUS_CONFIG[report?.status ?? 'draft'] ?? STATUS_CONFIG.draft;
   const subtitle = report
@@ -321,19 +318,6 @@ export default function ReportDetailScreen() {
     [id, report, markCompleted, reopenForEditing, transitionToDraft, refetch]
   );
 
-  const handleCamera = useCallback(() => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-  }, []);
-
-  const handleLibrary = useCallback(() => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    router.push('/(app)/library');
-  }, [router]);
-
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.cream[50] }}>
       <StatusBar style="light" />
@@ -352,8 +336,20 @@ export default function ReportDetailScreen() {
         topInset={insets.top}
         status={(report?.status as ReportStatus) ?? 'draft'}
         isStatusUpdating={isStatusUpdating}
-        onBack={() => router.back()}
+        onMenu={openMenu}
         onStatusChange={handleStatusChange}
+        reportTitle={
+          report
+            ? `${report.reportType === 'bedek_bait' ? 'בדק בית' : 'פרוטוקול מסירה'} — דירה ${report.apartmentNumber}`
+            : undefined
+        }
+        projectName={report?.projectName ?? report?.address ?? undefined}
+        inspectorName={profile?.fullName ?? undefined}
+        reportDate={report?.reportDate ?? undefined}
+        onPreview={handleGeneratePdf}
+        onShare={handleSharePdf}
+        onSettings={() => showToast('הגדרות דוח — בקרוב', 'info')}
+        onDownload={handleGeneratePdf}
       />
 
       {isLoading ? (
@@ -375,7 +371,7 @@ export default function ReportDetailScreen() {
             onCta={() => refetch()}
           />
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => router.replace('/(app)/reports')}
             style={{
               marginTop: 12,
               paddingVertical: 8,
@@ -397,7 +393,7 @@ export default function ReportDetailScreen() {
         <>
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            contentContainerStyle={{ paddingBottom: 32 }}
           >
             {/* Report Info Card */}
             {report && (
@@ -466,18 +462,7 @@ export default function ReportDetailScreen() {
             </View>
           </ScrollView>
 
-          <ReportActionsBar
-            bottomInset={insets.bottom}
-            defectsCount={defects.length}
-            isGenerating={isGenerating}
-            isSharing={isSharing}
-            onGeneratePdf={handleGeneratePdf}
-            onSharePdf={handleSharePdf}
-            onChecklist={navigateToChecklist}
-            onAddDefect={() => navigateToAddDefect()}
-            onCamera={handleCamera}
-            onLibrary={handleLibrary}
-          />
+          {/* No footer for bedek_bait — the 4 SubHeader buttons handle all actions */}
 
           {/* Summary modal */}
           {report && (
@@ -501,8 +486,21 @@ export default function ReportDetailScreen() {
               onClose={() => setShowTenantSignature(false)}
             />
           )}
+
+          {/* Search overlay */}
+          {showSearch && (
+            <SearchOverlay
+              defects={defects}
+              onSelect={(_defectId) => {
+                setShowSearch(false);
+              }}
+              onClose={() => setShowSearch(false)}
+            />
+          )}
         </>
       )}
+
+      <SideMenu visible={menuOpen} onClose={closeMenu} />
     </View>
   );
 }

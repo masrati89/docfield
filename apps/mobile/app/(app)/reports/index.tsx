@@ -46,7 +46,8 @@ export default function ReportsScreen() {
   const [showWizard, setShowWizard] = useState(false);
   const { isOpen: menuOpen, open: _openMenu, close: closeMenu } = useSideMenu();
 
-  const hasActiveFilters = typeFilter !== 'all' || sortBy !== 'date';
+  const hasActiveFilters =
+    typeFilter !== 'all' || statusFilter !== 'all' || sortBy !== 'date';
 
   const onRefresh = useCallback(() => {
     refetch();
@@ -170,7 +171,7 @@ export default function ReportsScreen() {
                 : 'עדיין לא יצרת דוחות.\nלחץ על + כדי להתחיל.'
             }
             ctaLabel="בדיקה חדשה"
-            onCta={() => router.push('/(app)/projects')}
+            onCta={() => setShowWizard(true)}
           />
         </View>
       );

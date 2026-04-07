@@ -29,6 +29,8 @@ import { SubHeader, ProgressStrip, ApartmentRow } from '@/components/projects';
 import { NewInspectionWizard } from '@/components/wizard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/useToast';
+import { useSideMenu } from '@/hooks/useSideMenu';
+import { SideMenu } from '@/components/ui/SideMenu';
 
 import type { WizardPrefill } from '@/components/wizard/NewInspectionWizard.types';
 
@@ -278,6 +280,7 @@ export default function ApartmentsScreen() {
   const router = useRouter();
   const { profile } = useAuth();
   const { toast, showToast, hideToast } = useToast();
+  const { isOpen: menuOpen, open: openMenu, close: closeMenu } = useSideMenu();
   const insets = useSafeAreaInsets();
 
   // Wizard state
@@ -507,7 +510,7 @@ export default function ApartmentsScreen() {
       <SubHeader
         title={title}
         subtitle={info?.address ?? undefined}
-        onBack={() => router.back()}
+        onMenu={openMenu}
       />
 
       {isLoading ? (
@@ -655,6 +658,8 @@ export default function ApartmentsScreen() {
           onDismiss={hideToast}
         />
       )}
+
+      <SideMenu visible={menuOpen} onClose={closeMenu} />
     </View>
   );
 }

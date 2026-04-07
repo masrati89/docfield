@@ -3,8 +3,8 @@ import { View, Text, Pressable, Platform, Modal } from 'react-native';
 import Animated, {
   FadeIn,
   FadeOut,
-  SlideInLeft,
-  SlideOutLeft,
+  SlideInRight,
+  SlideOutRight,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -107,8 +107,8 @@ export function SideMenu({ visible, onClose }: SideMenuProps) {
 
       {/* Menu Panel — slides in from the left (RTL: menu is on the right edge) */}
       <Animated.View
-        entering={SlideInLeft.duration(320).springify()}
-        exiting={SlideOutLeft.duration(260)}
+        entering={SlideInRight.duration(320).springify()}
+        exiting={SlideOutRight.duration(260)}
         style={{
           position: 'absolute',
           top: 0,
@@ -182,7 +182,7 @@ export function SideMenu({ visible, onClose }: SideMenuProps) {
                 style={{
                   fontSize: 18,
                   fontFamily: 'Rubik-Bold',
-                  color: '#FFFFFF',
+                  color: COLORS.white,
                 }}
               >
                 {avatarLetter}

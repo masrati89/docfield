@@ -18,7 +18,6 @@ import {
   StatsStrip,
   ReportsSection,
   ProjectsSection,
-  ToolGrid,
 } from '@/components/home';
 
 // --- Types ---
@@ -241,12 +240,6 @@ export default function HomeScreen() {
                 }}
               />
             )}
-
-            <ToolGrid
-              onToolPress={() =>
-                Alert.alert('בקרוב', 'פיצ׳ר זה יהיה זמין בקרוב')
-              }
-            />
           </>
         )}
       </ScrollView>

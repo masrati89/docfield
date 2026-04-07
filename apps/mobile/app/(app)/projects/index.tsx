@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { SideMenu } from '@/components/ui/SideMenu';
 import { BottomSheetWrapper } from '@/components/ui/BottomSheetWrapper';
 import { useProjects } from '@/hooks/useProjects';
+import { useDeleteProject } from '@/hooks/useDeleteProject';
 import { useSideMenu } from '@/hooks/useSideMenu';
 import {
   Header,
@@ -33,6 +34,7 @@ import type { ProjectItem } from '@/hooks/useProjects';
 export default function ProjectsScreen() {
   const router = useRouter();
   const { projects, isLoading, isRefreshing, error, refetch } = useProjects();
+  const handleDeleteProject = useDeleteProject(projects, refetch);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -129,9 +131,13 @@ export default function ProjectsScreen() {
 
   const renderProjectItem = useCallback(
     ({ item }: { item: ProjectItem }) => (
-      <ProjectCard item={item} onPress={() => handleProjectPress(item)} />
+      <ProjectCard
+        item={item}
+        onPress={() => handleProjectPress(item)}
+        onDelete={handleDeleteProject}
+      />
     ),
-    [handleProjectPress]
+    [handleProjectPress, handleDeleteProject]
   );
 
   const keyExtractor = useCallback((item: ProjectItem) => item.id, []);
@@ -163,6 +169,7 @@ export default function ProjectsScreen() {
         renderItem={renderProjectItem}
         keyExtractor={keyExtractor}
         scrollEnabled={false}
+        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 12,

@@ -109,7 +109,7 @@ export function ChecklistHeader({
                   <Text
                     style={{
                       fontSize: 10,
-                      color: '#FFFFFF',
+                      color: COLORS.white,
                       fontWeight: '500',
                       fontFamily: 'Rubik-Medium',
                     }}

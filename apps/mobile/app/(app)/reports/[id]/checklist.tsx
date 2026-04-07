@@ -8,7 +8,8 @@ import {
   Alert,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -17,6 +18,8 @@ import type BottomSheetType from '@gorhom/bottom-sheet';
 import { COLORS } from '@infield/ui';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { SideMenu } from '@/components/ui/SideMenu';
+import { useSideMenu } from '@/hooks/useSideMenu';
 import { SkeletonBlock, BottomSheetWrapper } from '@/components/ui';
 import { Toast } from '@/components/ui/Toast';
 import {
@@ -37,11 +40,11 @@ import { useToast } from '@/hooks/useToast';
 
 export default function ChecklistScreen() {
   const { id: reportId } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { profile } = useAuth();
   const organizationId = profile?.organizationId;
   const { toast, showToast, hideToast } = useToast();
+  const { isOpen: menuOpen, open: openMenu, close: closeMenu } = useSideMenu();
 
   // Report data
   const {
@@ -66,7 +69,7 @@ export default function ChecklistScreen() {
     (msg) => showToast(msg, 'error')
   );
 
-  // Checklist state
+  // Checklist state — loaded from and persisted to delivery_reports.checklist_state
   const {
     openRooms,
     statuses,
@@ -74,12 +77,13 @@ export default function ChecklistScreen() {
     bathTypes,
     activeDefect,
     stats,
+    isLoadingState,
     toggleRoom,
     setItemStatus,
     setDefectText,
     setBathType,
     setActiveDefect,
-  } = useChecklist();
+  } = useChecklist(reportId, (msg) => showToast(msg, 'error'));
 
   // Sheet states
   const [showAddDefect, setShowAddDefect] = useState(false);
@@ -216,12 +220,14 @@ export default function ChecklistScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Green header bar */}
-        <View
+        <LinearGradient
+          colors={[COLORS.primary[700], COLORS.primary[600]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={{
             paddingTop: insets.top + 12,
             paddingHorizontal: 16,
             paddingBottom: 12,
-            backgroundColor: COLORS.primary[700],
           }}
         >
           <View
@@ -231,6 +237,21 @@ export default function ChecklistScreen() {
               justifyContent: 'space-between',
             }}
           >
+            {/* Menu button (right in RTL — first in row-reverse) */}
+            <Pressable
+              onPress={openMenu}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(255,255,255,0.15)',
+              }}
+            >
+              <Feather name="menu" size={20} color={COLORS.white} />
+            </Pressable>
+
             {/* App title + subtitle */}
             <View style={{ flex: 1 }}>
               <View
@@ -296,23 +317,8 @@ export default function ChecklistScreen() {
                 </Text>
               ) : null}
             </View>
-
-            {/* Back button */}
-            <Pressable
-              onPress={() => router.back()}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'rgba(255,255,255,0.15)',
-              }}
-            >
-              <Feather name="arrow-left" size={20} color={COLORS.white} />
-            </Pressable>
           </View>
-        </View>
+        </LinearGradient>
 
         {/* Report card */}
         <ChecklistHeader
@@ -333,7 +339,7 @@ export default function ChecklistScreen() {
 
         {/* Rooms */}
         <View style={{ padding: 12, paddingTop: 8 }}>
-          {reportLoading ? (
+          {reportLoading || isLoadingState ? (
             <View style={{ gap: 8 }}>
               {[1, 2, 3, 4, 5].map((i) => (
                 <SkeletonBlock
@@ -414,6 +420,8 @@ export default function ChecklistScreen() {
           />
         </BottomSheetWrapper>
       )}
+
+      <SideMenu visible={menuOpen} onClose={closeMenu} />
     </View>
   );
 }

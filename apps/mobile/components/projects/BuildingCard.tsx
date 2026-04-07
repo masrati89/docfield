@@ -6,10 +6,14 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSpring,
   Easing,
 } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 // --- Types ---
 
@@ -41,6 +45,11 @@ export const BuildingCard = React.memo(function BuildingCard({
       : 0;
   const isFull = pct === 100;
 
+  const pressScale = useSharedValue(1);
+  const pressAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pressScale.value }],
+  }));
+
   const progressWidth = useSharedValue(0);
 
   useEffect(() => {
@@ -55,17 +64,27 @@ export const BuildingCard = React.memo(function BuildingCard({
   }));
 
   return (
-    <Animated.View entering={FadeInUp.delay(60 * index).duration(200)}>
-      <Pressable
+    <Animated.View
+      entering={FadeInUp.delay(60 * index).duration(200)}
+      style={pressAnimStyle}
+    >
+      <AnimatedPressable
         onPress={onPress}
-        style={({ pressed }) => ({
+        onPressIn={() => {
+          pressScale.value = withSpring(0.98);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }}
+        onPressOut={() => {
+          pressScale.value = withSpring(1);
+        }}
+        style={{
           flexDirection: 'row-reverse',
           backgroundColor: COLORS.cream[50],
           borderWidth: 1,
-          borderColor: pressed ? COLORS.primary[200] : COLORS.cream[200],
+          borderColor: COLORS.cream[200],
           borderRadius: BORDER_RADIUS.lg,
           overflow: 'hidden',
-        })}
+        }}
       >
         {/* Accent bar */}
         <View
@@ -243,7 +262,7 @@ export const BuildingCard = React.memo(function BuildingCard({
             </Text>
           </View>
         </View>
-      </Pressable>
+      </AnimatedPressable>
     </Animated.View>
   );
 });

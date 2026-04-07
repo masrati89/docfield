@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
+import { COLORS } from '@infield/ui';
 import { useRouter } from 'expo-router';
 
 import type { ReportType } from './NewInspectionSheet.types';
@@ -107,7 +108,7 @@ export function NewInspectionSheet({
               className="w-[36px] h-[36px] rounded-md items-center justify-center bg-cream-100 border border-cream-200"
               accessibilityLabel="סגור"
             >
-              <Feather name="x" size={20} color="#5C5852" />
+              <Feather name="x" size={20} color={COLORS.neutral[600]} />
             </Pressable>
           </View>
 
@@ -152,7 +153,9 @@ export function NewInspectionSheet({
                     <Feather
                       name={type.icon}
                       size={20}
-                      color={isSelected ? '#1B7A44' : '#7A766F'}
+                      color={
+                        isSelected ? COLORS.primary[500] : COLORS.neutral[500]
+                      }
                     />
                   </View>
 
@@ -193,7 +196,7 @@ export function NewInspectionSheet({
             <Feather
               name="arrow-left"
               size={16}
-              color={selectedType ? '#FFFFFF' : '#A8A49D'}
+              color={selectedType ? COLORS.white : COLORS.neutral[400]}
               style={{ marginEnd: 8 }}
             />
           </Pressable>

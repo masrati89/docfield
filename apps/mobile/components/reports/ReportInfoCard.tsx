@@ -215,7 +215,7 @@ export function ReportInfoCard({
             gap: 3,
           }}
         >
-          <Feather name="camera" size={16} color={COLORS.neutral[400]} />
+          <Feather name="camera" size={12} color={COLORS.neutral[400]} />
           <Text
             style={{
               fontSize: 10,

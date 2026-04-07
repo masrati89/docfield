@@ -80,7 +80,7 @@ async function fetchReport(id: string): Promise<ReportDetail> {
   const { data: defectsData, error: defectsError } = await supabase
     .from('defects')
     .select(
-      'id, description, room, category, severity, status, standard_ref, defect_photos(id)'
+      'id, description, room, category, severity, status, standard_reference, defect_photos(id)'
     )
     .eq('delivery_report_id', id)
     .order('sort_order')
@@ -98,7 +98,7 @@ async function fetchReport(id: string): Promise<ReportDetail> {
         category: d.category as string | null,
         severity: d.severity as string,
         status: d.status as string,
-        standardRef: d.standard_ref as string | null,
+        standardRef: d.standard_reference as string | null,
         photoCount: photos.length,
       };
     }
@@ -116,6 +116,9 @@ export function useReport(id: string | undefined) {
     queryKey: reportKeys.detail(id ?? ''),
     queryFn: () => fetchReport(id!),
     enabled: !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 2,
   });
 
   const refetch = async () => {

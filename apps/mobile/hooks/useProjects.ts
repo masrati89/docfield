@@ -40,7 +40,14 @@ async function fetchProjects(): Promise<ProjectItem[]> {
 
   if (error) throw error;
 
-  // Fetch open defect counts per project
+  // Fetch open defect counts per project (scoped to user's org via RLS + explicit filter)
+  const { data: userData } = await supabase.auth.getUser();
+  const { data: profileData } = await supabase
+    .from('users')
+    .select('organization_id')
+    .eq('id', userData.user?.id ?? '')
+    .single();
+
   const { data: defectsData } = await supabase
     .from('defects')
     .select(
@@ -50,6 +57,7 @@ async function fetchProjects(): Promise<ProjectItem[]> {
         )
       )`
     )
+    .eq('organization_id', profileData?.organization_id ?? '')
     .in('status', ['open', 'in_progress']);
 
   const defectsByProject = new Map<string, number>();
@@ -101,6 +109,9 @@ export function useProjects() {
   const query = useQuery({
     queryKey: projectsKeys.list(),
     queryFn: fetchProjects,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 2,
   });
 
   const refetch = async () => {

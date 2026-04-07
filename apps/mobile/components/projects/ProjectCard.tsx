@@ -17,9 +17,11 @@ import type { ProjectItem } from '@/hooks/useProjects';
 export function ProjectCard({
   item,
   onPress: onCardPress,
+  onDelete,
 }: {
   item: ProjectItem;
   onPress: () => void;
+  onDelete?: (id: string) => void;
 }) {
   const pct =
     item.totalApts > 0
@@ -47,6 +49,10 @@ export function ProjectCard({
       onPress={() => {
         haptic();
         onCardPress();
+      }}
+      onLongPress={() => {
+        haptic();
+        onDelete?.(item.id);
       }}
       style={[
         {

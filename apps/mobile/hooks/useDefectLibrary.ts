@@ -34,33 +34,34 @@ export const defectLibraryKeys = {
 };
 
 // --- Fetcher ---
+// DB schema (migration 008): id, organization_id, description, category,
+// default_severity, standard_reference, is_global, created_at
 
 async function fetchDefectLibrary(
-  userId: string
+  _userId: string
 ): Promise<DefectLibraryItem[]> {
   const { data, error } = await supabase
     .from('defect_library')
     .select(
-      'id, title, category, location, standard_ref, recommendation, cost, cost_unit, notes, source, user_id'
+      'id, description, category, standard_reference, is_global, organization_id'
     )
-    .or(`source.eq.system,user_id.eq.${userId}`)
-    .order('source')
-    .order('title');
+    .order('category')
+    .order('description');
 
   if (error) throw error;
 
   return (data ?? []).map((d: Record<string, unknown>) => ({
     id: d.id as string,
-    title: d.title as string,
+    title: (d.description as string) ?? '',
     category: (d.category as string) ?? '',
-    location: (d.location as string) ?? '',
-    standardRef: d.standard_ref as string | null,
-    recommendation: d.recommendation as string | null,
-    cost: d.cost as number | null,
-    costUnit: d.cost_unit as string | null,
-    notes: d.notes as string | null,
-    source: d.source as 'system' | 'user',
-    userId: d.user_id as string | null,
+    location: '',
+    standardRef: (d.standard_reference as string) ?? null,
+    recommendation: null,
+    cost: null,
+    costUnit: null,
+    notes: null,
+    source: (d.is_global as boolean) ? ('system' as const) : ('user' as const),
+    userId: null,
   }));
 }
 
@@ -78,6 +79,9 @@ export function useDefectLibrary() {
     queryKey: defectLibraryKeys.list(),
     queryFn: () => fetchDefectLibrary(userId),
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 2,
   });
 
   const items = useMemo(() => query.data ?? [], [query.data]);
@@ -86,7 +90,7 @@ export function useDefectLibrary() {
   const fuse = useMemo(
     () =>
       new Fuse(items, {
-        keys: ['title', 'category', 'location'],
+        keys: ['title', 'category'],
         threshold: 0.4,
         ignoreLocation: true,
       }),
@@ -126,8 +130,7 @@ export function useDefectLibrary() {
         .from('defect_library')
         .delete()
         .eq('id', itemId)
-        .eq('source', 'user')
-        .eq('user_id', userId);
+        .eq('is_global', false);
 
       if (error) throw error;
     },
@@ -151,16 +154,10 @@ export function useDefectLibrary() {
       if (!userData?.organization_id) throw new Error('לא נמצא ארגון למשתמש');
 
       const { error } = await supabase.from('defect_library').insert({
-        title: item.title,
+        description: item.title,
         category: item.category,
-        location: item.location,
-        standard_ref: item.standardRef,
-        recommendation: item.recommendation,
-        cost: item.cost,
-        cost_unit: item.costUnit,
-        notes: item.notes,
-        source: 'user',
-        user_id: userId,
+        standard_reference: item.standardRef,
+        is_global: false,
         organization_id: userData.organization_id,
       });
 
@@ -181,25 +178,17 @@ export function useDefectLibrary() {
       updates: Partial<Omit<DefectLibraryItem, 'id' | 'source' | 'userId'>>;
     }) => {
       const updateData: Record<string, unknown> = {};
-      if (updates.title !== undefined) updateData.title = updates.title;
+      if (updates.title !== undefined) updateData.description = updates.title;
       if (updates.category !== undefined)
         updateData.category = updates.category;
-      if (updates.location !== undefined)
-        updateData.location = updates.location;
       if (updates.standardRef !== undefined)
-        updateData.standard_ref = updates.standardRef;
-      if (updates.recommendation !== undefined)
-        updateData.recommendation = updates.recommendation;
-      if (updates.cost !== undefined) updateData.cost = updates.cost;
-      if (updates.costUnit !== undefined)
-        updateData.cost_unit = updates.costUnit;
-      if (updates.notes !== undefined) updateData.notes = updates.notes;
+        updateData.standard_reference = updates.standardRef;
 
       const { error } = await supabase
         .from('defect_library')
         .update(updateData)
         .eq('id', itemId)
-        .eq('source', 'user');
+        .eq('is_global', false);
 
       if (error) throw error;
     },

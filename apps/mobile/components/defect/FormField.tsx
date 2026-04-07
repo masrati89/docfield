@@ -41,7 +41,7 @@ export function FormField({
           }}
         >
           {icon ? (
-            <Feather name={icon} size={16} color={COLORS.neutral[400]} />
+            <Feather name={icon} size={13} color={COLORS.neutral[400]} />
           ) : null}
           <Text
             style={{
@@ -66,7 +66,7 @@ export function FormField({
           ) : null}
         </View>
         {filled ? (
-          <Feather name="check" size={16} color={COLORS.primary[500]} />
+          <Feather name="check" size={12} color={COLORS.primary[500]} />
         ) : null}
       </View>
 

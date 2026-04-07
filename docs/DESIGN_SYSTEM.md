@@ -174,7 +174,7 @@ const shadow = {
 
 ## 7. ANIMATION & INTERACTION
 
-### Animation Types
+### Animation Types (CSS — for web/PDF)
 
 | Animation               | CSS                                                                                                           |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -184,13 +184,46 @@ const shadow = {
 | Accordion               | `max-height` transition — 0.3s ease                                                                           |
 | Hover scale             | `transform: scale(1.02)` — 0.1s                                                                               |
 
+### React Native Animation Patterns (react-native-reanimated)
+
+**These are the actual implementations used in the mobile app. Use these exact patterns.**
+
+| Pattern                 | Reanimated Code                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Accordion content open  | `<Animated.View entering={FadeInDown.duration(250)}>`                                                              |
+| Accordion content close | `<Animated.View exiting={FadeOutUp.duration(200)}>`                                                                |
+| List item stagger       | `<Animated.View entering={FadeInUp.delay(60 * index).duration(200)}>`                                              |
+| Section stagger         | Header: `FadeInDown.duration(200)`, Search: `.delay(50)`, Chips: `.delay(100)`                                     |
+| Chevron rotation        | `useAnimatedStyle(() => ({ transform: [{ rotate: withTiming(isOpen ? '180deg' : '0deg', { duration: 200 }) }] }))` |
+| Progress bar fill       | `withTiming(targetWidth, { duration: 600, easing: Easing.bezier(.25,.1,.25,1) })`                                  |
+| Counter number          | `useSharedValue(0)` + `withTiming(target)` + `useAnimatedReaction` + `runOnJS(setDisplayValue)`                    |
+| Press feedback          | `withSpring(0.98)` on press in, `withSpring(1)` on press out                                                       |
+| FAB press               | `withSpring(0.92)` scale + `Haptics.impactAsync(Light)`                                                            |
+
 ### Design Principles
 
-- ✅ **Spring animations** (cubic-bezier) — לא linear/ease
-- ✅ **Skeleton loading** — לא spinners
-- ✅ **Haptic feedback** — ויברציה קצרה בלחיצה על תקין/לא תקין בצ'קליסט
-- ✅ **Staggered entrance animations** — אלמנטים נכנסים אחד אחרי השני
+- ✅ **Spring animations** (withSpring / cubic-bezier) — לא linear/ease
+- ✅ **Skeleton loading** — לא spinners (use SkeletonBlock component)
+- ✅ **Haptic feedback** — `Haptics.impactAsync(Light)` על כל אלמנט אינטראקטיבי
+- ✅ **Staggered entrance animations** — `FadeInUp.delay(60 * index)` בכל רשימה
+- ✅ **Accordion animation** — `FadeInDown` / `FadeOutUp` + chevron rotation
+- ✅ **Press scale** — `scale(0.98)` spring על כל Pressable
+- ✅ **Progress animation** — withTiming עם bezier easing על כל progress bar
 - ✅ **First-time hints** — "החלק שמאלה" מופיע פעם אחת ונעלם
+
+### Icon Size Guide (Feather icons)
+
+| Context                                | Size    | Example                              |
+| -------------------------------------- | ------- | ------------------------------------ |
+| Inline metadata (next to 10-12px text) | 10-12px | clock, map-pin, camera in list items |
+| Inline labels (next to 13-14px text)   | 14px    | chevron in rows, status icons        |
+| Toolbar / action buttons               | 20px    | edit, share, download in headers     |
+| Header icons                           | 20-24px | bell, menu, back arrow               |
+| Tab bar                                | 22px    | home, file-text, folder, settings    |
+| FAB                                    | 24px    | plus icon                            |
+| Empty state                            | 48-64px | illustration icon                    |
+
+**Rule:** Icon size must MATCH the font size of adjacent text. Never use 16px icons next to 10px text.
 
 ---
 
@@ -345,14 +378,28 @@ Used for: קטגוריה, ממצא, מיקום, תקן, המלצה
 
 ### FAB (Floating Action Button)
 
-- Position: absolute bottom 80px (with tab bar) or 28px (without), left 16px
-- Size: 48×48px default, expands to ~148px on hover
-- Border-radius: 14px
-- Background: `g500` (hover: `g600`)
-- Shadow: `0 4px 16px rgba(27,122,68,.3)`
-- Expanded: icon + label text (12px, 600, Rubik)
-- Transition: `all 0.3s cubic-bezier(.22,1,.36,1)`
+- Position: absolute bottom 80px (with tab bar) or 28px (without), left 16px (RTL: visual right)
+- Size: 48×48px, borderRadius: 24 (perfect circle)
+- Background: `g500` (#1B7A44)
+- Shadow: `0 4px 16px rgba(27,122,68,.3)` — green-tinted, NOT generic gray
+- Icon: Feather "plus", 24px, white
+- Press: `scale(0.92)` spring + `Haptics.impactAsync(Light)`
 - z-index: 25
+
+**React Native implementation:**
+
+```typescript
+<Pressable style={{
+  position: 'absolute', bottom: 80, left: 16,
+  width: 48, height: 48, borderRadius: 24,
+  backgroundColor: '#1B7A44',
+  alignItems: 'center', justifyContent: 'center',
+  boxShadow: '0 4px 16px rgba(27,122,68,.3)',
+  zIndex: 25,
+}}>
+  <Feather name="plus" size={24} color="white" />
+</Pressable>
+```
 
 ### Search Bar
 

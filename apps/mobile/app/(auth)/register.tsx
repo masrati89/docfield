@@ -564,7 +564,7 @@ export default function RegisterScreen() {
                   `}
                 >
                   {isSubmitting ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <ActivityIndicator size="small" color={COLORS.white} />
                   ) : (
                     <Text className="text-white text-[15px] font-rubik-semibold">
                       צור חשבון

@@ -83,7 +83,8 @@ export function useDeleteReport(reports: ReportItem[], refetch: () => void) {
 
                 // Refresh list from server
                 refetch();
-              } catch {
+              } catch (err) {
+                console.error('[DeleteReport]', err);
                 Alert.alert('שגיאה', 'לא הצלחנו למחוק את הדוח. נסה שוב.');
               }
             },

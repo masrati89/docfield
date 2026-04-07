@@ -14,6 +14,7 @@ interface ReportActionsBarProps {
   onAddDefect: () => void;
   onCamera: () => void;
   onLibrary: () => void;
+  onSearch?: () => void;
 }
 
 export function ReportActionsBar({
@@ -27,6 +28,7 @@ export function ReportActionsBar({
   onAddDefect,
   onCamera,
   onLibrary,
+  onSearch,
 }: ReportActionsBarProps) {
   return (
     <View
@@ -184,7 +186,7 @@ export function ReportActionsBar({
 
         {/* Search button */}
         <Pressable
-          onPress={onLibrary}
+          onPress={onSearch ?? onLibrary}
           style={{
             width: 44,
             height: 44,

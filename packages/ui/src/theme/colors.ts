@@ -31,6 +31,7 @@ export const COLORS = {
     100: '#FDF4E7',
     300: '#F0C66B',
     500: '#C8952E',
+    600: '#92600A',
     700: '#8B6514',
   },
 
@@ -57,12 +58,14 @@ export const COLORS = {
 
   danger: {
     50: '#FEF2F2',
+    200: '#F5C6C6',
     500: '#EF4444',
     700: '#B91C1C',
   },
 
   warning: {
-    50: '#FFFBEB',
+    50: '#FEFAED',
+    200: '#F0DCA0',
     500: '#F59E0B',
     700: '#B45309',
   },

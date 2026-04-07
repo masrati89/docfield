@@ -161,7 +161,8 @@ export function CheckItem({
             <Text
               style={{
                 fontSize: 11,
-                color: status === 'defect' ? '#b91c1c' : '#92600a',
+                color:
+                  status === 'defect' ? COLORS.danger[700] : COLORS.gold[600],
                 marginTop: 2,
                 lineHeight: 16,
                 opacity: 0.8,
@@ -290,9 +291,9 @@ function DefectInput({
   onSave: () => void;
 }) {
   const isDefect = status === 'defect';
-  const accentColor = isDefect ? '#b91c1c' : '#92600a';
-  const borderColor = isDefect ? '#f5c6c6' : '#f0dca0';
-  const bgColor = isDefect ? '#fef2f2' : '#fefaed';
+  const accentColor = isDefect ? COLORS.danger[700] : COLORS.gold[600];
+  const borderColor = isDefect ? COLORS.danger[200] : COLORS.warning[200];
+  const bgColor = isDefect ? COLORS.danger[50] : COLORS.warning[50];
   const canSave = !!defectText.trim();
 
   return (
@@ -362,12 +363,12 @@ function DefectInput({
           gap: 6,
         }}
       >
-        <Feather name="check" size={16} color="#FFFFFF" />
+        <Feather name="check" size={16} color={COLORS.white} />
         <Text
           style={{
             fontSize: 13,
             fontWeight: '600',
-            color: '#FFFFFF',
+            color: COLORS.white,
             fontFamily: 'Rubik-SemiBold',
           }}
         >

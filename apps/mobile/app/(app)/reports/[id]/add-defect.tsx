@@ -95,12 +95,23 @@ export default function AddDefectScreen() {
   const [addedToLibrary, setAddedToLibrary] = useState(false);
 
   const suggestions = useMemo(() => {
-    if (!description.trim() || description.trim().length < 2) return [];
+    // Start with items filtered by selected category (if any)
+    let pool = libraryItems;
+    if (category) {
+      pool = pool.filter((item) => item.category === category);
+    }
+
+    // If no text yet, show all items for this category (up to 10)
+    if (!description.trim()) {
+      return pool.slice(0, 10);
+    }
+
+    // Filter by typed text
     const query = description.trim().toLowerCase();
-    return libraryItems
+    return pool
       .filter((item) => item.title.toLowerCase().includes(query))
-      .slice(0, 5);
-  }, [description, libraryItems]);
+      .slice(0, 10);
+  }, [description, libraryItems, category]);
 
   // Build a lookup map for standard descriptions (used by suggestion + standard picker)
   const standardDescMap = useMemo(() => {
@@ -520,18 +531,18 @@ export default function AddDefectScreen() {
             {entrySource === 'library' && (
               <View
                 style={{
-                  backgroundColor: COLORS.primary[50],
+                  backgroundColor: COLORS.gold[100],
                   borderRadius: BORDER_RADIUS.sm,
                   paddingHorizontal: 8,
                   paddingVertical: 3,
                   borderWidth: 1,
-                  borderColor: COLORS.primary[200],
+                  borderColor: COLORS.gold[300],
                 }}
               >
                 <Text
                   style={{
                     fontSize: 11,
-                    color: COLORS.primary[600],
+                    color: COLORS.gold[700],
                     fontFamily: 'Rubik-Medium',
                   }}
                 >
@@ -699,30 +710,84 @@ export default function AddDefectScreen() {
                         : 'transparent',
                     })}
                   >
+                    {/* Row 1: Title */}
                     <Text
                       style={{
                         fontSize: 13,
-                        fontFamily: 'Rubik-Regular',
-                        color: COLORS.neutral[700],
+                        fontFamily: 'Rubik-Medium',
+                        color: COLORS.neutral[800],
                         textAlign: 'right',
                       }}
                       numberOfLines={1}
                     >
                       {item.title}
                     </Text>
-                    {item.category ? (
-                      <Text
+
+                    {/* Row 2: Category badge + location + cost badge */}
+                    {item.category || item.location || item.cost !== null ? (
+                      <View
                         style={{
-                          fontSize: 11,
-                          fontFamily: 'Rubik-Regular',
-                          color: COLORS.neutral[400],
-                          textAlign: 'right',
-                          marginTop: 2,
+                          flexDirection: 'row-reverse',
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          gap: 4,
+                          marginTop: 4,
                         }}
                       >
-                        {item.category}
-                        {item.location ? ` · ${item.location}` : ''}
-                      </Text>
+                        {item.category ? (
+                          <View
+                            style={{
+                              backgroundColor: COLORS.primary[50],
+                              borderRadius: 4,
+                              paddingHorizontal: 6,
+                              paddingVertical: 1,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                fontSize: 10,
+                                fontFamily: 'Rubik-Regular',
+                                color: COLORS.primary[700],
+                              }}
+                            >
+                              {item.category}
+                            </Text>
+                          </View>
+                        ) : null}
+
+                        {item.location ? (
+                          <Text
+                            style={{
+                              fontSize: 10,
+                              fontFamily: 'Rubik-Regular',
+                              color: COLORS.neutral[400],
+                            }}
+                          >
+                            {item.location}
+                          </Text>
+                        ) : null}
+
+                        {item.cost !== null ? (
+                          <View
+                            style={{
+                              backgroundColor: COLORS.gold[100],
+                              borderRadius: 4,
+                              paddingHorizontal: 6,
+                              paddingVertical: 1,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                fontSize: 10,
+                                fontFamily: 'Rubik-Regular',
+                                color: COLORS.gold[700],
+                              }}
+                            >
+                              ₪{item.cost}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
                     ) : null}
                   </Pressable>
                 ))}
@@ -798,7 +863,7 @@ export default function AddDefectScreen() {
                   marginTop: 8,
                   paddingVertical: 8,
                   paddingHorizontal: 12,
-                  borderRightWidth: 3,
+                  borderRightWidth: 2,
                   borderRightColor: COLORS.primary[500],
                   backgroundColor: COLORS.primary[50],
                   borderRadius: BORDER_RADIUS.sm,
@@ -824,7 +889,8 @@ export default function AddDefectScreen() {
             style={{
               height: 1,
               backgroundColor: COLORS.cream[200],
-              marginVertical: 4,
+              marginTop: 4,
+              marginBottom: 12,
             }}
           />
 

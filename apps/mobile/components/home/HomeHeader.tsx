@@ -56,7 +56,7 @@ export function HomeHeader({
             justifyContent: 'center',
           }}
         >
-          <Feather name="menu" size={24} color={COLORS.neutral[700]} />
+          <Feather name="menu" size={20} color={COLORS.neutral[700]} />
         </Pressable>
 
         {/* Logo center */}
@@ -102,7 +102,7 @@ export function HomeHeader({
             justifyContent: 'center',
           }}
         >
-          <Feather name="bell" size={24} color={COLORS.neutral[500]} />
+          <Feather name="bell" size={19} color={COLORS.neutral[500]} />
           {/* Notification badge — only visible when there are unread notifications */}
           {notificationCount > 0 && (
             <View
@@ -124,7 +124,7 @@ export function HomeHeader({
               <Text
                 style={{
                   fontSize: 8,
-                  color: 'white',
+                  color: COLORS.white,
                   fontWeight: '700',
                   fontFamily: 'Rubik-Bold',
                 }}
@@ -176,13 +176,13 @@ export function HomeHeader({
             ...SHADOWS.sm,
           }}
         >
-          <Feather name="plus" size={16} color="white" />
+          <Feather name="plus" size={16} color={COLORS.white} />
           <Text
             style={{
               fontSize: 12,
               fontWeight: '600',
               fontFamily: 'Rubik-SemiBold',
-              color: 'white',
+              color: COLORS.white,
             }}
           >
             בדיקה חדשה

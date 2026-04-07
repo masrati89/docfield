@@ -62,12 +62,12 @@ export function ChecklistFooter({
           height: 44,
         }}
       >
-        <Feather name="plus" size={20} color="#FFFFFF" />
+        <Feather name="plus" size={20} color={COLORS.white} />
         <Text
           style={{
             fontSize: 14,
             fontWeight: '600',
-            color: '#FFFFFF',
+            color: COLORS.white,
             fontFamily: 'Rubik-SemiBold',
           }}
         >

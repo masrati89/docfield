@@ -1,9 +1,17 @@
 import { View, Text, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, {
+  FadeInUp,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
 import { SkeletonBlock, EmptyState } from '@/components/ui';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 // --- Types ---
 
@@ -38,17 +46,31 @@ function ProjectRow({
   const pct = Math.round((project.done / project.total) * 100);
   const isFull = pct === 100;
 
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   return (
     <Animated.View entering={FadeInUp.delay(50 * index).duration(350)}>
-      <Pressable
+      <AnimatedPressable
         onPress={onPress}
-        style={({ pressed }) => ({
-          paddingVertical: 11,
-          paddingHorizontal: 16,
-          borderBottomWidth: isLast ? 0 : 1,
-          borderBottomColor: COLORS.cream[200],
-          backgroundColor: pressed ? COLORS.cream[100] : 'transparent',
-        })}
+        onPressIn={() => {
+          scale.value = withSpring(0.98);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1);
+        }}
+        style={[
+          {
+            paddingVertical: 11,
+            paddingHorizontal: 16,
+            borderBottomWidth: isLast ? 0 : 1,
+            borderBottomColor: COLORS.cream[200],
+          },
+          animStyle,
+        ]}
       >
         {/* Row 1: dot + name + chevron */}
         <View
@@ -91,7 +113,7 @@ function ProjectRow({
             marginBottom: 7,
           }}
         >
-          <Feather name="map-pin" size={12} color={COLORS.neutral[400]} />
+          <Feather name="map-pin" size={11} color={COLORS.neutral[400]} />
           <Text
             style={{
               fontSize: 11,
@@ -151,7 +173,7 @@ function ProjectRow({
             />
           </View>
         </View>
-      </Pressable>
+      </AnimatedPressable>
     </Animated.View>
   );
 }

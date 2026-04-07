@@ -14,3 +14,4 @@ export {
 export type { StatusFilter, SortBy, TypeFilter } from './reportsConstants';
 export { PrePdfSummary } from './PrePdfSummary';
 export { TenantSignatureScreen } from './TenantSignatureScreen';
+export { SearchOverlay } from './SearchOverlay';

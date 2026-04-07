@@ -22,7 +22,9 @@ import {
   AddBuildingSheet,
 } from '@/components/projects';
 import { useToast } from '@/hooks/useToast';
+import { useSideMenu } from '@/hooks/useSideMenu';
 import { Toast } from '@/components/ui';
+import { SideMenu } from '@/components/ui/SideMenu';
 
 import type { BuildingItem } from '@/components/projects';
 
@@ -50,6 +52,7 @@ export default function BuildingsScreen() {
   const sheetRef = useRef<BottomSheet>(null);
   const [showAddSheet, setShowAddSheet] = useState(false);
   const { toast, showToast, hideToast } = useToast();
+  const { isOpen: menuOpen, open: openMenu, close: closeMenu } = useSideMenu();
 
   const fetchData = useCallback(
     async (silent = false) => {
@@ -165,7 +168,7 @@ export default function BuildingsScreen() {
       <SubHeader
         title={project?.name ?? ''}
         subtitle={project?.address ?? undefined}
-        onBack={() => router.back()}
+        onMenu={openMenu}
       />
 
       {error && !isLoading ? (
@@ -329,6 +332,8 @@ export default function BuildingsScreen() {
         visible={!!toast}
         onDismiss={hideToast}
       />
+
+      <SideMenu visible={menuOpen} onClose={closeMenu} />
     </View>
   );
 }

@@ -10,12 +10,12 @@ import { COLORS, BORDER_RADIUS } from '@infield/ui';
 interface SubHeaderProps {
   title: string;
   subtitle?: string;
-  onBack: () => void;
+  onMenu: () => void;
 }
 
 // --- Component ---
 
-export function SubHeader({ title, subtitle, onBack }: SubHeaderProps) {
+export function SubHeader({ title, subtitle, onMenu }: SubHeaderProps) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -26,7 +26,7 @@ export function SubHeader({ title, subtitle, onBack }: SubHeaderProps) {
         backgroundColor: COLORS.cream[50],
       }}
     >
-      {/* Top row: back — logo (RTL: logo right, back left) */}
+      {/* Top row: hamburger (right) — logo (left) in RTL */}
       <Animated.View
         entering={FadeInDown.duration(200)}
         style={{
@@ -34,7 +34,26 @@ export function SubHeader({ title, subtitle, onBack }: SubHeaderProps) {
           alignItems: 'center',
         }}
       >
-        {/* Logo (right in RTL) */}
+        {/* Menu button (right in RTL — first in row-reverse) */}
+        <Pressable
+          onPress={onMenu}
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: BORDER_RADIUS.md,
+            backgroundColor: COLORS.cream[100],
+            borderWidth: 1,
+            borderColor: COLORS.cream[200],
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Feather name="menu" size={20} color={COLORS.neutral[700]} />
+        </Pressable>
+
+        <View style={{ flex: 1 }} />
+
+        {/* Logo (left in RTL) */}
         <View
           style={{
             width: 24,
@@ -49,25 +68,6 @@ export function SubHeader({ title, subtitle, onBack }: SubHeaderProps) {
         >
           <Feather name="clipboard" size={16} color={COLORS.primary[500]} />
         </View>
-
-        <View style={{ flex: 1 }} />
-
-        {/* Back button (left in RTL) */}
-        <Pressable
-          onPress={onBack}
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: BORDER_RADIUS.md,
-            backgroundColor: COLORS.cream[100],
-            borderWidth: 1,
-            borderColor: COLORS.cream[200],
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Feather name="chevron-right" size={20} color={COLORS.neutral[700]} />
-        </Pressable>
       </Animated.View>
 
       {/* Title + subtitle */}
@@ -95,7 +95,7 @@ export function SubHeader({ title, subtitle, onBack }: SubHeaderProps) {
               marginTop: 2,
             }}
           >
-            <Feather name="map-pin" size={16} color={COLORS.neutral[400]} />
+            <Feather name="map-pin" size={12} color={COLORS.neutral[400]} />
             <Text
               style={{
                 fontSize: 11,

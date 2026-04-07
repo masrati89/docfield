@@ -1,9 +1,17 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, {
+  FadeInUp,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 import { COLORS } from '@infield/ui';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 // --- Types ---
 
@@ -65,19 +73,33 @@ export const ApartmentRow = React.memo(function ApartmentRow({
 }: ApartmentRowProps) {
   const st = APT_STATUS[apartment.status] ?? APT_STATUS.pending;
 
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   return (
     <Animated.View entering={FadeInUp.delay(60 * index).duration(200)}>
-      <Pressable
+      <AnimatedPressable
         onPress={onPress}
-        style={({ pressed }) => ({
-          flexDirection: 'row-reverse',
-          alignItems: 'center',
-          paddingVertical: 12,
-          paddingHorizontal: 16,
-          borderBottomWidth: isLast ? 0 : 1,
-          borderBottomColor: COLORS.cream[200],
-          backgroundColor: pressed ? COLORS.cream[100] : 'transparent',
-        })}
+        onPressIn={() => {
+          scale.value = withSpring(0.98);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1);
+        }}
+        style={[
+          {
+            flexDirection: 'row-reverse',
+            alignItems: 'center',
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            borderBottomWidth: isLast ? 0 : 1,
+            borderBottomColor: COLORS.cream[200],
+          },
+          animStyle,
+        ]}
       >
         {/* Status dot */}
         <View
@@ -239,7 +261,7 @@ export const ApartmentRow = React.memo(function ApartmentRow({
         </View>
 
         <Feather name="chevron-left" size={14} color={COLORS.neutral[300]} />
-      </Pressable>
+      </AnimatedPressable>
     </Animated.View>
   );
 });

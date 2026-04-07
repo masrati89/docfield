@@ -80,10 +80,10 @@ export function RoomAccordion({
   const badgeBg =
     counts.done > 0
       ? counts.defect > 0 || counts.partial > 0
-        ? '#b91c1c'
+        ? COLORS.danger[700]
         : COLORS.primary[500]
       : COLORS.cream[200];
-  const badgeColor = counts.done > 0 ? '#FFFFFF' : COLORS.neutral[500];
+  const badgeColor = counts.done > 0 ? COLORS.white : COLORS.neutral[500];
 
   const rotation = useSharedValue(isOpen ? 180 : 0);
 
@@ -212,7 +212,7 @@ export function RoomAccordion({
                   <Text
                     style={{
                       fontSize: 10,
-                      color: '#b91c1c',
+                      color: COLORS.danger[700],
                       fontWeight: '500',
                       fontFamily: 'Rubik-Medium',
                     }}
@@ -224,7 +224,7 @@ export function RoomAccordion({
                   <Text
                     style={{
                       fontSize: 10,
-                      color: '#92600a',
+                      color: COLORS.gold[600],
                       fontWeight: '500',
                       fontFamily: 'Rubik-Medium',
                     }}

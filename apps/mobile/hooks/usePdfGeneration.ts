@@ -78,7 +78,7 @@ async function fetchFullReportData(
     .from('defects')
     .select(
       `id, description, room, category, severity, status, sort_order,
-       standard_ref, recommendation, cost, cost_unit, notes,
+       standard_reference,
        defect_photos(image_url, sort_order, annotations_json)`
     )
     .eq('delivery_report_id', reportId)
@@ -122,11 +122,7 @@ async function fetchFullReportData(
         title: d.description as string,
         location: (d.room as string) ?? '',
         category: (d.category as string) ?? 'כללי',
-        standardRef: d.standard_ref as string | undefined,
-        recommendation: d.recommendation as string | undefined,
-        cost: d.cost as number | undefined,
-        costLabel: d.cost_unit as string | undefined,
-        note: d.notes as string | undefined,
+        standardRef: d.standard_reference as string | undefined,
         photoUrls,
       };
     })

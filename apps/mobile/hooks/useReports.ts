@@ -61,6 +61,9 @@ export function useReports() {
   const query = useQuery({
     queryKey: reportsKeys.list(),
     queryFn: fetchReports,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 2,
   });
 
   const refetch = async () => {

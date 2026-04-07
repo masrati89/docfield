@@ -15,6 +15,7 @@ import {
   detailBox,
   photoHtml,
   signatureBoxHtml,
+  escapeHtml,
   formatCurrency,
   groupDefectsByCategory,
 } from './shared';
@@ -35,15 +36,19 @@ function defectFullHtml(d: {
   annexText?: string;
 }): string {
   const photos = d.photoUrls ?? [];
-  const costDisplay = d.costLabel ?? (d.cost ? formatCurrency(d.cost) : '');
+  const costDisplay = d.costLabel
+    ? escapeHtml(d.costLabel)
+    : d.cost
+      ? formatCurrency(d.cost)
+      : '';
 
   let html = `
     <div style="padding:6px 0;border-bottom:1px solid ${PDF.bdrLt};margin-bottom:2px;">
       <div style="display:flex;align-items:flex-start;gap:6px;">
         <div style="font-size:8px;font-weight:700;color:white;background:${PDF.dk};width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${d.num}</div>
         <div style="flex:1;">
-          <div style="font-size:9px;font-weight:600;color:${PDF.dk};line-height:1.4;">${d.title}</div>
-          <div style="font-size:7.5px;color:${PDF.lt};margin-top:1px;">\u05DE\u05D9\u05E7\u05D5\u05DD: ${d.location}</div>
+          <div style="font-size:9px;font-weight:600;color:${PDF.dk};line-height:1.4;">${escapeHtml(d.title)}</div>
+          <div style="font-size:7.5px;color:${PDF.lt};margin-top:1px;">\u05DE\u05D9\u05E7\u05D5\u05DD: ${escapeHtml(d.location)}</div>
         </div>
         ${costDisplay ? `<div style="font-size:8px;font-weight:700;color:${PDF.accent};flex-shrink:0;background:${PDF.accentLt};padding:2px 6px;border-radius:10px;">${costDisplay}</div>` : ''}
       </div>`;
@@ -51,21 +56,21 @@ function defectFullHtml(d: {
   if (d.standardRef) {
     html += `
       <div style="margin:4px 0 3px;margin-right:26px;padding:3px 6px;background:${PDF.bg};border-right:2px solid ${PDF.accent};font-size:7.5px;color:${PDF.md};line-height:1.5;">
-        <span style="font-weight:600;color:${PDF.dk};">${d.standardRef}</span>${d.standardText ? ` \u2014 ${d.standardText}` : ''}
+        <span style="font-weight:600;color:${PDF.dk};">${escapeHtml(d.standardRef)}</span>${d.standardText ? ` \u2014 ${escapeHtml(d.standardText)}` : ''}
       </div>`;
   }
 
   if (d.recommendation) {
     html += `
       <div style="margin:3px 0 0;margin-right:26px;font-size:7.5px;color:${PDF.md};">
-        <span style="font-weight:600;color:${PDF.accent};">\u05D4\u05DE\u05DC\u05E6\u05D4: </span>${d.recommendation}
+        <span style="font-weight:600;color:${PDF.accent};">\u05D4\u05DE\u05DC\u05E6\u05D4: </span>${escapeHtml(d.recommendation)}
       </div>`;
   }
 
   if (d.note) {
     html += `
       <div style="margin:2px 0 0;margin-right:26px;font-size:7px;color:${PDF.lt};font-style:italic;">
-        \u05D4\u05E2\u05E8\u05D4: ${d.note}
+        \u05D4\u05E2\u05E8\u05D4: ${escapeHtml(d.note)}
       </div>`;
   }
 
@@ -81,7 +86,7 @@ function defectFullHtml(d: {
     html += `
       <div style="margin:4px 0 2px;margin-right:26px;padding:3px 6px;background:${PDF.bg};border-radius:2px;font-size:7px;color:${PDF.lt};display:flex;align-items:center;gap:4px;">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${PDF.lt}" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-        ${d.annexText}
+        ${escapeHtml(d.annexText)}
       </div>`;
   }
 
@@ -107,15 +112,17 @@ function costTableHtml(
   let rows = '';
 
   for (const g of groups) {
-    rows += `<div style="padding:4px 6px;background:${PDF.accentLt};font-weight:700;font-size:7.5px;color:${PDF.accent};">${g.category}</div>`;
+    rows += `<div style="padding:4px 6px;background:${PDF.accentLt};font-weight:700;font-size:7.5px;color:${PDF.accent};">${escapeHtml(g.category)}</div>`;
     for (const d of g.defects) {
       const cost = d.cost ?? 0;
       subtotal += cost;
-      const costStr = d.costLabel ?? cost.toLocaleString('he-IL');
+      const costStr = d.costLabel
+        ? escapeHtml(d.costLabel)
+        : cost.toLocaleString('he-IL');
       rows += `
         <div style="display:grid;grid-template-columns:36px 1fr 80px;padding:4px 6px;border-bottom:1px solid ${PDF.bdrLt};font-size:8px;">
           <span style="font-weight:600;">${d.num}</span>
-          <span>${d.title}</span>
+          <span>${escapeHtml(d.title)}</span>
           <span style="text-align:left;font-weight:600;">${costStr}</span>
         </div>`;
     }
@@ -163,12 +170,12 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
       <div style="font-size:11px;color:${PDF.lt};margin-bottom:24px;">\u05D1\u05D3\u05D9\u05E7\u05EA \u05E7\u05D1\u05DC\u05D4 \u05DC\u05D3\u05D9\u05E8\u05D4 \u05D7\u05D3\u05E9\u05D4</div>
       <div style="width:160px;height:1px;background:${PDF.bdr};margin-bottom:20px;"></div>
       <div style="font-size:9px;color:${PDF.md};line-height:2;text-align:center;">
-        ${detailRow('\u05E4\u05E8\u05D5\u05D9\u05E7\u05D8:', data.property.projectName)}
-        ${detailRow('\u05D3\u05D9\u05E8\u05D4:', `\u05D3\u05D9\u05E8\u05D4 ${data.property.apartmentNumber}${data.property.floor !== null && data.property.floor !== undefined ? `, \u05E7\u05D5\u05DE\u05D4 ${data.property.floor}` : ''}`)}
-        ${detailRow('\u05DE\u05D6\u05DE\u05D9\u05DF:', data.client.name)}
-        ${detailRow('\u05DE\u05E4\u05E7\u05D7:', data.inspector.name)}
-        ${detailRow('\u05EA\u05D0\u05E8\u05D9\u05DA:', data.reportDate)}
-        ${detailRow('\u05DE\u05E1\u05E4\u05E8 \u05D3\u05D5\u05D7:', data.reportNumber)}
+        ${detailRow('\u05E4\u05E8\u05D5\u05D9\u05E7\u05D8:', escapeHtml(data.property.projectName))}
+        ${detailRow('\u05D3\u05D9\u05E8\u05D4:', `\u05D3\u05D9\u05E8\u05D4 ${escapeHtml(data.property.apartmentNumber)}${data.property.floor !== null && data.property.floor !== undefined ? `, \u05E7\u05D5\u05DE\u05D4 ${data.property.floor}` : ''}`)}
+        ${detailRow('\u05DE\u05D6\u05DE\u05D9\u05DF:', escapeHtml(data.client.name))}
+        ${detailRow('\u05DE\u05E4\u05E7\u05D7:', escapeHtml(data.inspector.name))}
+        ${detailRow('\u05EA\u05D0\u05E8\u05D9\u05DA:', escapeHtml(data.reportDate))}
+        ${detailRow('\u05DE\u05E1\u05E4\u05E8 \u05D3\u05D5\u05D7:', escapeHtml(data.reportNumber))}
       </div>
       <div style="width:160px;height:1px;background:${PDF.bdr};margin-top:24px;margin-bottom:12px;"></div>
       <div style="font-size:7px;color:${PDF.vlt};">\u05DE\u05E1\u05DE\u05DA \u05D6\u05D4 \u05D4\u05D5\u05D0 \u05D7\u05D5\u05D5\u05EA \u05D3\u05E2\u05EA \u05D4\u05E0\u05D3\u05E1\u05D9\u05EA \u05DE\u05E7\u05E6\u05D5\u05E2\u05D9\u05EA. \u05DB\u05DC \u05D4\u05D6\u05DB\u05D5\u05D9\u05D5\u05EA \u05E9\u05DE\u05D5\u05E8\u05D5\u05EA.</div>
@@ -177,40 +184,40 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
   // --- PAGE 2: Details ---
   const detailsPage = `
     <div class="page" style="display:flex;flex-direction:column;">
-      ${miniHeader(`${title} \u2014 ${data.property.projectName}`, data.logoUrl)}
+      ${miniHeader(`${title} \u2014 ${escapeHtml(data.property.projectName)}`, data.logoUrl)}
       ${sectionTitle('\u05E4\u05E8\u05D8\u05D9 \u05D4\u05DE\u05E4\u05E7\u05D7')}
       ${detailBox(`
-        ${detailRow('\u05E9\u05DD:', data.inspector.name)}
-        ${data.inspector.licenseNumber ? detailRow('\u05DE.\u05E8.:', data.inspector.licenseNumber) : ''}
-        ${data.inspector.education ? detailRow('\u05D4\u05E9\u05DB\u05DC\u05D4:', data.inspector.education) : ''}
-        ${data.inspector.experience ? detailRow('\u05E0\u05D9\u05E1\u05D9\u05D5\u05DF:', data.inspector.experience) : ''}
+        ${detailRow('\u05E9\u05DD:', escapeHtml(data.inspector.name))}
+        ${data.inspector.licenseNumber ? detailRow('\u05DE.\u05E8.:', escapeHtml(data.inspector.licenseNumber)) : ''}
+        ${data.inspector.education ? detailRow('\u05D4\u05E9\u05DB\u05DC\u05D4:', escapeHtml(data.inspector.education)) : ''}
+        ${data.inspector.experience ? detailRow('\u05E0\u05D9\u05E1\u05D9\u05D5\u05DF:', escapeHtml(data.inspector.experience)) : ''}
       `)}
       ${sectionTitle('\u05E4\u05E8\u05D8\u05D9 \u05D4\u05E0\u05DB\u05E1')}
       ${detailBox(`
-        ${detailRow('\u05E4\u05E8\u05D5\u05D9\u05E7\u05D8:', data.property.projectName)}
-        ${data.property.address ? detailRow('\u05DB\u05EA\u05D5\u05D1\u05EA:', data.property.address) : ''}
-        ${detailRow('\u05D3\u05D9\u05E8\u05D4:', `\u05D3\u05D9\u05E8\u05D4 ${data.property.apartmentNumber}${data.property.floor !== null && data.property.floor !== undefined ? `, \u05E7\u05D5\u05DE\u05D4 ${data.property.floor}` : ''}`)}
-        ${data.property.area ? detailRow('\u05E9\u05D8\u05D7:', data.property.area) : ''}
-        ${data.property.contractor ? detailRow('\u05E7\u05D1\u05DC\u05DF:', data.property.contractor) : ''}
+        ${detailRow('\u05E4\u05E8\u05D5\u05D9\u05E7\u05D8:', escapeHtml(data.property.projectName))}
+        ${data.property.address ? detailRow('\u05DB\u05EA\u05D5\u05D1\u05EA:', escapeHtml(data.property.address)) : ''}
+        ${detailRow('\u05D3\u05D9\u05E8\u05D4:', `\u05D3\u05D9\u05E8\u05D4 ${escapeHtml(data.property.apartmentNumber)}${data.property.floor !== null && data.property.floor !== undefined ? `, \u05E7\u05D5\u05DE\u05D4 ${data.property.floor}` : ''}`)}
+        ${data.property.area ? detailRow('\u05E9\u05D8\u05D7:', escapeHtml(data.property.area)) : ''}
+        ${data.property.contractor ? detailRow('\u05E7\u05D1\u05DC\u05DF:', escapeHtml(data.property.contractor)) : ''}
       `)}
       ${sectionTitle('\u05E4\u05E8\u05D8\u05D9 \u05D4\u05DE\u05D6\u05DE\u05D9\u05DF')}
       ${detailBox(`
-        ${detailRow('\u05E9\u05DD:', data.client.name)}
-        ${data.client.phone ? detailRow('\u05D8\u05DC\u05E4\u05D5\u05DF:', data.client.phone) : ''}
-        ${data.client.email ? detailRow('\u05D0\u05D9\u05DE\u05D9\u05D9\u05DC:', data.client.email) : ''}
+        ${detailRow('\u05E9\u05DD:', escapeHtml(data.client.name))}
+        ${data.client.phone ? detailRow('\u05D8\u05DC\u05E4\u05D5\u05DF:', escapeHtml(data.client.phone)) : ''}
+        ${data.client.email ? detailRow('\u05D0\u05D9\u05DE\u05D9\u05D9\u05DC:', escapeHtml(data.client.email)) : ''}
       `)}
       ${sectionTitle('\u05EA\u05E0\u05D0\u05D9 \u05D4\u05D1\u05D3\u05D9\u05E7\u05D4')}
       ${detailBox(`
         <div><span style="color:${PDF.lt};">\u05DE\u05D8\u05E8\u05D4: </span>\u05D1\u05D3\u05D9\u05E7\u05EA \u05DC\u05D9\u05E7\u05D5\u05D9\u05D9 \u05D1\u05E0\u05D9\u05D9\u05D4 \u05DC\u05E4\u05E0\u05D9 \u05E7\u05D1\u05DC\u05EA \u05D3\u05D9\u05E8\u05D4 \u05D7\u05D3\u05E9\u05D4</div>
-        ${data.weatherConditions ? `<div><span style="color:${PDF.lt};">\u05DE\u05D6\u05D2 \u05D0\u05D5\u05D5\u05D9\u05E8: </span>${data.weatherConditions}</div>` : ''}
-        ${data.limitations ? `<div><span style="color:${PDF.lt};">\u05DE\u05D2\u05D1\u05DC\u05D5\u05EA: </span>${data.limitations}</div>` : ''}
+        ${data.weatherConditions ? `<div><span style="color:${PDF.lt};">\u05DE\u05D6\u05D2 \u05D0\u05D5\u05D5\u05D9\u05E8: </span>${escapeHtml(data.weatherConditions)}</div>` : ''}
+        ${data.limitations ? `<div><span style="color:${PDF.lt};">\u05DE\u05D2\u05D1\u05DC\u05D5\u05EA: </span>${escapeHtml(data.limitations)}</div>` : ''}
       `)}
       ${
         data.tools && data.tools.length > 0
           ? `
         ${sectionTitle('\u05DB\u05DC\u05D9\u05DD \u05D1\u05E9\u05D9\u05DE\u05D5\u05E9')}
         <div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:8px;display:flex;flex-wrap:wrap;gap:4px;">
-          ${data.tools.map((t) => `<span style="display:flex;align-items:center;gap:3px;"><span style="color:${PDF.accent};">\u2713</span>${t}</span>`).join('')}
+          ${data.tools.map((t) => `<span style="display:flex;align-items:center;gap:3px;"><span style="color:${PDF.accent};">\u2713</span>${escapeHtml(t)}</span>`).join('')}
         </div>
       `
           : ''
@@ -226,7 +233,7 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
   let pageNum = 3;
 
   for (const group of groups) {
-    currentPageDefects += subSectionTitle(group.category);
+    currentPageDefects += subSectionTitle(escapeHtml(group.category));
     for (const defect of group.defects) {
       currentPageDefects += defectFullHtml({
         num: defect.number,
@@ -306,7 +313,7 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
         data.notes
           ? `
         ${sectionTitle('\u05D4\u05E2\u05E8\u05D5\u05EA \u05DB\u05DC\u05DC\u05D9\u05D5\u05EA')}
-        <div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:8px;line-height:1.6;">${data.notes}</div>
+        <div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:8px;line-height:1.6;">${escapeHtml(data.notes)}</div>
       `
           : ''
       }
@@ -315,8 +322,8 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
       <div style="display:flex;gap:20px;margin-top:4px;">
         ${signatureBoxHtml(
           '\u05D7\u05EA\u05D9\u05DE\u05EA \u05DE\u05E4\u05E7\u05D7',
-          data.inspector.name,
-          data.reportDate,
+          escapeHtml(data.inspector.name),
+          escapeHtml(data.reportDate),
           data.signatures?.find((s) => s.signerType === 'inspector')?.imageUrl
         )}
         ${

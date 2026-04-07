@@ -96,7 +96,7 @@ export function CostSection({
                 style={{
                   fontSize: 11,
                   fontWeight: isSelected ? '600' : '400',
-                  color: isSelected ? '#FFFFFF' : COLORS.neutral[600],
+                  color: isSelected ? COLORS.white : COLORS.neutral[600],
                   fontFamily: isSelected ? 'Rubik-SemiBold' : 'Rubik-Regular',
                 }}
               >

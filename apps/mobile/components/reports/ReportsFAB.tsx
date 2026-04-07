@@ -30,7 +30,7 @@ export function FAB({ onPress }: { onPress: () => void }) {
       style={[
         {
           position: 'absolute',
-          bottom: 16,
+          bottom: 80,
           left: 16,
           width: 48,
           height: 48,
