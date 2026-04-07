@@ -281,11 +281,8 @@ export function useWizardState(
           (_, i) => (state.newApartmentCounts[i] ?? 0) >= 1
         );
       case 'apartment':
-        // Need apartment selection or freetext
-        return (
-          state.selectedApartment !== null ||
-          state.apartmentFreetext.trim().length > 0
-        );
+        // Apartment is optional per FLOW_SPEC §3 — always allow proceeding
+        return true;
       case 'protocol':
         return state.protocolMode !== null;
       default:
@@ -311,13 +308,17 @@ export function useWizardState(
     [prefill]
   );
 
-  // Handle "skip project" → auto-submit after state updates
+  // Handle "skip project" → advance past project step, auto-submit only if no more steps
   const pendingSubmitRef = useRef(false);
 
   const handleSkipProject = useCallback(() => {
     dispatch({ type: 'SKIP_PROJECT' });
-    pendingSubmitRef.current = true;
-  }, []);
+    // Only auto-submit if bedek_bait (no protocol step remains)
+    // For delivery, the user still needs to pick protocol mode
+    if (state.reportType !== 'delivery') {
+      pendingSubmitRef.current = true;
+    }
+  }, [state.reportType]);
 
   // Submit: create report in DB + navigate
   const handleSubmit = useCallback(async () => {
@@ -488,11 +489,18 @@ export function useWizardState(
       // Close wizard first, then navigate after Modal unmounts
       onClose?.();
 
-      // Wait for Modal animation to complete before navigating
-      InteractionManager.runAfterInteractions(() => {
-        // Always navigate to report detail — delivery auto-redirects to checklist
+      // Wait for Modal animation to complete before navigating.
+      // Use both InteractionManager and a fallback timeout to prevent freeze.
+      let navigated = false;
+      const navigate = () => {
+        if (navigated) return;
+        navigated = true;
         router.push(`/(app)/reports/${reportId}`);
-      });
+      };
+
+      InteractionManager.runAfterInteractions(navigate);
+      // Fallback: if InteractionManager doesn't fire (e.g. web), navigate after 500ms
+      setTimeout(navigate, 500);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'שגיאה לא ידועה';
       Alert.alert('שגיאה ביצירת הדוח', `${message}\n\nנסה שוב.`);

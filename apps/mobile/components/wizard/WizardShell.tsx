@@ -232,7 +232,7 @@ export function WizardShell({
           borderTopColor: COLORS.cream[200],
         }}
       >
-        {/* Skip button (only on project step) */}
+        {/* Skip button (project step) */}
         {currentStepId === 'project' && !isStepPrefilled('project') && (
           <Pressable
             onPress={onSkipProject}
@@ -251,6 +251,29 @@ export function WizardShell({
               }}
             >
               דלג - ללא שיוך לפרויקט
+            </Text>
+          </Pressable>
+        )}
+
+        {/* Skip button (apartment step — optional per FLOW_SPEC §3) */}
+        {currentStepId === 'apartment' && !isStepPrefilled('apartment') && (
+          <Pressable
+            onPress={handleNext}
+            style={{
+              alignItems: 'center',
+              paddingVertical: 8,
+              marginBottom: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                fontFamily: 'Rubik-Medium',
+                color: COLORS.neutral[500],
+                textDecorationLine: 'underline',
+              }}
+            >
+              דלג - ללא שיוך לדירה
             </Text>
           </Pressable>
         )}
