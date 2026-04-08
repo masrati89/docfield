@@ -239,7 +239,7 @@ export default function AddDefectScreen() {
     note,
     photos.length > 0,
   ].filter(Boolean).length;
-  const totalFields = 8;
+  const totalFields = 7;
   const canSave = !!category && description.trim().length > 0;
 
   const handleAddPhoto = useCallback(() => {
@@ -295,6 +295,15 @@ export default function AddDefectScreen() {
     []
   );
 
+  const handleUpdateCaption = useCallback(
+    (photoId: string, caption: string) => {
+      setPhotos((prev) =>
+        prev.map((p) => (p.id === photoId ? { ...p, caption } : p))
+      );
+    },
+    []
+  );
+
   const handleDeletePhoto = useCallback(
     async (photoId: string) => {
       const photo = photos.find((p) => p.id === photoId);
@@ -342,7 +351,7 @@ export default function AddDefectScreen() {
           description,
           room: location || null,
           category: category || null,
-          standard_reference: standardRef.trim() || null,
+          standard_ref: standardRef.trim() || null,
           severity: 'medium',
           source: 'manual',
         })
@@ -398,6 +407,7 @@ export default function AddDefectScreen() {
               image_url: imageUrl,
               sort_order: i,
               annotations_json: photo.annotations ?? null,
+              caption: photo.caption?.trim() || null,
             });
 
           if (insertError) {
@@ -569,23 +579,6 @@ export default function AddDefectScreen() {
             </Text>
             <Pressable
               onPress={() => {
-                // If filled from library, first press resets form back to direct entry
-                if (entrySource === 'library') {
-                  setCategory(initialCategory ?? '');
-                  setDescription('');
-                  setLocation('');
-                  setStandardRef('');
-                  setStandardDisplay('');
-                  setRecommendation('');
-                  setCostUnit('fixed');
-                  setCostAmount('');
-                  setCostQty('');
-                  setCostPerUnit('');
-                  setNote('');
-                  setPhotos([]);
-                  setEntrySource('direct');
-                  return;
-                }
                 if (!isDirty || savedRef.current) {
                   savedRef.current = true;
                   router.back();
@@ -960,42 +953,8 @@ export default function AddDefectScreen() {
               onPickFromGallery={handlePickFromGallery}
               onDeletePhoto={handleDeletePhoto}
               onUpdateAnnotations={handleUpdateAnnotations}
+              onUpdateCaption={handleUpdateCaption}
             />
-          </FormField>
-
-          {/* 8. Attachment */}
-          <FormField label="נספח (צילום מהתקן)" icon="paperclip">
-            <Pressable
-              style={({ pressed }) => ({
-                width: '100%',
-                paddingVertical: 10,
-                borderRadius: BORDER_RADIUS.md,
-                borderWidth: 2,
-                borderStyle: 'dashed',
-                borderColor: pressed
-                  ? COLORS.primary[500]
-                  : COLORS.primary[200],
-                backgroundColor: pressed
-                  ? COLORS.primary[100]
-                  : COLORS.primary[50],
-                flexDirection: 'row-reverse',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-              })}
-            >
-              <Feather name="paperclip" size={16} color={COLORS.primary[500]} />
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontWeight: '500',
-                  color: COLORS.primary[500],
-                  fontFamily: 'Rubik-Medium',
-                }}
-              >
-                הוסף נספח
-              </Text>
-            </Pressable>
           </FormField>
         </ScrollView>
       </KeyboardAvoidingView>

@@ -80,7 +80,7 @@ async function fetchReport(id: string): Promise<ReportDetail> {
   const { data: defectsData, error: defectsError } = await supabase
     .from('defects')
     .select(
-      'id, description, room, category, severity, status, standard_reference, defect_photos(id)'
+      'id, description, room, category, severity, status, standard_ref, defect_photos(id, caption)'
     )
     .eq('delivery_report_id', id)
     .order('sort_order')
@@ -90,7 +90,9 @@ async function fetchReport(id: string): Promise<ReportDetail> {
 
   const defects: DefectItem[] = (defectsData ?? []).map(
     (d: Record<string, unknown>) => {
-      const photos = (d.defect_photos as Array<{ id: string }>) ?? [];
+      const photos =
+        (d.defect_photos as Array<{ id: string; caption: string | null }>) ??
+        [];
       return {
         id: d.id as string,
         description: d.description as string,
@@ -98,7 +100,7 @@ async function fetchReport(id: string): Promise<ReportDetail> {
         category: d.category as string | null,
         severity: d.severity as string,
         status: d.status as string,
-        standardRef: d.standard_reference as string | null,
+        standardRef: d.standard_ref as string | null,
         photoCount: photos.length,
       };
     }
