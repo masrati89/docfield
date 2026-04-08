@@ -6,13 +6,23 @@
     "orientation": "portrait",
     "scheme": "infield",
     "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#FEFDFB",
+      "resizeMode": "contain"
+    },
     "newArchEnabled": true,
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.infield.app"
+      "bundleIdentifier": "com.infield.app",
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "inField needs camera access to photograph construction defects",
+        "NSPhotoLibraryUsageDescription": "inField needs photo library access to attach existing photos to defect reports",
+        "NSPhotoLibraryAddUsageDescription": "inField needs permission to save PDF reports and photos to your library"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -24,6 +34,25 @@
       "bundler": "metro",
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-router", "expo-font", "expo-image", "expo-secure-store"]
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-image",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "inField needs camera access to photograph construction defects"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "inField needs photo library access to attach existing photos to defect reports",
+          "cameraPermission": "inField needs camera access to photograph construction defects"
+        }
+      ],
+      "expo-web-browser"
+    ]
   }
 }

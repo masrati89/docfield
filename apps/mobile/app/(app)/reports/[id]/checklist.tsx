@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -40,6 +40,7 @@ import { useToast } from '@/hooks/useToast';
 
 export default function ChecklistScreen() {
   const { id: reportId } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { profile } = useAuth();
   const organizationId = profile?.organizationId;
@@ -374,8 +375,12 @@ export default function ChecklistScreen() {
       {/* Footer */}
       <ChecklistFooter
         onAddDefect={() => setShowAddDefect(true)}
-        onCamera={() => {}}
-        onSearch={() => {}}
+        onCamera={() => {
+          if (reportId) {
+            router.push(`/(app)/reports/${reportId}/add-defect`);
+          }
+        }}
+        onSearch={() => showToast('חיפוש — בקרוב', 'info')}
       />
 
       {/* Add defect bottom sheet */}
