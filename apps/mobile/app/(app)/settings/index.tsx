@@ -18,6 +18,7 @@ import {
   ChangePasswordSection,
   PreferencesSection,
   SignatureStampSection,
+  InspectorProfileSection,
   InfoSection,
   SignOutButton,
 } from '@/components/settings';
@@ -113,7 +114,13 @@ export default function SettingsScreen() {
           {/* Divider */}
           <View className="mx-[20px] h-[1px] bg-cream-200 mb-[24px]" />
 
-          {/* 4. Info */}
+          {/* 4. Inspector Profile */}
+          <InspectorProfileSection />
+
+          {/* Divider */}
+          <View className="mx-[20px] h-[1px] bg-cream-200 mb-[24px]" />
+
+          {/* 5. Info */}
           <InfoSection onComingSoon={handleComingSoon} />
 
           {/* Divider */}
