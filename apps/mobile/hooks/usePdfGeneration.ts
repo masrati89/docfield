@@ -51,6 +51,9 @@ async function fetchFullReportData(
     .from('delivery_reports')
     .select(
       `id, report_type, status, tenant_name, tenant_phone, report_date, notes,
+       report_number, client_name, client_phone, client_email, client_id_number,
+       property_type, property_area, property_floor, property_description,
+       report_content, weather_conditions, contractor_name, contractor_phone,
        apartments(
          number, floor,
          buildings(
@@ -78,8 +81,8 @@ async function fetchFullReportData(
     .from('defects')
     .select(
       `id, description, room, category, severity, status, sort_order,
-       standard_reference,
-       defect_photos(image_url, sort_order, annotations_json)`
+       standard_ref, recommendation, notes, cost, cost_unit,
+       defect_photos(image_url, sort_order, annotations_json, caption)`
     )
     .eq('delivery_report_id', reportId)
     .order('sort_order')
@@ -94,6 +97,7 @@ async function fetchFullReportData(
           image_url: string;
           sort_order: number;
           annotations_json: unknown;
+          caption: string | null;
         }>) ?? [];
       const sortedPhotos = photos.sort((a, b) => a.sort_order - b.sort_order);
       const photoUrls: string[] = [];
@@ -117,13 +121,24 @@ async function fetchFullReportData(
           photoUrls.push(photo.image_url);
         }
       }
+      // Build photos array with captions
+      const photosWithCaptions = sortedPhotos.map((p, pIdx) => ({
+        url: photoUrls[pIdx],
+        caption: p.caption ?? undefined,
+      }));
+
       return {
         number: idx + 1,
         title: d.description as string,
         location: (d.room as string) ?? '',
         category: (d.category as string) ?? 'כללי',
-        standardRef: d.standard_reference as string | undefined,
+        standardRef: d.standard_ref as string | undefined,
+        recommendation: d.recommendation as string | undefined,
+        cost: d.cost as number | undefined,
+        costLabel: d.cost_unit as string | undefined,
+        note: d.notes as string | undefined,
         photoUrls,
+        photos: photosWithCaptions,
       };
     })
   );
@@ -158,29 +173,77 @@ async function fetchFullReportData(
     }
   }
 
-  // Client info from report's tenant fields (clients table is org-level, not per-report)
+  // Fetch inspector settings for professional details
+  let inspectorSettings: Record<string, unknown> = {};
+  if (inspector) {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('inspector_settings')
+      .eq('id', (await supabase.auth.getUser()).data.user?.id ?? '')
+      .single();
+    inspectorSettings =
+      (userData?.inspector_settings as Record<string, unknown>) ?? {};
+  }
+
+  // Parse report_content JSONB
+  const reportContent =
+    ((report as Record<string, unknown>).report_content as Record<
+      string,
+      unknown
+    >) ?? {};
   const reportRecord = report as Record<string, unknown>;
 
   return {
     reportType: report.report_type as 'bedek_bait' | 'delivery',
-    reportNumber: reportId.slice(0, 8).toUpperCase(),
+    reportNumber:
+      (reportRecord.report_number as string) ??
+      reportId.slice(0, 8).toUpperCase(),
     reportDate: report.report_date,
     status: report.status as PdfReportData['status'],
-    inspector: { name: inspector?.name ?? '' },
+    inspector: {
+      name: inspector?.name ?? '',
+      licenseNumber: inspectorSettings.license_number as string | undefined,
+      education: inspectorSettings.education as string | undefined,
+      experience: inspectorSettings.experience as string | undefined,
+      companyName: inspectorSettings.company_name as string | undefined,
+      companyLogoUrl: inspectorSettings.company_logo_url as string | undefined,
+    },
     property: {
       projectName: apt?.buildings?.projects?.name ?? '',
       address: apt?.buildings?.projects?.address ?? undefined,
       apartmentNumber: apt?.number ?? '',
-      floor: apt?.floor ?? undefined,
+      floor: (reportRecord.property_floor as number) ?? apt?.floor ?? undefined,
+      area: (reportRecord.property_area as string) ?? undefined,
+      contractor: (reportRecord.contractor_name as string) ?? undefined,
     },
     client: {
-      name: (reportRecord.tenant_name as string) ?? '',
-      phone: reportRecord.tenant_phone as string | undefined,
+      name:
+        (reportRecord.client_name as string) ??
+        (reportRecord.tenant_name as string) ??
+        '',
+      phone:
+        (reportRecord.client_phone as string) ??
+        (reportRecord.tenant_phone as string) ??
+        undefined,
+      email: reportRecord.client_email as string | undefined,
+      idNumber: reportRecord.client_id_number as string | undefined,
     },
     defects,
     signatures,
     notes: report.notes ?? undefined,
     stampUrl: inspector?.stampUrl,
+    declaration: reportContent.declaration as string | undefined,
+    scope: reportContent.scope as string | undefined,
+    propertyDescription:
+      (reportRecord.property_description as string) ??
+      (reportContent.property_description as string) ??
+      undefined,
+    limitations: reportContent.limitations as string | undefined,
+    tools: reportContent.tools as string[] | undefined,
+    weatherConditions: reportRecord.weather_conditions as string | undefined,
+    contractorName: reportRecord.contractor_name as string | undefined,
+    contractorPhone: reportRecord.contractor_phone as string | undefined,
+    logoUrl: inspectorSettings.company_logo_url as string | undefined,
   };
 }
 

@@ -5,6 +5,8 @@ export interface PdfInspector {
   licenseNumber?: string;
   education?: string;
   experience?: string;
+  companyName?: string;
+  companyLogoUrl?: string;
 }
 
 export interface PdfProperty {
@@ -36,6 +38,7 @@ export interface PdfDefect {
   costLabel?: string;
   note?: string;
   photoUrls?: string[];
+  photos?: { url: string; caption?: string }[];
   annotationsJson?: Record<string, unknown>[]; // annotation layers per photo
   annexText?: string;
 }
@@ -78,6 +81,11 @@ export interface PdfReportData {
   keyDelivery?: PdfKeyDelivery[];
   logoUrl?: string;
   stampUrl?: string;
+  declaration?: string;
+  scope?: string;
+  propertyDescription?: string;
+  contractorName?: string;
+  contractorPhone?: string;
 }
 
 // --- Grouped defects by category ---
