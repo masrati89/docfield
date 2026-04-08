@@ -16,3 +16,4 @@ export { PrePdfSummary } from './PrePdfSummary';
 export { TenantSignatureScreen } from './TenantSignatureScreen';
 export { SearchOverlay } from './SearchOverlay';
 export { ReportDetailsTab } from './ReportDetailsTab';
+export { ReportContentTab } from './ReportContentTab';

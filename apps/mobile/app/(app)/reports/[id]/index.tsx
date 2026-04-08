@@ -28,6 +28,7 @@ import { CategoryAccordion } from '@/components/reports/CategoryAccordion';
 import { ReportTabBar } from '@/components/reports/ReportTabBar';
 import { ReportSkeleton } from '@/components/reports/ReportSkeleton';
 import { ReportDetailsTab } from '@/components/reports/ReportDetailsTab';
+import { ReportContentTab } from '@/components/reports/ReportContentTab';
 import { ReportHeaderBar } from '@/components/reports/ReportHeaderBar';
 import { PrePdfSummary } from '@/components/reports/PrePdfSummary';
 import { ReportPreviewModal } from '@/components/reports/ReportPreviewModal';
@@ -429,12 +430,8 @@ export default function ReportDetailScreen() {
                 <ReportDetailsTab reportId={id} />
               )}
 
-              {activeTab === 'content' && (
-                <EmptyState
-                  icon="list"
-                  title="תוכן הדוח"
-                  subtitle="תוכן עניינים יתעדכן אוטומטית"
-                />
+              {activeTab === 'content' && id && (
+                <ReportContentTab reportId={id} />
               )}
 
               {activeTab === 'shortages' && (
