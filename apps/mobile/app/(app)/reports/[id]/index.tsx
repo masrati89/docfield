@@ -29,6 +29,7 @@ import { ReportTabBar } from '@/components/reports/ReportTabBar';
 import { ReportSkeleton } from '@/components/reports/ReportSkeleton';
 import { ReportDetailsTab } from '@/components/reports/ReportDetailsTab';
 import { ReportContentTab } from '@/components/reports/ReportContentTab';
+import { ReportShortagesTab } from '@/components/reports/ReportShortagesTab';
 import { ReportHeaderBar } from '@/components/reports/ReportHeaderBar';
 import { PrePdfSummary } from '@/components/reports/PrePdfSummary';
 import { ReportPreviewModal } from '@/components/reports/ReportPreviewModal';
@@ -434,12 +435,8 @@ export default function ReportDetailScreen() {
                 <ReportContentTab reportId={id} />
               )}
 
-              {activeTab === 'shortages' && (
-                <EmptyState
-                  icon="alert-circle"
-                  title="חוסרים"
-                  subtitle="אין חוסרים מתועדים עדיין"
-                />
+              {activeTab === 'shortages' && id && (
+                <ReportShortagesTab reportId={id} />
               )}
             </View>
           </ScrollView>
