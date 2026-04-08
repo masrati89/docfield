@@ -24,14 +24,13 @@ import { usePdfGeneration } from '@/hooks/usePdfGeneration';
 import { useReportStatus } from '@/hooks/useReportStatus';
 import { useReport } from '@/hooks/useReport';
 import { useSignature } from '@/hooks/useSignature';
-import { STATUS_CONFIG } from '@/components/reports/reportDetailConstants';
 import { CategoryAccordion } from '@/components/reports/CategoryAccordion';
 import { ReportTabBar } from '@/components/reports/ReportTabBar';
 import { ReportSkeleton } from '@/components/reports/ReportSkeleton';
-import { ReportDetailsSection } from '@/components/reports/ReportDetailsSection';
+import { ReportDetailsTab } from '@/components/reports/ReportDetailsTab';
 import { ReportHeaderBar } from '@/components/reports/ReportHeaderBar';
-import { ReportInfoCard } from '@/components/reports/ReportInfoCard';
 import { PrePdfSummary } from '@/components/reports/PrePdfSummary';
+import { ReportPreviewModal } from '@/components/reports/ReportPreviewModal';
 import { TenantSignatureScreen } from '@/components/reports/TenantSignatureScreen';
 import { SearchOverlay } from '@/components/reports/SearchOverlay';
 import type {
@@ -79,6 +78,7 @@ export default function ReportDetailScreen() {
   const [showSummary, setShowSummary] = useState(false);
   const [showTenantSignature, setShowTenantSignature] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [pdfAction, setPdfAction] = useState<'generate' | 'share'>('generate');
 
   const { generatePdf, sharePdf } = usePdfGeneration(
@@ -129,8 +129,6 @@ export default function ReportDetailScreen() {
       photoCount: items.reduce((sum, d) => sum + d.photoCount, 0),
     }));
   }, [defects]);
-
-  const totalPhotos = defects.reduce((sum, d) => sum + d.photoCount, 0);
 
   const toggleCategory = (name: string) => {
     setOpenCategories((prev) => ({ ...prev, [name]: !prev[name] }));
@@ -203,8 +201,6 @@ export default function ReportDetailScreen() {
     [id, router]
   );
 
-  const statusConfig =
-    STATUS_CONFIG[report?.status ?? 'draft'] ?? STATUS_CONFIG.draft;
   const subtitle = report
     ? `${report.address ?? report.projectName}, דירה ${report.apartmentNumber}`
     : '';
@@ -346,7 +342,7 @@ export default function ReportDetailScreen() {
         projectName={report?.projectName ?? report?.address ?? undefined}
         inspectorName={profile?.fullName ?? undefined}
         reportDate={report?.reportDate ?? undefined}
-        onPreview={handleGeneratePdf}
+        onPreview={() => setShowPreview(true)}
         onShare={handleSharePdf}
         onSettings={() => showToast('הגדרות דוח — בקרוב', 'info')}
         onDownload={handleGeneratePdf}
@@ -395,17 +391,6 @@ export default function ReportDetailScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 32 }}
           >
-            {/* Report Info Card */}
-            {report && (
-              <ReportInfoCard
-                report={report}
-                statusConfig={statusConfig}
-                defectsCount={defects.length}
-                totalPhotos={totalPhotos}
-                categoryCount={categoryGroups.length}
-              />
-            )}
-
             <ReportTabBar
               activeTab={activeTab}
               onTabChange={setActiveTab}
@@ -440,8 +425,8 @@ export default function ReportDetailScreen() {
                 </>
               )}
 
-              {activeTab === 'details' && report && (
-                <ReportDetailsSection report={report} />
+              {activeTab === 'details' && id && (
+                <ReportDetailsTab reportId={id} />
               )}
 
               {activeTab === 'content' && (
@@ -495,6 +480,16 @@ export default function ReportDetailScreen() {
                 setShowSearch(false);
               }}
               onClose={() => setShowSearch(false)}
+            />
+          )}
+
+          {/* PDF Preview modal */}
+          {id && (
+            <ReportPreviewModal
+              visible={showPreview}
+              onClose={() => setShowPreview(false)}
+              onGeneratePdf={handleGeneratePdf}
+              reportId={id}
             />
           )}
         </>
