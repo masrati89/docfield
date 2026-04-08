@@ -13,10 +13,12 @@ import {
   miniHeader,
   detailRow,
   detailBox,
-  photoHtml,
+  photoWithCaptionHtml,
   signatureBoxHtml,
   escapeHtml,
   formatCurrency,
+  declarationHtml,
+  annexPageHtml,
   groupDefectsByCategory,
 } from './shared';
 
@@ -33,9 +35,10 @@ function defectFullHtml(d: {
   costLabel?: string;
   note?: string;
   photoUrls?: string[];
+  photos?: { url: string; caption?: string }[];
   annexText?: string;
 }): string {
-  const photos = d.photoUrls ?? [];
+  const photos = d.photoUrls ?? d.photos?.map((p) => p.url) ?? [];
   const costDisplay = d.costLabel
     ? escapeHtml(d.costLabel)
     : d.cost
@@ -75,9 +78,11 @@ function defectFullHtml(d: {
   }
 
   if (photos.length > 0) {
+    const photoItems =
+      d.photos ?? photos.map((url) => ({ url, caption: undefined }));
     html += `<div style="display:flex;gap:3px;margin-top:4px;margin-right:26px;flex-wrap:wrap;">`;
-    for (const url of photos.slice(0, 6)) {
-      html += photoHtml(url);
+    for (const photo of photoItems.slice(0, 6)) {
+      html += photoWithCaptionHtml(photo.url, photo.caption);
     }
     html += `</div>`;
   }
@@ -165,6 +170,7 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
   const coverPage = `
     <div class="page" style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
       <div style="align-self:flex-end;margin-bottom:16px;">${logoHtml(data.logoUrl)}</div>
+      ${data.inspector.companyName ? `<div style="font-size:12px;font-weight:600;color:${PDF.accent};margin-bottom:4px;">${escapeHtml(data.inspector.companyName)}</div>` : ''}
       <div style="width:160px;height:1px;background:${PDF.dk};margin-bottom:24px;"></div>
       <div style="font-size:22px;font-weight:700;color:${PDF.dk};letter-spacing:-0.5px;margin-bottom:6px;">${title}</div>
       <div style="font-size:11px;color:${PDF.lt};margin-bottom:24px;">\u05D1\u05D3\u05D9\u05E7\u05EA \u05E7\u05D1\u05DC\u05D4 \u05DC\u05D3\u05D9\u05E8\u05D4 \u05D7\u05D3\u05E9\u05D4</div>
@@ -205,7 +211,47 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
         ${detailRow('\u05E9\u05DD:', escapeHtml(data.client.name))}
         ${data.client.phone ? detailRow('\u05D8\u05DC\u05E4\u05D5\u05DF:', escapeHtml(data.client.phone)) : ''}
         ${data.client.email ? detailRow('\u05D0\u05D9\u05DE\u05D9\u05D9\u05DC:', escapeHtml(data.client.email)) : ''}
+        ${data.client.idNumber ? detailRow('\u05EA.\u05D6.:', escapeHtml(data.client.idNumber)) : ''}
       `)}
+      ${
+        data.contractorName
+          ? `
+      ${sectionTitle('\u05E4\u05E8\u05D8\u05D9 \u05E7\u05D1\u05DC\u05DF')}
+      ${detailBox(`
+        ${detailRow('\u05E9\u05DD:', escapeHtml(data.contractorName))}
+        ${data.contractorPhone ? detailRow('\u05D8\u05DC\u05E4\u05D5\u05DF:', escapeHtml(data.contractorPhone)) : ''}
+      `)}
+      `
+          : ''
+      }
+
+      ${
+        data.declaration
+          ? `
+      ${sectionTitle('\u05D4\u05E6\u05D4\u05E8\u05EA \u05D1\u05D5\u05D3\u05E7')}
+      ${declarationHtml(data.declaration)}
+      `
+          : ''
+      }
+
+      ${
+        data.scope
+          ? `
+      ${sectionTitle('\u05D4\u05D9\u05E7\u05E3 \u05D4\u05D1\u05D3\u05D9\u05E7\u05D4')}
+      ${detailBox(`<div style="white-space:pre-wrap;">${escapeHtml(data.scope)}</div>`)}
+      `
+          : ''
+      }
+
+      ${
+        data.propertyDescription
+          ? `
+      ${sectionTitle('\u05EA\u05D9\u05D0\u05D5\u05E8 \u05D4\u05E0\u05DB\u05E1')}
+      ${detailBox(`<div style="white-space:pre-wrap;">${escapeHtml(data.propertyDescription)}</div>`)}
+      `
+          : ''
+      }
+
       ${sectionTitle('\u05EA\u05E0\u05D0\u05D9 \u05D4\u05D1\u05D3\u05D9\u05E7\u05D4')}
       ${detailBox(`
         <div><span style="color:${PDF.lt};">\u05DE\u05D8\u05E8\u05D4: </span>\u05D1\u05D3\u05D9\u05E7\u05EA \u05DC\u05D9\u05E7\u05D5\u05D9\u05D9 \u05D1\u05E0\u05D9\u05D9\u05D4 \u05DC\u05E4\u05E0\u05D9 \u05E7\u05D1\u05DC\u05EA \u05D3\u05D9\u05E8\u05D4 \u05D7\u05D3\u05E9\u05D4</div>
@@ -246,6 +292,7 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
         costLabel: defect.costLabel,
         note: defect.note,
         photoUrls: defect.photoUrls,
+        photos: defect.photos,
         annexText: defect.annexText,
       });
       defectsOnPage++;
@@ -345,6 +392,15 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
       ${footerHtml(pageNum, title, data.reportDate, data.logoUrl)}
     </div>`;
 
+  // --- ANNEX: Full-size photos ---
+  const annexPages = annexPageHtml(
+    data.defects,
+    pageNum + 1,
+    title,
+    data.reportDate,
+    data.logoUrl
+  );
+
   return `<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -358,6 +414,7 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
   ${detailsPage}
   ${defectPages.join('')}
   ${summaryPage}
+  ${annexPages}
 </body>
 </html>`;
 }

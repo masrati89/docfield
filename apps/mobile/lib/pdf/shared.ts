@@ -151,6 +151,85 @@ export function formatCurrency(amount: number): string {
   return `\u20AA${amount.toLocaleString('he-IL')}`;
 }
 
+export function declarationHtml(text: string): string {
+  return `
+    <div style="padding:8px 10px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:8px;line-height:1.8;white-space:pre-wrap;">${escapeHtml(text)}</div>
+  `;
+}
+
+export function photoWithCaptionHtml(url: string, caption?: string): string {
+  return `
+    <div style="text-align:center;flex-shrink:0;">
+      <img src="${url}" style="width:56px;height:42px;border-radius:2px;object-fit:cover;border:1px solid ${PDF.bdrLt};" />
+      ${caption ? `<div style="font-size:6px;color:${PDF.lt};margin-top:1px;max-width:56px;line-height:1.3;word-break:break-word;">${escapeHtml(caption)}</div>` : ''}
+    </div>
+  `;
+}
+
+export function annexPageHtml(
+  defects: PdfDefect[],
+  pageNum: number,
+  title: string,
+  date: string,
+  logoUrl?: string
+): string {
+  const photosWithDefects: {
+    url: string;
+    caption?: string;
+    defectNum: number;
+    defectTitle: string;
+  }[] = [];
+
+  for (const d of defects) {
+    const photos =
+      d.photos ??
+      d.photoUrls?.map((url) => ({ url, caption: undefined })) ??
+      [];
+    for (const photo of photos) {
+      photosWithDefects.push({
+        url: photo.url,
+        caption: photo.caption,
+        defectNum: d.number,
+        defectTitle: d.title,
+      });
+    }
+  }
+
+  if (photosWithDefects.length === 0) return '';
+
+  let pages = '';
+  const photosPerPage = 6;
+
+  for (let i = 0; i < photosWithDefects.length; i += photosPerPage) {
+    const batch = photosWithDefects.slice(i, i + photosPerPage);
+    const pageIdx = pageNum + Math.floor(i / photosPerPage);
+
+    pages += `
+      <div class="page" style="display:flex;flex-direction:column;">
+        ${miniHeader(`${title} \u2014 \u05E0\u05E1\u05E4\u05D7 \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA`, logoUrl)}
+        ${sectionTitle(`\u05E0\u05E1\u05E4\u05D7 \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA${i > 0 ? ` (\u05D4\u05DE\u05E9\u05DA)` : ''}`)}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
+          ${batch
+            .map(
+              (p) => `
+            <div style="border:1px solid ${PDF.bdrLt};border-radius:3px;overflow:hidden;">
+              <img src="${p.url}" style="width:100%;height:160px;object-fit:cover;" />
+              <div style="padding:4px 6px;background:${PDF.bg};">
+                <div style="font-size:7px;font-weight:600;color:${PDF.dk};">\u05DE\u05DE\u05E6\u05D0 ${p.defectNum}: ${escapeHtml(p.defectTitle)}</div>
+                ${p.caption ? `<div style="font-size:6.5px;color:${PDF.lt};margin-top:1px;">${escapeHtml(p.caption)}</div>` : ''}
+              </div>
+            </div>
+          `
+            )
+            .join('')}
+        </div>
+        ${footerHtml(pageIdx, title, date, logoUrl)}
+      </div>`;
+  }
+
+  return pages;
+}
+
 import type { PdfDefect, DefectGroup } from './types';
 
 export function groupDefectsByCategory(defects: PdfDefect[]): DefectGroup[] {
