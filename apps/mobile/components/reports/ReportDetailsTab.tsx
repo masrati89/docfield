@@ -69,16 +69,16 @@ export function ReportDetailsTab({ reportId }: ReportDetailsTabProps) {
       if (row) {
         const r = row as unknown as Record<string, string | null>;
         setData({
-          client_name: r.client_name || r.tenant_name || '',
-          client_phone: r.client_phone || r.tenant_phone || '',
-          client_email: r.client_email || '',
-          client_id_number: r.client_id_number || '',
-          property_type: r.property_type || '',
-          property_area: r.property_area || '',
-          property_floor: r.property_floor || '',
-          property_description: r.property_description || '',
-          contractor_name: r.contractor_name || '',
-          contractor_phone: r.contractor_phone || '',
+          client_name: r.client_name ?? r.tenant_name ?? '',
+          client_phone: r.client_phone ?? r.tenant_phone ?? '',
+          client_email: r.client_email ?? '',
+          client_id_number: r.client_id_number ?? '',
+          property_type: r.property_type ?? '',
+          property_area: r.property_area ?? '',
+          property_floor: r.property_floor ?? '',
+          property_description: r.property_description ?? '',
+          contractor_name: r.contractor_name ?? '',
+          contractor_phone: r.contractor_phone ?? '',
         });
       }
       setLoading(false);

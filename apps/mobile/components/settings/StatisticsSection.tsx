@@ -53,11 +53,7 @@ export function StatisticsSection({ organizationId }: StatisticsSectionProps) {
 
       const reports = reportsRes.data ?? [];
       const now = new Date();
-      const monthStart = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        1
-      ).toISOString();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
       setStats({
         totalReports: reports.length,
@@ -65,7 +61,8 @@ export function StatisticsSection({ organizationId }: StatisticsSectionProps) {
         bedekBait: reports.filter((r) => r.report_type === 'bedek_bait').length,
         delivery: reports.filter((r) => r.report_type === 'delivery').length,
         completed: reports.filter((r) => r.status === 'completed').length,
-        thisMonth: reports.filter((r) => r.created_at >= monthStart).length,
+        thisMonth: reports.filter((r) => new Date(r.created_at) >= monthStart)
+          .length,
       });
     } catch {
       // Silently fail — stats are non-critical

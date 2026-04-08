@@ -101,7 +101,7 @@ export function useReportShortages(
     };
   }, [reportId]);
 
-  if (isLoading || settingsLoading || !reportRow) {
+  if (isLoading || settingsLoading || !reportRow || !settings) {
     return {
       requiredMissing: [],
       optionalMissing: [],

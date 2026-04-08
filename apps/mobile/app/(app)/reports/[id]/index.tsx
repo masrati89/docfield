@@ -30,6 +30,7 @@ import { ReportSkeleton } from '@/components/reports/ReportSkeleton';
 import { ReportDetailsTab } from '@/components/reports/ReportDetailsTab';
 import { ReportContentTab } from '@/components/reports/ReportContentTab';
 import { ReportShortagesTab } from '@/components/reports/ReportShortagesTab';
+import { useReportShortages } from '@/hooks/useReportShortages';
 import { ReportHeaderBar } from '@/components/reports/ReportHeaderBar';
 import { PrePdfSummary } from '@/components/reports/PrePdfSummary';
 import { ReportPreviewModal } from '@/components/reports/ReportPreviewModal';
@@ -64,6 +65,9 @@ export default function ReportDetailScreen() {
       router.replace(`/(app)/reports/${id}/checklist`);
     }
   }, [report?.reportType, id, router]);
+
+  // Shortages count for tab badge
+  const { totalRequired: shortagesCount } = useReportShortages(id, defects);
 
   // Refetch when screen regains focus (e.g., after adding a defect)
   useFocusEffect(
@@ -396,7 +400,7 @@ export default function ReportDetailScreen() {
             <ReportTabBar
               activeTab={activeTab}
               onTabChange={setActiveTab}
-              shortagesCount={0}
+              shortagesCount={shortagesCount}
             />
 
             {/* Tab Content */}

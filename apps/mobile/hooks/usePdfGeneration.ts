@@ -176,13 +176,19 @@ async function fetchFullReportData(
   // Fetch inspector settings for professional details
   let inspectorSettings: Record<string, unknown> = {};
   if (inspector) {
-    const { data: userData } = await supabase
-      .from('users')
-      .select('inspector_settings')
-      .eq('id', (await supabase.auth.getUser()).data.user?.id ?? '')
-      .single();
-    inspectorSettings =
-      (userData?.inspector_settings as Record<string, unknown>) ?? {};
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    if (userId) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('inspector_settings')
+        .eq('id', userId)
+        .single();
+      inspectorSettings =
+        (userData?.inspector_settings as Record<string, unknown>) ?? {};
+    }
   }
 
   // Parse report_content JSONB

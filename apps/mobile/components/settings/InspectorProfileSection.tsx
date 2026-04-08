@@ -163,14 +163,13 @@ export function InspectorProfileSection() {
               placeholderTextColor={COLORS.neutral[400]}
               multiline={field.multiline}
               numberOfLines={field.numberOfLines}
-              className={`bg-white border border-cream-200 rounded-[10px] p-[12px] text-[14px] font-rubik text-neutral-700 ${
-                field.multiline
-                  ? 'min-h-[' + (field.numberOfLines ?? 3) * 28 + 'px]'
-                  : ''
-              }`}
+              className="bg-white border border-cream-200 rounded-[10px] p-[12px] text-[14px] font-rubik text-neutral-700"
               style={{
                 textAlign: 'right',
                 textAlignVertical: field.multiline ? 'top' : 'center',
+                minHeight: field.multiline
+                  ? (field.numberOfLines ?? 3) * 28
+                  : undefined,
               }}
             />
           </View>

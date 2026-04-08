@@ -113,7 +113,7 @@ export function useReportContent(
   // Initialize from inspector settings defaults
   const initializeDefaults = useCallback(
     (inspectorSettings: Record<string, unknown>) => {
-      if (!isContentEmpty(content) && !isLoading) return;
+      if (defaultsLoaded || isLoading || !isContentEmpty(content)) return;
 
       const defaults: ReportContent = {};
       let hasDefaults = false;
@@ -137,7 +137,7 @@ export function useReportContent(
         saveToSupabase(defaults);
       }
     },
-    [content, isLoading, saveToSupabase]
+    [content, isLoading, defaultsLoaded, saveToSupabase]
   );
 
   // Cleanup debounce on unmount

@@ -343,6 +343,9 @@ export default function AddDefectScreen() {
     setIsSaving(true);
     try {
       // Insert the defect
+      // Compute cost value
+      const costValue = costAmount ? parseFloat(costAmount) : null;
+
       const { data: defectData, error: defectError } = await supabase
         .from('defects')
         .insert({
@@ -354,6 +357,10 @@ export default function AddDefectScreen() {
           standard_ref: standardRef.trim() || null,
           severity: 'medium',
           source: 'manual',
+          recommendation: recommendation.trim() || null,
+          notes: note.trim() || null,
+          cost: costValue,
+          cost_unit: costValue !== null ? costUnit : null,
         })
         .select('id')
         .single();
@@ -432,6 +439,10 @@ export default function AddDefectScreen() {
     location,
     category,
     standardRef,
+    recommendation,
+    note,
+    costAmount,
+    costUnit,
     photos,
     router,
     showToast,
