@@ -33,3 +33,47 @@ put it in `apps/mobile` or `apps/web` env files. Client bundles get
 `sb_publishable_…` only.
 
 ---
+
+## Defect library: intentional `standard` = `standard_reference` duplication
+
+**Date discovered:** 2026-04-10
+**Introduced by:** migration `031_seed_global_defect_library.sql`
+
+`defect_library` has **two columns holding the same reference to an Israeli
+standard** (e.g. `ת"י 1415`):
+
+- `standard_reference` — original from migration 008, **currently read/written
+  by `apps/mobile/hooks/useDefectLibrary.ts`**
+- `standard` — added by migration 030 for a planned "rich library" feature,
+  not yet wired up
+
+Migration 031 deliberately writes the **same value to both columns** for all
+338 system defects. This is a known, documented duplication — not a bug.
+
+**Why the duplication exists:** when 031 was authored we considered writing
+only to `standard` (the newer column) and updating the hook. We rejected that
+because (a) Iron Rule — don't refactor beyond the requested scope, (b) one
+month before production deploy is the wrong time to refactor a reader path,
+(c) the duplication costs ~27KB and zero risk. Full decision trail is in the
+agent conversation from 2026-04-10 (C1 discussion).
+
+**When you build the rich defect library feature (title/recommendation/cost
+editing UI), you must clean this up:**
+
+1. Update `apps/mobile/hooks/useDefectLibrary.ts` to read from `standard`
+   first, fall back to `standard_reference` (COALESCE-style), and write only
+   to `standard` on create/update.
+2. Verify no other consumer still reads `standard_reference` (grep the repo).
+3. Run the one-liner cleanup in a new migration:
+   ```sql
+   -- Migration 0XX_drop_standard_reference_duplication
+   UPDATE defect_library SET standard_reference = NULL WHERE source = 'system';
+   ```
+4. Optionally, a later migration can `ALTER TABLE defect_library DROP COLUMN
+standard_reference` once you're confident no user-created rows rely on it.
+
+**Do NOT touch this without doing all four steps in order.** Dropping one side
+without updating the hook will silently blank out every `standardRef` shown in
+the "Add defect" screen for 338 pre-seeded items.
+
+---
