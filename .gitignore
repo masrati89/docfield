@@ -18,6 +18,7 @@ android/
 .env
 .env.local
 .env.*.local
+.env.remote
 
 # IDE
 .vscode/
@@ -31,6 +32,13 @@ Thumbs.db
 
 # Supabase
 supabase/.temp/
+supabase/.branches/
+
+# DB backups (local, not for repo)
+backups/
+
+# TypeScript incremental build artifacts
+*.tsbuildinfo
 
 # Debug
 npm-debug.log*
