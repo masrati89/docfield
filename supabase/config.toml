@@ -11,8 +11,9 @@ port = 54322
 major_version = 17
 
 [db.seed]
-enabled = true
-sql_paths = ["./seeds/demo_data.sql"]
+# Auto-seed is disabled. Use `npm run seed` after `supabase db reset`.
+# See scripts/seed.mjs — local-dev-only seed with safety guards.
+enabled = false
 
 [studio]
 enabled = true
