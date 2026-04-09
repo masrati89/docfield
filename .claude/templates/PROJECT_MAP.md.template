@@ -1,0 +1,81 @@
+# Project Map
+
+> Directory structure with explanations. Updated by project-architect.
+
+## Top-Level
+```
+.
+├── .claude/              # Claude Code config, agents, commands
+├── .github/              # GitHub Actions, templates
+├── app/ (or src/)        # Application source
+├── components/           # Shared UI components
+├── docs/                 # Documentation
+├── lib/                  # Utilities, helpers, clients
+├── public/               # Static assets
+├── supabase/             # Database migrations, seeds, functions
+├── tests/                # Test files
+├── types/                # TypeScript type definitions
+├── .env.example          # Required env vars (template)
+├── CLAUDE.md             # Entry point for Claude Code
+├── package.json          # Dependencies and scripts
+├── tsconfig.json         # TypeScript config
+└── README.md             # Project intro and setup
+```
+
+## Key Directories
+
+### `app/` (Next.js App Router)
+- `(auth)/` — public auth pages (login, signup)
+- `(dashboard)/` — authenticated dashboard
+- `api/` — API route handlers
+- `b/[slug]/` — public booking pages
+- `layout.tsx` — root layout with providers
+- `globals.css` — global styles and CSS variables
+
+### `components/`
+- `ui/` — shadcn/ui primitives (Button, Input, Dialog)
+- `forms/` — form components
+- `layout/` — navigation, headers, sidebars
+- `features/` — feature-specific components
+
+### `lib/`
+- `supabase/` — Supabase client and helpers
+- `utils.ts` — general utilities
+- `validators/` — Zod schemas
+- `api/` — API client wrappers
+- `hooks/` — custom React hooks
+
+### `supabase/`
+- `migrations/` — SQL migration files (timestamped)
+- `seed.sql` — development seed data
+- `functions/` — Edge Functions
+- `config.toml` — Supabase config
+
+### `docs/`
+- `ARCHITECTURE.md` — system design and decisions
+- `DATABASE.md` — schema, RLS, indexes
+- `CONVENTIONS.md` — coding standards
+- `GOTCHAS.md` — known pitfalls
+- `SECURITY.md` — threat model
+- `ADR/` — Architecture Decision Records
+
+## Where to Put New Code
+
+| What | Where |
+|------|-------|
+| New page | `app/[route]/page.tsx` |
+| New API route | `app/api/[route]/route.ts` |
+| New UI primitive | `components/ui/` |
+| New feature component | `components/features/[feature]/` |
+| New database table | `supabase/migrations/[timestamp]_[name].sql` |
+| New utility | `lib/utils.ts` or `lib/[domain]/` |
+| New hook | `lib/hooks/` |
+| New type | `types/[domain].ts` |
+| New test | Co-located with file (`*.test.ts`) |
+| New E2E test | `tests/e2e/[flow].spec.ts` |
+
+## Import Aliases
+- `@/` → project root
+- `@/components` → `./components`
+- `@/lib` → `./lib`
+- `@/types` → `./types`

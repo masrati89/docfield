@@ -1,0 +1,72 @@
+# Gotchas
+
+> Known pitfalls and non-obvious behaviors. Read before debugging unfamiliar issues.
+
+## How to Use This File
+When you encounter a tricky bug or non-obvious behavior, add it here so future-you (and Claude) don't waste time rediscovering it.
+
+## Template for New Entries
+```markdown
+## [Title]
+**Discovered**: YYYY-MM-DD
+**Severity**: 🔴 Critical / 🟠 High / 🟡 Medium / 🟢 Low
+**Symptom**: What you observed
+**Cause**: Actual root cause
+**Fix**: What fixed it
+**Prevention**: How to avoid in future
+```
+
+---
+
+## Multi-Tenant: Missing business_id Filter
+**Severity**: 🔴 Critical
+**Symptom**: User A sees User B's data
+**Cause**: Query forgot `.eq('business_id', businessId)`
+**Fix**: Always filter by business_id in every query
+**Prevention**: Use a wrapper function `getScopedQuery(table, businessId)` that enforces it
+
+## RLS Policy Not Applied
+**Severity**: 🔴 Critical
+**Symptom**: Data visible across tenants despite policy
+**Cause**: Forgot `ALTER TABLE x ENABLE ROW LEVEL SECURITY;`
+**Fix**: Enable RLS on every new table
+**Prevention**: db-migrator agent checks this automatically
+
+## RTL: margin-left Breaks in Hebrew
+**Severity**: 🟠 High
+**Symptom**: Spacing looks wrong in Hebrew UI
+**Cause**: Hardcoded `ml-*` instead of logical `ms-*`
+**Fix**: Use `ms-*`, `me-*`, `ps-*`, `pe-*` instead
+**Prevention**: rtl-checker agent catches this
+
+## Green API Rate Limits
+**Severity**: 🟠 High
+**Symptom**: Messages fail silently after burst
+**Cause**: Green API has per-minute rate limits
+**Fix**: Use Upstash Redis queue with throttling
+**Prevention**: Always send through queue, never direct
+
+## Stripe Webhook Signature Verification
+**Severity**: 🔴 Critical
+**Symptom**: Webhooks accepted from anyone
+**Cause**: Missing `stripe.webhooks.constructEvent` signature check
+**Fix**: Always verify webhook signatures in API route
+**Prevention**: security-auditor agent flags this
+
+## Supabase Edge Function Timeout
+**Severity**: 🟡 Medium
+**Symptom**: Function fails after 10 seconds
+**Cause**: Edge Function max execution time
+**Fix**: Move long operations to background job or queue
+**Prevention**: Keep Edge Functions under 5 seconds
+
+## Hebrew Font Not Loading
+**Severity**: 🟡 Medium
+**Symptom**: Hebrew text renders in fallback font
+**Cause**: Font file not loaded or wrong font-family
+**Fix**: Load Assistant/Heebo/Rubik from Google Fonts or self-host
+**Prevention**: Test RTL rendering during component review
+
+---
+
+[Add new entries above this line]

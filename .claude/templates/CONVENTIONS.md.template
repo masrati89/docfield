@@ -1,0 +1,74 @@
+# Coding Conventions
+
+> Inferred from existing codebase. Enforced by ESLint/Prettier where possible.
+
+## TypeScript
+- **Strict mode**: enabled
+- **No `any`**: use `unknown` and narrow
+- **Explicit return types** on exported functions
+- **Interface over type** for object shapes
+- **Prefer `const assertions`** for literal types
+
+## React
+- **Functional components only** — no classes
+- **Named exports** for components
+- **Props interface** named `[Component]Props`
+- **Custom hooks** start with `use`
+- **Error boundaries** on route level
+
+## File Naming
+- **Components**: PascalCase (`UserProfile.tsx`)
+- **Hooks**: camelCase (`useUser.ts`)
+- **Utils**: camelCase (`formatDate.ts`)
+- **Types**: PascalCase (`User.ts`)
+- **Tests**: match source (`UserProfile.test.tsx`)
+
+## Naming
+- **Variables/functions**: camelCase
+- **Constants**: UPPER_SNAKE_CASE
+- **Types/Interfaces/Components**: PascalCase
+- **Event handlers**: `handle*` or `on*`
+- **Boolean**: `is*`, `has*`, `should*`, `can*`
+
+## Imports Order
+1. External (React, libraries)
+2. Internal aliases (`@/lib`, `@/components`)
+3. Relative (`./sibling`)
+4. Types (last, with `type` keyword)
+5. Styles (last)
+
+## Comments
+- **JSDoc** on exported functions
+- **Inline** only for non-obvious logic
+- **No commented-out code** — use git history
+- **TODOs** include ticket number: `// TODO(#123): ...`
+
+## Error Handling
+- **Throw in functions** that can fail
+- **Catch in handlers** (route handlers, event handlers)
+- **Never swallow** — always log or rethrow
+- **Custom error classes** for domain errors
+
+## Async
+- **async/await** over promise chains
+- **Promise.all** for parallel
+- **AbortController** for cancellation
+- **Always handle errors** — no bare `await`
+
+## State
+- **Server state**: React Query
+- **Client state**: Zustand for global, useState for local
+- **URL state**: searchParams for filters/pagination
+- **Form state**: React Hook Form + Zod
+
+## Styling
+- **Tailwind utilities** primarily
+- **Logical properties** for RTL support
+- **CSS variables** for theme tokens
+- **No inline styles** except dynamic values
+
+## Testing
+- **Unit tests** next to source files
+- **Integration tests** in `tests/integration`
+- **E2E tests** in `tests/e2e`
+- **Test names** describe behavior, not implementation

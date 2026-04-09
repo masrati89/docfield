@@ -1,0 +1,94 @@
+# Security
+
+> Threat model and security requirements. Reviewed quarterly.
+
+## Threat Model
+
+### Assets to Protect
+1. **User PII** — names, phones, emails, addresses
+2. **Business data** — bookings, customers, revenue
+3. **Payment information** — handled by Stripe (PCI scope minimized)
+4. **Authentication credentials** — passwords, tokens
+5. **Multi-tenant isolation** — preventing cross-business data leaks
+
+### Threat Actors
+1. **External attackers** — SQL injection, XSS, CSRF
+2. **Malicious users** — trying to access other tenants' data
+3. **Compromised dependencies** — supply chain
+4. **Insider threats** — developer access to production
+
+## Security Controls
+
+### Authentication
+- Supabase Auth with email/password and Google OAuth
+- Passwords hashed with bcrypt (Supabase default)
+- Sessions via HTTP-only cookies
+- JWT expiration: 1 hour
+- Refresh token rotation enabled
+
+### Authorization
+- Row Level Security (RLS) on every table
+- API routes check authentication
+- Multi-tenant isolation via `business_id` filtering
+- Admin endpoints segregated
+
+### Input Validation
+- All user input validated with Zod schemas
+- SQL queries parameterized (via Supabase client)
+- File uploads restricted by type and size
+- URLs validated before fetching
+
+### Output Encoding
+- React escapes by default
+- `dangerouslySetInnerHTML` sanitized with DOMPurify when needed
+- API responses exclude sensitive fields
+
+### Secrets Management
+- All secrets in environment variables
+- `.env*` files in `.gitignore`
+- Production secrets in Vercel environment
+- Rotate secrets quarterly
+
+### Rate Limiting
+- Auth endpoints: 5 attempts/minute/IP
+- Public APIs: 100 requests/minute/IP
+- Implemented with Upstash Redis
+
+### Headers
+- HTTPS enforced
+- HSTS: max-age=31536000
+- CSP configured
+- X-Frame-Options: DENY
+- X-Content-Type-Options: nosniff
+
+### Dependencies
+- Dependabot enabled
+- `npm audit` weekly
+- Major version updates reviewed
+
+### Monitoring
+- Sentry for error tracking
+- Failed auth attempts logged
+- Suspicious activity alerts
+
+## Compliance
+- **GDPR**: User data deletion endpoint
+- **Israeli Privacy Protection Law**: Documented data handling
+- **PCI DSS**: Out of scope (Stripe handles card data)
+
+## Incident Response
+1. Contain — revoke compromised credentials
+2. Assess — determine scope and impact
+3. Notify — affected users within 72 hours (GDPR)
+4. Remediate — patch vulnerability
+5. Document — post-mortem
+
+## Security Checklist for New Features
+- [ ] Input validated with Zod
+- [ ] Output properly escaped
+- [ ] Auth check on API route
+- [ ] RLS policy on new tables
+- [ ] `business_id` filter on queries
+- [ ] Rate limiting if public
+- [ ] No secrets in code
+- [ ] Dependencies from trusted sources
