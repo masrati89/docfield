@@ -3,6 +3,7 @@ import { Alert, InteractionManager } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { supabase } from '@/lib/supabase';
+import { createReportWithSnapshot } from '@/lib/createReportWithSnapshot';
 import { useAuth } from '@/contexts/AuthContext';
 
 import type {
@@ -470,36 +471,25 @@ export function useWizardState(
         }
       }
 
-      const insertData: Record<string, unknown> = {
-        apartment_id: apartmentId,
-        organization_id: profile.organizationId,
-        inspector_id: profile.id,
-        report_type: state.reportType as ReportType,
-        status: 'draft',
-        round_number: roundNumber,
-        previous_round_id: previousRoundId,
-        report_date: new Date().toISOString().split('T')[0],
-        project_name_freetext:
+      const { id: reportId } = await createReportWithSnapshot({
+        apartmentId: apartmentId ?? null,
+        organizationId: profile.organizationId,
+        inspectorId: profile.id,
+        reportType: state.reportType as ReportType,
+        roundNumber,
+        previousRoundId,
+        reportDate: new Date().toISOString().split('T')[0],
+        projectNameFreetext:
           state.projectFreetext.trim() || state.selectedProject?.name || null,
-        apartment_label_freetext:
+        apartmentLabelFreetext:
           state.apartmentFreetext.trim() ||
           (state.selectedApartment
             ? `דירה ${state.selectedApartment.number}`
             : null),
-        tenant_name: state.tenantName.trim() || null,
-        tenant_phone: state.tenantPhone.trim() || null,
-        tenant_email: state.tenantEmail.trim() || null,
-      };
-
-      const { data, error } = await supabase
-        .from('delivery_reports')
-        .insert(insertData)
-        .select('id')
-        .single();
-
-      if (error) throw error;
-
-      const reportId = data.id as string;
+        tenantName: state.tenantName.trim() || null,
+        tenantPhone: state.tenantPhone.trim() || null,
+        tenantEmail: state.tenantEmail.trim() || null,
+      });
 
       // Reset submitting state before closing
       dispatch({ type: 'SET_SUBMITTING', payload: false });

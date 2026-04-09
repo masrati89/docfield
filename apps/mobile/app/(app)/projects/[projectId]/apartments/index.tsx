@@ -22,6 +22,7 @@ import type BottomSheetType from '@gorhom/bottom-sheet';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
 import { supabase } from '@/lib/supabase';
+import { createReportWithSnapshot } from '@/lib/createReportWithSnapshot';
 import { SkeletonBlock, EmptyState } from '@/components/ui';
 import { BottomSheetWrapper } from '@/components/ui/BottomSheetWrapper';
 import { Toast } from '@/components/ui/Toast';
@@ -455,25 +456,18 @@ export default function ApartmentsScreen() {
     setIsCreating(true);
 
     try {
-      const { data, error: insertError } = await supabase
-        .from('delivery_reports')
-        .insert({
-          apartment_id: selectedApartment.id,
-          organization_id: profile.organizationId,
-          inspector_id: profile.id,
-          report_type: selectedReportType,
-          status: 'draft',
-          round_number: 1,
-          report_date: new Date().toISOString().split('T')[0],
-        })
-        .select('id')
-        .single();
-
-      if (insertError) throw insertError;
+      const { id: reportId } = await createReportWithSnapshot({
+        apartmentId: selectedApartment.id,
+        organizationId: profile.organizationId,
+        inspectorId: profile.id,
+        reportType: selectedReportType,
+        roundNumber: 1,
+        reportDate: new Date().toISOString().split('T')[0],
+      });
 
       sheetRef.current?.close();
       setSheetOpen(false);
-      router.push(`/(app)/reports/${data.id}`);
+      router.push(`/(app)/reports/${reportId}`);
     } catch {
       showToast('שגיאה ביצירת הדוח. נסה שוב.', 'error');
     } finally {

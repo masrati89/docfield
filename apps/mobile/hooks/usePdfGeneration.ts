@@ -54,6 +54,14 @@ async function fetchFullReportData(
        report_number, client_name, client_phone, client_email, client_id_number,
        property_type, property_area, property_floor, property_description,
        report_content, weather_conditions, contractor_name, contractor_phone,
+       inspector_full_name_snapshot, inspector_license_number_snapshot,
+       inspector_professional_title_snapshot, inspector_education_snapshot,
+       inspector_signature_url_snapshot, inspector_stamp_url_snapshot,
+       inspector_phone_snapshot, inspector_email_snapshot,
+       organization_name_snapshot, organization_logo_url_snapshot,
+       organization_legal_name_snapshot, organization_tax_id_snapshot,
+       organization_address_snapshot, organization_phone_snapshot,
+       organization_email_snapshot, organization_legal_disclaimer_snapshot,
        apartments(
          number, floor,
          buildings(
@@ -66,6 +74,8 @@ async function fetchFullReportData(
     .single();
 
   if (reportError || !report) throw new Error('שגיאה בטעינת נתוני הדוח');
+
+  const reportRecord = report as Record<string, unknown>;
 
   const apt = report.apartments as unknown as {
     number: string;
@@ -158,24 +168,32 @@ async function fetchFullReportData(
     })
   );
 
-  // Add inspector signature from user profile if not already in signatures table
-  if (inspector?.signatureUrl) {
+  // Add inspector signature from snapshot or user profile if not already in signatures table
+  const sigUrl =
+    (reportRecord.inspector_signature_url_snapshot as string) ??
+    inspector?.signatureUrl;
+  if (sigUrl) {
     const hasInspectorSig = signatures.some(
       (s) => s.signerType === 'inspector'
     );
     if (!hasInspectorSig) {
       signatures.push({
         signerType: 'inspector',
-        signerName: inspector.name,
-        imageUrl: inspector.signatureUrl,
+        signerName:
+          (reportRecord.inspector_full_name_snapshot as string) ??
+          inspector?.name ??
+          '',
+        imageUrl: sigUrl,
         signedAt: new Date().toISOString(),
       });
     }
   }
 
-  // Fetch inspector settings for professional details
+  // Iron Rule: prefer snapshot fields from report, fallback to live data
+  const hasSnapshot = !!reportRecord.inspector_full_name_snapshot;
+
   let inspectorSettings: Record<string, unknown> = {};
-  if (inspector) {
+  if (!hasSnapshot && inspector) {
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -197,7 +215,6 @@ async function fetchFullReportData(
       string,
       unknown
     >) ?? {};
-  const reportRecord = report as Record<string, unknown>;
 
   return {
     reportType: report.report_type as 'bedek_bait' | 'delivery',
@@ -207,12 +224,21 @@ async function fetchFullReportData(
     reportDate: report.report_date,
     status: report.status as PdfReportData['status'],
     inspector: {
-      name: inspector?.name ?? '',
-      licenseNumber: inspectorSettings.license_number as string | undefined,
-      education: inspectorSettings.education as string | undefined,
+      name:
+        (reportRecord.inspector_full_name_snapshot as string) ??
+        inspector?.name ??
+        '',
+      licenseNumber:
+        (reportRecord.inspector_license_number_snapshot as string) ??
+        (inspectorSettings.license_number as string | undefined),
+      education:
+        (reportRecord.inspector_education_snapshot as string) ??
+        (inspectorSettings.education as string | undefined),
       experience: inspectorSettings.experience as string | undefined,
       companyName: inspectorSettings.company_name as string | undefined,
-      companyLogoUrl: inspectorSettings.company_logo_url as string | undefined,
+      companyLogoUrl:
+        (reportRecord.organization_logo_url_snapshot as string) ??
+        (inspectorSettings.company_logo_url as string | undefined),
     },
     property: {
       projectName: apt?.buildings?.projects?.name ?? '',
@@ -237,8 +263,12 @@ async function fetchFullReportData(
     defects,
     signatures,
     notes: report.notes ?? undefined,
-    stampUrl: inspector?.stampUrl,
-    declaration: reportContent.declaration as string | undefined,
+    stampUrl:
+      (reportRecord.inspector_stamp_url_snapshot as string) ??
+      inspector?.stampUrl,
+    declaration:
+      (reportRecord.organization_legal_disclaimer_snapshot as string) ??
+      (reportContent.declaration as string | undefined),
     scope: reportContent.scope as string | undefined,
     propertyDescription:
       (reportRecord.property_description as string) ??
@@ -249,7 +279,9 @@ async function fetchFullReportData(
     weatherConditions: reportRecord.weather_conditions as string | undefined,
     contractorName: reportRecord.contractor_name as string | undefined,
     contractorPhone: reportRecord.contractor_phone as string | undefined,
-    logoUrl: inspectorSettings.company_logo_url as string | undefined,
+    logoUrl:
+      (reportRecord.organization_logo_url_snapshot as string) ??
+      (inspectorSettings.company_logo_url as string | undefined),
   };
 }
 
