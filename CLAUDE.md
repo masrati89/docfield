@@ -14,48 +14,86 @@ Pricing: Free (3 reports) / ₪99 / ₪199 / ₪349.
 - Completed reports require double confirmation to re-edit
 - Pixel-perfect from mockup — build directly from mockup JSX, never interpret independently
 - Signatures: immutable — no UPDATE or DELETE policy ever
+- **Snapshot-only PDFs** — see dedicated section below
+
+## Iron Rule — Snapshot-Only PDFs
+
+Reports are legal documents that must render from data frozen at report-creation time. No PDF generator, preview, or sharing path may read live data from `users`, `organizations`, `projects`, `buildings`, or `apartments`. Every field shown on a generated PDF must come from a snapshot column on `delivery_reports`.
+
+**Why:** a report generated three months after creation — after the inspector changes their email, the organization renames itself, a building gets renumbered — must still match the report that was signed at handover. Reading live data leaks cross-user state and, worse, silently rewrites prior legal documents.
+
+**Current state (2026-04-11):**
+
+- 18 snapshot columns on `delivery_reports` covering inspector (10) and organization (8). Added by migrations 029 + 032.
+- `apps/mobile/lib/createReportWithSnapshot.ts` — writes all 18 fields at report INSERT time.
+- `apps/mobile/hooks/usePdfGeneration.ts` — reads inspector/org exclusively from snapshots; no live joins on those tables.
+- **Open gap (tracked as Phase 0.6):** 3 property fields — `project_name`, `project_address`, `apartment_number` — still read live via joins in `usePdfGeneration.ts:208-215`. Must be frozen into `delivery_reports` as `property_*_snapshot` columns in a future migration.
+
+**Rule:** any new PDF field goes through the snapshot path. If a snapshot column does not exist for it, add one in a migration — do not add a live join.
 
 ## Current Status
 
-Phase 6 — polish, advanced features, production readiness. All core screens built and audited.
+**Phase 0 — Post-Audit Remediation** (started 2026-04-11).
 
-✅ Infrastructure: monorepo, auth, DB schema + RLS (15 migrations), design tokens, shared types/validation/i18n, seed data, Rubik fonts, NativeWind, Supabase client
-✅ All screens built + audited: Login, Register, Home, Reports List, Report Detail, Checklist, Add Defect, Projects List, Buildings, Apartments, Settings
-✅ Components: 70+ files across 9 categories (ui, home, reports, projects, checklist, defect, settings, camera, wizard)
-✅ Hooks: 13 custom hooks (data fetching, PDF generation, report status, idle timeout, etc.)
-✅ PDF generation: bedek bayit + protocol mesira HTML templates (970 lines)
-✅ New Inspection Wizard: 6-step conditional flow (type → project → buildings → apt counts → apartment → protocol)
-✅ Inline Project Creation: wizard + projects page — name, buildings, apartments in one flow
-✅ Auto-detect delivery round: round_number + previous_round_id on report creation
-✅ Checklist action buttons: preview, share, settings, download — with closable bottom sheets
-✅ Visual + Logic audit completed: 181 visual items + 29 logic items fixed across all 9 screens
+A repo audit on 2026-04-10 (`docs/audits/AUDIT_2026-04-10.md`) identified critical Iron Rule violations in the PDF generator and catalogued unfinished features (`docs/audits/UNFINISHED_FEATURES_2026-04-10.md`). We are executing a structured remediation plan before resuming feature work.
 
-🔴 Not built yet:
+**Completed before Phase 0:**
 
-- Digital signatures — @shopify/react-native-skia (not installed)
-- Delivery Round 2 — inherited defects + review_status UI
-- Full camera overlay — green badge counter, drag-to-delete review
-- Offline sync — WatermelonDB (deferred post-MVP)
-- WhatsApp send — Green API integration
-- Notifications — bell icon + notification panel
-- Pre-close summary — summary screen before PDF generation
-- Admin settings — category/template/location management
-- Legal text & branding — developer logo, inspector stamp
-- Speech recognition — @jamsch/expo-speech-recognition (post-MVP)
+- ✅ All core screens built and visually audited: Login, Register (+ complete-profile, verify-email), Home, Reports List, Report Detail, Checklist, Add Defect, Projects List, Buildings, Apartments, Settings, Library
+- ✅ Auth incl. OAuth: email/password + Google/Apple social sign-in via `useOAuth` + `components/auth/SocialAuthButtons` + migration 027
+- ✅ Digital signatures: `SignaturePad` (+ `.web`), `useSignature`, `TenantSignatureScreen`, `SignatureStampSection` — migrations 009 + 017 (stamp_url)
+- ✅ Camera + annotations: `AnnotationEditor`, `AnnotationToolbar`, `PhotoReviewGrid`, `useAnnotationEditor`, `lib/annotations/` — migration 018 (annotations_json)
+- ✅ Pre-PDF summary: `components/reports/PrePdfSummary.tsx`
+- ✅ Inspector profile system: `InspectorProfileSection`, `SignatureStampSection`, `StatisticsSection`, `useInspectorSettings`
+- ✅ Global defect library: 338 canonical entries seeded via migration 031
+- ✅ Iron Rule snapshot columns (18 fields) — migrations 029 + 032
+- ✅ RLS recursion fix — migration 028 (`get_user_org_id()` SECURITY DEFINER helper)
+- ✅ New Inspection Wizard: 7-step conditional flow (type → project → buildings → apt counts → apartment → client details → protocol)
+- ✅ Checklist action buttons with closable bottom sheets (preview, share, settings, download)
+- ✅ Inline project creation (wizard + projects page)
+- ✅ Auto-detect delivery round (round_number + previous_round_id on creation)
+
+**Phase 0 substeps (in order):**
+
+- 0.1 CLAUDE.md truth-up (this commit)
+- 0.2 Remove duplicate `.claude/CLAUDE.md`
+- 0.3 `.gitignore` cleanup (Zone.Identifier, supabase/snippets/)
+- 0.4 Docs commits — completed (508ed06: PM/agent templates; ce45c53: audit reports; a3b3f5b: RTL violations log)
+- 0.5 `.env.seed.local` location check
+- 0.6 Iron Rule residue: freeze 3 property fields into snapshot columns
+- 0.7 Design token fixes: warm shadows + color scale completion
+
+**Feature status — post audit:**
+
+| Feature                     | Status                                                        |
+| --------------------------- | ------------------------------------------------------------- |
+| Digital signatures          | ✅ built                                                      |
+| Camera + annotations        | ✅ built                                                      |
+| Pre-PDF summary             | ✅ built                                                      |
+| OAuth (Google/Apple)        | ✅ built                                                      |
+| Iron Rule inspector/org     | ✅ built (18 snapshot columns)                                |
+| Notifications               | 🟡 partial — DB + hook + badge cell; panel UI pending         |
+| Search overlay              | 🟡 partial — component built; not wired to trigger button     |
+| Round 2 inherited defects   | 🟡 partial — DB schema ready; copy-forward logic + UI pending |
+| Iron Rule property fields   | 🟡 partial — 3 fields still live (Phase 0.6)                  |
+| WhatsApp send (Green API)   | 🔴 not built                                                  |
+| Offline sync (WatermelonDB) | 🔴 deferred post-MVP                                          |
+| Speech recognition          | 🔴 post-MVP                                                   |
+| Admin settings              | 🔴 not built — category/template/location management          |
 
 ## Stack
 
-| Layer    | Technology                                                        |
-| -------- | ----------------------------------------------------------------- |
-| Mobile   | React Native 0.76.9 + Expo SDK 55 (Expo Router v4, NativeWind v4) |
-| Data     | React Query 5 + Supabase direct — WatermelonDB = post-MVP         |
-| Drawing  | @shopify/react-native-skia (not yet installed)                    |
-| Web      | React + Vite + Tailwind CSS                                       |
-| Backend  | Supabase (PostgreSQL + Auth + Storage + Edge Functions)           |
-| PDF      | expo-print (offline-capable)                                      |
-| Monorepo | Turborepo + npm workspaces                                        |
-| Language | TypeScript 5.x strict                                             |
-| Icons    | @expo/vector-icons (Feather)                                      |
+| Layer    | Technology                                                              |
+| -------- | ----------------------------------------------------------------------- |
+| Mobile   | React Native 0.76.9 + Expo SDK 55 (Expo Router v4, NativeWind v4)       |
+| Data     | React Query 5 + Supabase direct — WatermelonDB = post-MVP               |
+| Drawing  | @shopify/react-native-skia 2.4.18 — SignaturePad + annotation rendering |
+| Web      | React + Vite + Tailwind CSS                                             |
+| Backend  | Supabase (PostgreSQL + Auth + Storage + Edge Functions)                 |
+| PDF      | expo-print (offline-capable)                                            |
+| Monorepo | Turborepo + npm workspaces                                              |
+| Language | TypeScript 5.x strict                                                   |
+| Icons    | @expo/vector-icons (Feather)                                            |
 
 ## Mobile App Structure (Expo Router)
 
@@ -67,10 +105,15 @@ apps/mobile/
 │   ├── (auth)/
 │   │   ├── _layout.tsx                ✅ Auth layout
 │   │   ├── login.tsx                  ✅ Full login (email/password + validation)
-│   │   └── register.tsx               ✅ Full register (4 fields + org creation + rollback)
+│   │   ├── register.tsx               ✅ Full register (4 fields + org creation + rollback)
+│   │   ├── complete-profile.tsx       ✅ Post-OAuth profile completion
+│   │   └── verify-email.tsx           ✅ Email verification landing
 │   └── (app)/
 │       ├── _layout.tsx                ✅ Tab bar (בית/דוחות/פרויקטים/הגדרות) + idle timeout
 │       ├── index.tsx                  ✅ Home dashboard (stats, recent reports/projects, tools)
+│       ├── library/
+│       │   ├── _layout.tsx            ✅ Stack layout
+│       │   └── index.tsx              ✅ Defect library browser
 │       ├── reports/
 │       │   ├── _layout.tsx            ✅ Stack layout
 │       │   ├── index.tsx              ✅ Reports list (search, filter, sort, delete, FAB)
@@ -93,13 +136,15 @@ apps/mobile/
 │       └── settings/
 │           ├── _layout.tsx            ✅ Stack layout
 │           └── index.tsx              ✅ Settings (profile, password, preferences, sign out)
-├── components/                        # 70+ files, 9 categories — see Component Architecture below
-├── hooks/                             # 13 custom hooks — see Hooks below
+├── components/                        # 100+ files, 10 categories — see Component Architecture below
+├── hooks/                             # 20 custom hooks — see Hooks below
 ├── contexts/AuthContext.tsx            ✅ Supabase auth + expo-secure-store
 ├── constants/theme.ts                 ✅ Design tokens
 ├── lib/
 │   ├── supabase.ts                    ✅ Client config
-│   └── pdf/                           ✅ PDF generation (bedekBayit.ts, protocol.ts, shared.ts, types.ts)
+│   ├── createReportWithSnapshot.ts    ✅ Iron Rule — freezes 18 snapshot fields on INSERT
+│   ├── annotations/                   ✅ Photo annotation rendering
+│   └── pdf/                           ✅ PDF generation (bedekBayit, protocol, previewHtml, shared, types)
 └── assets/fonts/                      ✅ Rubik (Regular/Medium/SemiBold/Bold)
 ```
 
@@ -107,20 +152,29 @@ apps/mobile/
 
 ```
 components/
-├── ui/           Button, Toast, BottomSheetWrapper(.web), SkeletonBlock, EmptyState, SideMenu, NewInspectionSheet
-├── home/         HomeHeader, StatsStrip, ReportsSection, ProjectsSection, ToolGrid
-├── reports/      ReportListItem(+GroupHeader), ReportsFilterBar(+SearchBar+FilterChips+ActiveTags),
-│                 ReportsSortSheet, ReportsLoadingState, ReportsFAB, ReportHeaderBar, ReportActionsBar,
-│                 ReportDetailsSection, ReportInfoCard, ReportTabBar, CategoryAccordion, DefectRow, ReportSkeleton
-├── projects/     ProjectCard, ProjectsFilterBar(+SearchBar+FilterChips), ProjectsSortSheet,
-│                 ProjectsLoadingState, ProjectsFAB, SubHeader, ProgressStrip, BuildingCard, ApartmentRow, AddBuildingSheet
-├── checklist/    CheckItem, RoomAccordion, BathTypeSelect, ChecklistHeader, ChecklistFooter, AddDefectSheet,
-│                 ReportPreviewSheet, ReportSettingsSheet
-├── defect/       FormField, CategoryPicker, CostSection, PhotoGrid, DefectLibraryCard, ComboField
-├── settings/     ProfileSection, ChangePasswordSection, PreferencesSection, InfoSection, SignOutButton
-├── camera/       CameraCapture
-└── wizard/       NewInspectionWizard, WizardShell, StepReportType, StepProject, StepBuildings,
-                  StepApartmentCounts, StepApartment, StepProtocol, useWizardState, NewInspectionWizard.types
+├── auth/          SocialAuthButtons
+├── camera/        CameraCapture, CameraPreview, AnnotationEditor, AnnotationToolbar, PhotoReviewGrid
+├── checklist/     CheckItem, RoomAccordion, BathTypeSelect, ChecklistHeader, ChecklistFooter,
+│                  AddDefectSheet, ReportPreviewSheet, ReportSettingsSheet
+├── defect/        FormField, CategoryPicker, CostSection, PhotoGrid, DefectLibraryCard, ComboField
+├── home/          HomeHeader, StatsStrip, ReportsSection, ProjectsSection, ToolGrid
+├── projects/      ProjectCard, NewProjectSheet, ProjectsFilterBar, ProjectsSortSheet,
+│                  ProjectsLoadingState, ProjectsFAB, SubHeader, ProgressStrip,
+│                  BuildingCard, ApartmentRow, AddBuildingSheet
+├── reports/       ReportListItem, ReportsFilterBar, ReportsSortSheet, ReportsLoadingState,
+│                  ReportsFAB, ReportHeaderBar, ReportActionsBar, ReportDetailsSection,
+│                  ReportInfoCard, ReportTabBar, ReportContentTab, ReportDetailsTab,
+│                  ReportShortagesTab, CategoryAccordion, DefectRow, ReportSkeleton,
+│                  ReportPreviewModal, PrePdfSummary, SearchOverlay, StatusBadge,
+│                  TenantSignatureScreen
+├── settings/      ProfileSection, ChangePasswordSection, PreferencesSection, InfoSection,
+│                  SignOutButton, InspectorProfileSection, SignatureStampSection,
+│                  StatisticsSection
+├── ui/            Button, Toast, BottomSheetWrapper(.web), SkeletonBlock, EmptyState,
+│                  SideMenu, NewInspectionSheet, SharedTabHeader, SignaturePad(.web)
+└── wizard/        NewInspectionWizard, WizardShell, StepReportType, StepProject, StepBuildings,
+                   StepApartmentCounts, StepApartment, StepClientDetails, StepProtocol,
+                   useWizardState, NewInspectionWizard.types
 ```
 
 All directories have barrel `index.ts` exports.
@@ -129,20 +183,29 @@ All directories have barrel `index.ts` exports.
 
 ```
 hooks/
-├── useReports.ts           # Reports list — fetch, filter, refresh
-├── useReport.ts            # Single report detail — fetch by ID
-├── useProjects.ts          # Projects list — fetch, filter, refresh
-├── useProjectApartments.ts # Apartments for a project
+├── useAnnotationEditor.ts  # Photo annotation editor state
 ├── useChecklist.ts         # Checklist state management
-├── useDefectLibrary.ts     # Defect library search + categories (261 lines)
+├── useDefectLibrary.ts     # Defect library search + categories
+├── useDeleteProject.ts     # Project deletion with confirmation
 ├── useDeleteReport.ts      # Report deletion with confirmation
-├── usePdfGeneration.ts     # PDF generation + sharing (204 lines)
+├── useIdleTimeout.ts       # 30min idle session timeout
+├── useInspectorSettings.ts # Inspector profile settings
+├── useNotifications.ts     # Notifications fetch + unread count
+├── useOAuth.ts             # Google/Apple social sign-in
+├── usePdfGeneration.ts     # PDF generation + sharing (Iron Rule: snapshot-only)
+├── useProjectApartments.ts # Apartments for a project
+├── useProjects.ts          # Projects list
+├── useReport.ts            # Single report detail
+├── useReportContent.ts     # Report content tab data
+├── useReports.ts           # Reports list
+├── useReportShortages.ts   # Report shortages tab data
 ├── useReportStatus.ts      # Report status transitions
 ├── useSideMenu.ts          # Side menu visibility
-├── useIdleTimeout.ts       # 30min idle session timeout
-├── useToast.ts             # Toast notification state
-└── useWizardState.ts       # Wizard state machine
+├── useSignature.ts         # Signature capture + persistence
+└── useToast.ts             # Toast notification state
 ```
+
+Note: `useWizardState.ts` lives under `components/wizard/`, not `hooks/` — it is a wizard-scoped state machine, not a shared hook.
 
 ## Mockups (mockups/ — design reference for built screens)
 
@@ -176,15 +239,14 @@ packages/ui/       (@infield/ui)
 
 ## Database (supabase/migrations/)
 
-```
-001 organizations → 002 users → 003 projects → 004 checklist_templates
-→ 005 delivery_reports → 006 checklist_results → 007 defects
-→ 008 defect_library → 009 signatures → 010 clients → 011 storage_buckets
-→ 012 add_missing_fields (round 2, freetext, report_type_default)
-→ 013 report_log (audit trail, append-only)
-→ 014 notifications
-→ 015 nullable_apartment_id (delivery_reports.apartment_id can be NULL)
-```
+32 migrations through 032. See `supabase/migrations/` for the full list. Key milestones:
+
+- **001–011** — core schema: organizations, users, projects, checklist_templates, delivery_reports, checklist_results, defects, defect_library, signatures, clients, storage_buckets
+- **012–015** — early extensions: round 2 fields + freetext (012), report_log audit trail (013), notifications (014), nullable apartment_id (015)
+- **016–027** — schema extensions: standard_ref on defects, stamp_url, annotations_json, checklist_state, defect rich fields, auth_trigger nullable org, org_insert_policy, users_self_insert_policy, user first_name + profession, pdf_infrastructure, OAuth support
+- **028** — RLS recursion fix: `get_user_org_id()` SECURITY DEFINER helper breaks infinite recursion in users RLS policies
+- **029 + 032** — Iron Rule: 18 snapshot columns (10 inspector + 8 organization) on delivery_reports; no backfill (test reports recreated via wizard)
+- **031** — global defect library seed: 338 canonical entries
 
 All tables: RLS enforced, organization_id tenant isolation.
 Signatures + report_log: no UPDATE/DELETE policies (immutable).
@@ -192,9 +254,16 @@ Signatures + report_log: no UPDATE/DELETE policies (immutable).
 ## Custom Claude Commands
 
 ```
+.claude/commands/architect.md       # architect a new feature
+.claude/commands/audit.md           # general-purpose audit
+.claude/commands/debug.md           # debugging workflow
 .claude/commands/design-check.md    # run before every UI commit
+.claude/commands/feature.md         # scaffold a feature
 .claude/commands/new-screen.md      # scaffold a new screen
+.claude/commands/plan.md            # planning workflow
+.claude/commands/review.md          # code review workflow
 .claude/commands/security-audit.md  # pre-deploy security check
+.claude/commands/ship.md            # shipping workflow
 ```
 
 ## Docs — Load on demand, NOT upfront
@@ -210,6 +279,10 @@ Signatures + report_log: no UPDATE/DELETE policies (immutable).
 | New session context        | docs/inField-HANDOFF.md                      |
 | Flow / navigation / wizard | docs/FLOW_SPEC.md                            |
 | All docs reference         | docs/CLAUDE_CODE_DOC_REFERENCE.md            |
+| Historical audit reports   | docs/audits/                                 |
+| PM/agent workflow context  | docs/agent/                                  |
+
+**`docs/reference/`** — do not modify. Customer reference material (real PDFs, real JSX). Read-only for context.
 
 ## Skills — Use for UI work
 
@@ -384,7 +457,6 @@ const onPressOut = () => {
 - Max ~200 lines — split if larger
 - 3+ useState → extract custom hook
 - Every async op: try/catch + Hebrew error message
-- No inline styles — NativeWind only
 - No prop drilling beyond 2 levels
 
 **State:** Local → useState | Shared → React Context | Server → React Query
@@ -417,6 +489,8 @@ supabase db reset        # reset + seed
 - Branches: main (prod) / develop (staging) / feature/_ / hotfix/_
 - Commits: feat: / fix: / docs: / refactor: / security:
 - No direct push to main
+- **Hooks enforced by lint-staged + husky**: eslint + prettier on `*.{ts,tsx}`, prettier only on `*.{json,md}`; pre-push runs turbo typecheck
+- **Never skip hooks** (`--no-verify`) except for **archive commits** that preserve historical code (wip recovery, stash snapshots) — and only with explicit user approval, noted in the commit message
 
 ## Feedback Loop — CRITICAL
 
