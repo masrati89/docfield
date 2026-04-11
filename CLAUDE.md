@@ -59,7 +59,7 @@ A repo audit on 2026-04-10 (`docs/audits/AUDIT_2026-04-10.md`) identified critic
 - 0.2 Remove duplicate `.claude/CLAUDE.md`
 - 0.3 `.gitignore` cleanup (Zone.Identifier, supabase/snippets/)
 - 0.4 Docs commits — completed (508ed06: PM/agent templates; ce45c53: audit reports; a3b3f5b: RTL violations log)
-- 0.5 `.env.seed.local` location check
+- 0.5 `.env.seed.local` moved to `scripts/` (audit M6 closed)
 - 0.6 Iron Rule residue: freeze 3 property fields into snapshot columns
 - 0.7 Design token fixes: warm shadows + color scale completion
 

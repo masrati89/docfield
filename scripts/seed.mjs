@@ -10,7 +10,7 @@
 //   2 apartments    · 2 reports    · 5 defects
 //
 // Usage:
-//   1. Copy .env.seed.local.example → .env.seed.local
+//   1. Copy scripts/.env.seed.local.example → scripts/.env.seed.local
 //   2. Fill SUPABASE_SECRET_KEY from `npx supabase status`
 //   3. `npm run seed`
 //
@@ -25,11 +25,10 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 // ------------------------------------------------------------
-// Load env from repo root
+// Load env from scripts/ (co-located with this file)
 // ------------------------------------------------------------
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, '..');
-loadEnv({ path: path.join(repoRoot, '.env.seed.local') });
+loadEnv({ path: path.join(__dirname, '.env.seed.local') });
 
 const {
   SUPABASE_URL,
@@ -47,7 +46,7 @@ function abort(msg) {
   process.exit(1);
 }
 
-if (!SUPABASE_URL) abort('SUPABASE_URL missing. Copy .env.seed.local.example to .env.seed.local');
+if (!SUPABASE_URL) abort('SUPABASE_URL missing. Copy scripts/.env.seed.local.example to scripts/.env.seed.local');
 if (!SUPABASE_SECRET_KEY) abort('SUPABASE_SECRET_KEY missing');
 if (!SEED_ADMIN_EMAIL) abort('SEED_ADMIN_EMAIL missing');
 if (!SEED_ADMIN_PASSWORD) abort('SEED_ADMIN_PASSWORD missing');
