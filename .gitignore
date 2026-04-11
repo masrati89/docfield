@@ -41,6 +41,9 @@ supabase/snippets/
 # Playwright MCP runtime artifacts
 .playwright-mcp/
 
+# Customer reference PDFs (PII — local-only)
+docs/reference/*.pdf
+
 # DB backups (local, not for repo)
 backups/
 
