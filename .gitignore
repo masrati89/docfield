@@ -38,6 +38,9 @@ supabase/snippets/
 # WSL artifacts
 *:Zone.Identifier
 
+# Playwright MCP runtime artifacts
+.playwright-mcp/
+
 # DB backups (local, not for repo)
 backups/
 
