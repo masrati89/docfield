@@ -35,6 +35,11 @@ interface SnapshotInsertData {
   organization_phone_snapshot: string | null;
   organization_email_snapshot: string | null;
   organization_legal_disclaimer_snapshot: string | null;
+  // Property snapshots (4) — Iron Rule completion (migration 033)
+  property_project_name: string | null;
+  property_project_address: string | null;
+  property_building_name: string | null;
+  property_apartment_number: string | null;
 }
 
 interface CreateReportParams {
@@ -50,6 +55,63 @@ interface CreateReportParams {
   tenantName?: string | null;
   tenantPhone?: string | null;
   tenantEmail?: string | null;
+}
+
+// --- Property snapshot resolver ---
+
+interface PropertySnapshot {
+  projectName: string | null;
+  projectAddress: string | null;
+  buildingName: string | null;
+  apartmentNumber: string | null;
+}
+
+async function fetchPropertySnapshot(
+  apartmentId: string | null,
+  projectNameFreetext: string | null,
+  apartmentLabelFreetext: string | null
+): Promise<PropertySnapshot> {
+  // Free-text fallback path (no apartment row exists)
+  if (!apartmentId) {
+    return {
+      projectName: projectNameFreetext,
+      projectAddress: null,
+      buildingName: null,
+      apartmentNumber: apartmentLabelFreetext,
+    };
+  }
+
+  const { data, error } = await supabase
+    .from('apartments')
+    .select('number, buildings(name, projects(name, address))')
+    .eq('id', apartmentId)
+    .single();
+
+  if (error || !data) {
+    // Do not throw — snapshot fields can be null and will fall back to
+    // free-text at render time.
+    return {
+      projectName: projectNameFreetext,
+      projectAddress: null,
+      buildingName: null,
+      apartmentNumber: apartmentLabelFreetext,
+    };
+  }
+
+  const apt = data as unknown as {
+    number: string;
+    buildings: {
+      name: string;
+      projects: { name: string; address: string | null };
+    } | null;
+  };
+
+  return {
+    projectName: apt.buildings?.projects?.name ?? projectNameFreetext,
+    projectAddress: apt.buildings?.projects?.address ?? null,
+    buildingName: apt.buildings?.name ?? null,
+    apartmentNumber: apt.number ?? apartmentLabelFreetext,
+  };
 }
 
 /**
@@ -87,6 +149,13 @@ export async function createReportWithSnapshot(
   }
 
   const orgSettings = (orgData.settings as Record<string, string | null>) ?? {};
+
+  // Fetch property snapshot (Iron Rule — migration 033)
+  const propertySnapshot = await fetchPropertySnapshot(
+    params.apartmentId,
+    params.projectNameFreetext ?? null,
+    params.apartmentLabelFreetext ?? null
+  );
 
   // Build INSERT data with snapshot fields
   const insertData: SnapshotInsertData = {
@@ -128,6 +197,12 @@ export async function createReportWithSnapshot(
     organization_email_snapshot: orgSettings.email ?? null,
     organization_legal_disclaimer_snapshot:
       orgSettings.legal_disclaimer ?? null,
+
+    // Property snapshots (4) — Iron Rule completion
+    property_project_name: propertySnapshot.projectName,
+    property_project_address: propertySnapshot.projectAddress,
+    property_building_name: propertySnapshot.buildingName,
+    property_apartment_number: propertySnapshot.apartmentNumber,
   };
 
   const { data, error } = await supabase

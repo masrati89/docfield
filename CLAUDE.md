@@ -22,12 +22,14 @@ Reports are legal documents that must render from data frozen at report-creation
 
 **Why:** a report generated three months after creation — after the inspector changes their email, the organization renames itself, a building gets renumbered — must still match the report that was signed at handover. Reading live data leaks cross-user state and, worse, silently rewrites prior legal documents.
 
-**Current state (2026-04-11):**
+**Current state (2026-04-12):**
 
-- 18 snapshot columns on `delivery_reports` covering inspector (10) and organization (8). Added by migrations 029 + 032.
-- `apps/mobile/lib/createReportWithSnapshot.ts` — writes all 18 fields at report INSERT time.
-- `apps/mobile/hooks/usePdfGeneration.ts` — reads inspector/org exclusively from snapshots; no live joins on those tables.
-- **Open gap (tracked as Phase 0.6):** 3 property fields — `project_name`, `project_address`, `apartment_number` — still read live via joins in `usePdfGeneration.ts:208-215`. Must be frozen into `delivery_reports` as `property_*_snapshot` columns in a future migration.
+- 22 snapshot columns on `delivery_reports`:
+  - 10 inspector — migrations 029 + 032
+  - 8 organization — migration 029
+  - 4 property (`property_project_name`, `property_project_address`, `property_building_name`, `property_apartment_number`) — migration 033
+- `apps/mobile/lib/createReportWithSnapshot.ts` — writes all 22 fields at report INSERT time. Property fields are resolved once via a live `apartments → buildings → projects` read inside `fetchPropertySnapshot()` and then frozen.
+- `apps/mobile/hooks/usePdfGeneration.ts` — reads everything exclusively from snapshot columns; no live joins on `users`, `organizations`, `projects`, `buildings`, or `apartments`.
 
 **Rule:** any new PDF field goes through the snapshot path. If a snapshot column does not exist for it, add one in a migration — do not add a live join.
 
@@ -46,7 +48,7 @@ A repo audit on 2026-04-10 (`docs/audits/AUDIT_2026-04-10.md`) identified critic
 - ✅ Pre-PDF summary: `components/reports/PrePdfSummary.tsx`
 - ✅ Inspector profile system: `InspectorProfileSection`, `SignatureStampSection`, `StatisticsSection`, `useInspectorSettings`
 - ✅ Global defect library: 338 canonical entries seeded via migration 031
-- ✅ Iron Rule snapshot columns (18 fields) — migrations 029 + 032
+- ✅ Iron Rule snapshot columns (22 fields — 10 inspector + 8 org + 4 property) — migrations 029 + 032 + 033
 - ✅ RLS recursion fix — migration 028 (`get_user_org_id()` SECURITY DEFINER helper)
 - ✅ New Inspection Wizard: 7-step conditional flow (type → project → buildings → apt counts → apartment → client details → protocol)
 - ✅ Checklist action buttons with closable bottom sheets (preview, share, settings, download)
@@ -60,7 +62,7 @@ A repo audit on 2026-04-10 (`docs/audits/AUDIT_2026-04-10.md`) identified critic
 - 0.3 `.gitignore` cleanup (Zone.Identifier, supabase/snippets/)
 - 0.4 Docs commits — completed (508ed06: PM/agent templates; ce45c53: audit reports; a3b3f5b: RTL violations log)
 - 0.5 `.env.seed.local` moved to `scripts/` (audit M6 closed)
-- 0.6 Iron Rule residue: freeze 3 property fields into snapshot columns — **deferred to Phase 1.1** (requires migration + data path changes, not a cleanup)
+- 0.6 Iron Rule residue: 4 property fields frozen into snapshot columns via migration 033 + `fetchPropertySnapshot()` in `createReportWithSnapshot.ts`
 - 0.7 Design token fixes: shadows.ts warmed to `rgba(60,54,42,x)`; colors.ts already complete (gold.600, danger.200, warning.50/200 pre-existed)
 
 **Feature status — post audit:**
@@ -75,7 +77,7 @@ A repo audit on 2026-04-10 (`docs/audits/AUDIT_2026-04-10.md`) identified critic
 | Notifications               | 🟡 partial — DB + hook + badge cell; panel UI pending         |
 | Search overlay              | 🟡 partial — component built; not wired to trigger button     |
 | Round 2 inherited defects   | 🟡 partial — DB schema ready; copy-forward logic + UI pending |
-| Iron Rule property fields   | 🟡 partial — 3 fields still live (Phase 0.6)                  |
+| Iron Rule property fields   | ✅ built (migration 033 — 4 snapshot columns)                 |
 | WhatsApp send (Green API)   | 🔴 not built                                                  |
 | Offline sync (WatermelonDB) | 🔴 deferred post-MVP                                          |
 | Speech recognition          | 🔴 post-MVP                                                   |
@@ -239,13 +241,13 @@ packages/ui/       (@infield/ui)
 
 ## Database (supabase/migrations/)
 
-32 migrations through 032. See `supabase/migrations/` for the full list. Key milestones:
+33 migrations through 033. See `supabase/migrations/` for the full list. Key milestones:
 
 - **001–011** — core schema: organizations, users, projects, checklist_templates, delivery_reports, checklist_results, defects, defect_library, signatures, clients, storage_buckets
 - **012–015** — early extensions: round 2 fields + freetext (012), report_log audit trail (013), notifications (014), nullable apartment_id (015)
 - **016–027** — schema extensions: standard_ref on defects, stamp_url, annotations_json, checklist_state, defect rich fields, auth_trigger nullable org, org_insert_policy, users_self_insert_policy, user first_name + profession, pdf_infrastructure, OAuth support
 - **028** — RLS recursion fix: `get_user_org_id()` SECURITY DEFINER helper breaks infinite recursion in users RLS policies
-- **029 + 032** — Iron Rule: 18 snapshot columns (10 inspector + 8 organization) on delivery_reports; no backfill (test reports recreated via wizard)
+- **029 + 032 + 033** — Iron Rule: 22 snapshot columns (10 inspector + 8 organization + 4 property) on delivery_reports; no backfill (test reports recreated via wizard)
 - **031** — global defect library seed: 338 canonical entries
 
 All tables: RLS enforced, organization_id tenant isolation.

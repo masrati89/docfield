@@ -39,6 +39,8 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
       `id, report_type, status, tenant_name, tenant_phone, report_date, notes,
        report_number, client_name, client_phone, client_email, client_id_number,
        property_type, property_area, property_floor, property_description,
+       property_project_name, property_project_address,
+       property_building_name, property_apartment_number,
        report_content, weather_conditions, contractor_name, contractor_phone,
        inspector_full_name_snapshot, inspector_license_number_snapshot,
        inspector_professional_title_snapshot, inspector_education_snapshot,
@@ -48,14 +50,7 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
        organization_name_snapshot, organization_logo_url_snapshot,
        organization_legal_name_snapshot, organization_tax_id_snapshot,
        organization_address_snapshot, organization_phone_snapshot,
-       organization_email_snapshot, organization_legal_disclaimer_snapshot,
-       apartments(
-         number, floor,
-         buildings(
-           name,
-           projects(name, address)
-         )
-       )`
+       organization_email_snapshot, organization_legal_disclaimer_snapshot`
     )
     .eq('id', reportId)
     .single();
@@ -63,15 +58,6 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
   if (reportError || !report) throw new Error('שגיאה בטעינת נתוני הדוח');
 
   const reportRecord = report as Record<string, unknown>;
-
-  const apt = report.apartments as unknown as {
-    number: string;
-    floor: number | null;
-    buildings: {
-      name: string;
-      projects: { name: string; address: string | null };
-    };
-  } | null;
 
   // Fetch defects with photos
   const { data: defectsData, error: defectsError } = await supabase
@@ -205,10 +191,10 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
         (reportRecord.organization_logo_url_snapshot as string) ?? undefined,
     },
     property: {
-      projectName: apt?.buildings?.projects?.name ?? '',
-      address: apt?.buildings?.projects?.address ?? undefined,
-      apartmentNumber: apt?.number ?? '',
-      floor: (reportRecord.property_floor as number) ?? apt?.floor ?? undefined,
+      projectName: (reportRecord.property_project_name as string) ?? '',
+      address: (reportRecord.property_project_address as string) ?? undefined,
+      apartmentNumber: (reportRecord.property_apartment_number as string) ?? '',
+      floor: (reportRecord.property_floor as number) ?? undefined,
       area: (reportRecord.property_area as string) ?? undefined,
       contractor: (reportRecord.contractor_name as string) ?? undefined,
     },
