@@ -19,7 +19,7 @@ git checkout -b feature/[kebab-name]
 
 ### 2. Understand (autonomous)
 
-- Read `.claude/CLAUDE.md`
+- Read `CLAUDE.md` (repo root)
 - Read `docs/PROJECT_MAP.md`
 - Read `docs/GOTCHAS.md`
 - Identify affected components

@@ -50,7 +50,7 @@ Everything else: **proceed and report**.
 
 Based on project state:
 
-- No `.claude/CLAUDE.md` OR no `AUDIT_REPORT.md` → **Phase 1: Discovery & Audit**
+- No `CLAUDE.md` OR no `AUDIT_REPORT.md` → **Phase 1: Discovery & Audit**
 - Audit exists, infrastructure incomplete → **Phase 2: Infrastructure Setup**
 - Infrastructure complete, feature work → **Phase 3: Development**
 - Feature complete, release prep → **Phase 4: Shipping**
@@ -82,7 +82,7 @@ find . -maxdepth 2 -name "*.config.*" 2>/dev/null
 2. `package.json` (and lockfile)
 3. `.env.example`
 4. `tsconfig.json` / build configs
-5. Existing `.claude/CLAUDE.md` (if any)
+5. Existing `CLAUDE.md` (if any)
 6. `docs/` folder contents
 7. DB schema (`supabase/migrations/*`, `prisma/schema.prisma`)
 8. CI/CD (`.github/workflows/*`)
@@ -213,7 +213,7 @@ For each file:
 
 **Files**:
 
-- `.claude/CLAUDE.md` — project-specific context
+- `CLAUDE.md` — project-specific context (repo root)
 - `.claude/settings.json` — permissions and config
 - `.claude/agents/code-reviewer.md`
 - `.claude/agents/security-auditor.md`

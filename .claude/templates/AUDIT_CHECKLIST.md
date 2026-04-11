@@ -4,7 +4,7 @@ Complete checklist for project-architect Phase 1 gap analysis.
 
 ## Claude Code Infrastructure
 
-- [ ] `.claude/CLAUDE.md` — project context
+- [ ] `CLAUDE.md` (repo root) — project context
 - [ ] `.claude/settings.json` — permissions
 - [ ] `.claude/settings.local.json` in `.gitignore`
 - [ ] `.claude/agents/code-reviewer.md`

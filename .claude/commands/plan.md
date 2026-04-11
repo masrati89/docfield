@@ -15,7 +15,7 @@ $ARGUMENTS
 
 ### 1. Understand (autonomous)
 
-- Read `.claude/CLAUDE.md`
+- Read `CLAUDE.md` (repo root)
 - Read `docs/PROJECT_MAP.md` if exists
 - Read `docs/GOTCHAS.md` if exists
 - Identify affected files/modules

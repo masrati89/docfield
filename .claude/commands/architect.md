@@ -12,7 +12,7 @@ $ARGUMENTS
 ## Initial Steps
 
 1. **Detect current phase** based on project state:
-   - No `.claude/CLAUDE.md` or no `AUDIT_REPORT.md` → Phase 1 (Discovery & Audit)
+   - No `CLAUDE.md` or no `AUDIT_REPORT.md` → Phase 1 (Discovery & Audit)
    - Audit exists, infrastructure incomplete → Phase 2 (Setup)
    - Infrastructure complete → Phase 3 (Development) — await user instructions
    - If $ARGUMENTS specifies a phase, use that instead
