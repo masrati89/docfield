@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -55,16 +55,7 @@ export default function ChecklistScreen() {
     refetch,
   } = useReport(reportId);
 
-  // PDF generation
-  const inspectorProfile = useMemo(
-    () => ({
-      name: profile?.fullName ?? '',
-      signatureUrl: profile?.signatureUrl,
-      stampUrl: profile?.stampUrl,
-    }),
-    [profile]
-  );
-
+  // PDF generation — Iron Rule: all inspector/org data comes from snapshot columns
   const { generatePdf, sharePdf } = usePdfGeneration(
     (msg) => showToast(msg, 'success'),
     (msg) => showToast(msg, 'error')
@@ -176,8 +167,8 @@ export default function ChecklistScreen() {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    await sharePdf(reportId, inspectorProfile);
-  }, [reportId, inspectorProfile, sharePdf]);
+    await sharePdf(reportId);
+  }, [reportId, sharePdf]);
 
   const handleSettings = useCallback(() => {
     if (Platform.OS !== 'web') {
@@ -191,8 +182,8 @@ export default function ChecklistScreen() {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    await generatePdf(reportId, inspectorProfile);
-  }, [reportId, inspectorProfile, generatePdf]);
+    await generatePdf(reportId);
+  }, [reportId, generatePdf]);
 
   const handleSettingsSaved = useCallback(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

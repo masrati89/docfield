@@ -93,12 +93,14 @@ export function InspectorProfileSection() {
 
   const handleChange = useCallback(
     (key: keyof InspectorSettings, value: string) => {
-      setLocalValues((prev) => ({ ...prev, [key]: value }));
-
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        updateSettings({ [key]: value });
-      }, 1000);
+      setLocalValues((prev) => {
+        const next = { ...prev, [key]: value };
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+          updateSettings(next);
+        }, 1000);
+        return next;
+      });
     },
     [updateSettings]
   );

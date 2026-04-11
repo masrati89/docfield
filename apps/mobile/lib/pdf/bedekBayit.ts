@@ -194,6 +194,7 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
       ${sectionTitle('\u05E4\u05E8\u05D8\u05D9 \u05D4\u05DE\u05E4\u05E7\u05D7')}
       ${detailBox(`
         ${detailRow('\u05E9\u05DD:', escapeHtml(data.inspector.name))}
+        ${data.inspector.companyName ? detailRow('\u05D7\u05D1\u05E8\u05D4:', escapeHtml(data.inspector.companyName)) : ''}
         ${data.inspector.licenseNumber ? detailRow('\u05DE.\u05E8.:', escapeHtml(data.inspector.licenseNumber)) : ''}
         ${data.inspector.education ? detailRow('\u05D4\u05E9\u05DB\u05DC\u05D4:', escapeHtml(data.inspector.education)) : ''}
         ${data.inspector.experience ? detailRow('\u05E0\u05D9\u05E1\u05D9\u05D5\u05DF:', escapeHtml(data.inspector.experience)) : ''}

@@ -20,33 +20,19 @@ const getRenderAnnotations = ():
 
 // --- Types ---
 
-interface InspectorProfile {
-  name: string;
-  signatureUrl?: string;
-  stampUrl?: string;
-}
-
 interface UsePdfGenerationResult {
   isGenerating: boolean;
   isSharing: boolean;
-  generatePdf: (
-    reportId: string,
-    inspector?: InspectorProfile
-  ) => Promise<string | null>;
-  sharePdf: (
-    reportId: string,
-    inspector?: InspectorProfile,
-    existingPdfUri?: string
-  ) => Promise<void>;
+  generatePdf: (reportId: string) => Promise<string | null>;
+  sharePdf: (reportId: string, existingPdfUri?: string) => Promise<void>;
 }
 
 // --- Fetcher ---
 
-async function fetchFullReportData(
-  reportId: string,
-  inspector?: InspectorProfile
-): Promise<PdfReportData> {
-  // Fetch report with relations
+async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
+  // Iron Rule: read ONLY from snapshot columns on delivery_reports.
+  // Never join live users/organizations — reports are legal documents
+  // and must render from data frozen at report creation time.
   const { data: report, error: reportError } = await supabase
     .from('delivery_reports')
     .select(
@@ -56,6 +42,7 @@ async function fetchFullReportData(
        report_content, weather_conditions, contractor_name, contractor_phone,
        inspector_full_name_snapshot, inspector_license_number_snapshot,
        inspector_professional_title_snapshot, inspector_education_snapshot,
+       inspector_experience_snapshot, inspector_company_name_snapshot,
        inspector_signature_url_snapshot, inspector_stamp_url_snapshot,
        inspector_phone_snapshot, inspector_email_snapshot,
        organization_name_snapshot, organization_logo_url_snapshot,
@@ -168,44 +155,25 @@ async function fetchFullReportData(
     })
   );
 
-  // Add inspector signature from snapshot or user profile if not already in signatures table
-  const sigUrl =
-    (reportRecord.inspector_signature_url_snapshot as string) ??
-    inspector?.signatureUrl;
-  if (sigUrl) {
+  // Synthesize inspector signature from snapshot if not in signatures table.
+  // Both name and url come exclusively from the snapshot — no live fallback.
+  const snapshotSigUrl = reportRecord.inspector_signature_url_snapshot as
+    | string
+    | null;
+  const snapshotInspectorName = reportRecord.inspector_full_name_snapshot as
+    | string
+    | null;
+  if (snapshotSigUrl) {
     const hasInspectorSig = signatures.some(
       (s) => s.signerType === 'inspector'
     );
     if (!hasInspectorSig) {
       signatures.push({
         signerType: 'inspector',
-        signerName:
-          (reportRecord.inspector_full_name_snapshot as string) ??
-          inspector?.name ??
-          '',
-        imageUrl: sigUrl,
+        signerName: snapshotInspectorName ?? '',
+        imageUrl: snapshotSigUrl,
         signedAt: new Date().toISOString(),
       });
-    }
-  }
-
-  // Iron Rule: prefer snapshot fields from report, fallback to live data
-  const hasSnapshot = !!reportRecord.inspector_full_name_snapshot;
-
-  let inspectorSettings: Record<string, unknown> = {};
-  if (!hasSnapshot && inspector) {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const userId = session?.user?.id;
-    if (userId) {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('inspector_settings')
-        .eq('id', userId)
-        .single();
-      inspectorSettings =
-        (userData?.inspector_settings as Record<string, unknown>) ?? {};
     }
   }
 
@@ -224,21 +192,17 @@ async function fetchFullReportData(
     reportDate: report.report_date,
     status: report.status as PdfReportData['status'],
     inspector: {
-      name:
-        (reportRecord.inspector_full_name_snapshot as string) ??
-        inspector?.name ??
-        '',
+      name: (reportRecord.inspector_full_name_snapshot as string) ?? '',
       licenseNumber:
-        (reportRecord.inspector_license_number_snapshot as string) ??
-        (inspectorSettings.license_number as string | undefined),
+        (reportRecord.inspector_license_number_snapshot as string) ?? undefined,
       education:
-        (reportRecord.inspector_education_snapshot as string) ??
-        (inspectorSettings.education as string | undefined),
-      experience: inspectorSettings.experience as string | undefined,
-      companyName: inspectorSettings.company_name as string | undefined,
+        (reportRecord.inspector_education_snapshot as string) ?? undefined,
+      experience:
+        (reportRecord.inspector_experience_snapshot as string) ?? undefined,
+      companyName:
+        (reportRecord.inspector_company_name_snapshot as string) ?? undefined,
       companyLogoUrl:
-        (reportRecord.organization_logo_url_snapshot as string) ??
-        (inspectorSettings.company_logo_url as string | undefined),
+        (reportRecord.organization_logo_url_snapshot as string) ?? undefined,
     },
     property: {
       projectName: apt?.buildings?.projects?.name ?? '',
@@ -264,8 +228,7 @@ async function fetchFullReportData(
     signatures,
     notes: report.notes ?? undefined,
     stampUrl:
-      (reportRecord.inspector_stamp_url_snapshot as string) ??
-      inspector?.stampUrl,
+      (reportRecord.inspector_stamp_url_snapshot as string) ?? undefined,
     declaration:
       (reportRecord.organization_legal_disclaimer_snapshot as string) ??
       (reportContent.declaration as string | undefined),
@@ -280,8 +243,7 @@ async function fetchFullReportData(
     contractorName: reportRecord.contractor_name as string | undefined,
     contractorPhone: reportRecord.contractor_phone as string | undefined,
     logoUrl:
-      (reportRecord.organization_logo_url_snapshot as string) ??
-      (inspectorSettings.company_logo_url as string | undefined),
+      (reportRecord.organization_logo_url_snapshot as string) ?? undefined,
   };
 }
 
@@ -295,13 +257,10 @@ export function usePdfGeneration(
   const [isSharing, setIsSharing] = useState(false);
 
   const generatePdf = useCallback(
-    async (
-      reportId: string,
-      inspector?: InspectorProfile
-    ): Promise<string | null> => {
+    async (reportId: string): Promise<string | null> => {
       setIsGenerating(true);
       try {
-        const data = await fetchFullReportData(reportId, inspector);
+        const data = await fetchFullReportData(reportId);
 
         // Generate HTML based on report type
         const html =
@@ -334,18 +293,14 @@ export function usePdfGeneration(
   );
 
   const sharePdf = useCallback(
-    async (
-      reportId: string,
-      inspector?: InspectorProfile,
-      existingPdfUri?: string
-    ) => {
+    async (reportId: string, existingPdfUri?: string) => {
       setIsSharing(true);
       try {
         let uri = existingPdfUri;
 
         // Generate if no existing URI
         if (!uri) {
-          uri = (await generatePdf(reportId, inspector)) ?? undefined;
+          uri = (await generatePdf(reportId)) ?? undefined;
         }
 
         if (!uri) {

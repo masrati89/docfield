@@ -112,14 +112,7 @@ export default function ReportDetailScreen() {
     isUploading: isSignatureUploading,
   } = useSignature();
 
-  const inspectorProfile = useMemo(
-    () => ({
-      name: profile?.fullName ?? '',
-      signatureUrl: profile?.signatureUrl,
-      stampUrl: profile?.stampUrl,
-    }),
-    [profile]
-  );
+  // Iron Rule: PDF generator reads all inspector/org data from snapshot columns.
 
   // Group defects by category
   const categoryGroups = useMemo<CategoryGroup[]>(() => {
@@ -237,20 +230,12 @@ export default function ReportDetailScreen() {
       showToast('לא הוגדרה חתימה — הגדר בהגדרות', 'info');
     }
     if (pdfAction === 'share') {
-      await sharePdf(id, inspectorProfile);
+      await sharePdf(id);
     } else {
-      const uri = await generatePdf(id, inspectorProfile);
+      const uri = await generatePdf(id);
       if (uri) setPdfUri(uri);
     }
-  }, [
-    id,
-    pdfAction,
-    profile,
-    inspectorProfile,
-    generatePdf,
-    sharePdf,
-    showToast,
-  ]);
+  }, [id, pdfAction, profile, generatePdf, sharePdf, showToast]);
 
   const handleContinueToSignature = useCallback(async () => {
     if (!id) return;
@@ -259,24 +244,16 @@ export default function ReportDetailScreen() {
       showToast('חתימת דייר קיימת', 'info');
       setShowSummary(false);
       if (pdfAction === 'share') {
-        await sharePdf(id, inspectorProfile);
+        await sharePdf(id);
       } else {
-        const uri = await generatePdf(id, inspectorProfile);
+        const uri = await generatePdf(id);
         if (uri) setPdfUri(uri);
       }
       return;
     }
     setShowSummary(false);
     setShowTenantSignature(true);
-  }, [
-    id,
-    pdfAction,
-    inspectorProfile,
-    getTenantSignature,
-    generatePdf,
-    sharePdf,
-    showToast,
-  ]);
+  }, [id, pdfAction, getTenantSignature, generatePdf, sharePdf, showToast]);
 
   const handleTenantSign = useCallback(
     async (name: string, base64Png: string) => {
@@ -284,20 +261,13 @@ export default function ReportDetailScreen() {
       await saveTenantSignature(id, name, base64Png);
       setShowTenantSignature(false);
       if (pdfAction === 'share') {
-        await sharePdf(id, inspectorProfile);
+        await sharePdf(id);
       } else {
-        const uri = await generatePdf(id, inspectorProfile);
+        const uri = await generatePdf(id);
         if (uri) setPdfUri(uri);
       }
     },
-    [
-      id,
-      pdfAction,
-      inspectorProfile,
-      saveTenantSignature,
-      generatePdf,
-      sharePdf,
-    ]
+    [id, pdfAction, saveTenantSignature, generatePdf, sharePdf]
   );
 
   const handleStatusChange = useCallback(

@@ -16,11 +16,13 @@ interface SnapshotInsertData {
   tenant_name?: string | null;
   tenant_phone?: string | null;
   tenant_email?: string | null;
-  // 16 snapshot fields
+  // 18 snapshot fields
   inspector_full_name_snapshot: string | null;
   inspector_license_number_snapshot: string | null;
   inspector_professional_title_snapshot: string | null;
   inspector_education_snapshot: string | null;
+  inspector_experience_snapshot: string | null;
+  inspector_company_name_snapshot: string | null;
   inspector_signature_url_snapshot: string | null;
   inspector_stamp_url_snapshot: string | null;
   inspector_phone_snapshot: string | null;
@@ -102,11 +104,15 @@ export async function createReportWithSnapshot(
     tenant_phone: params.tenantPhone ?? null,
     tenant_email: params.tenantEmail ?? null,
 
-    // Inspector snapshots (8)
+    // Inspector snapshots (10)
     inspector_full_name_snapshot: userData.full_name ?? null,
     inspector_license_number_snapshot: settings.license_number ?? null,
-    inspector_professional_title_snapshot: null, // Future: from inspector_settings
+    // TODO: map professional_title when Organization Module (Phase 2) decides
+    // whether it lives on users.profession or users.inspector_settings.
+    inspector_professional_title_snapshot: null,
     inspector_education_snapshot: settings.education ?? null,
+    inspector_experience_snapshot: settings.experience ?? null,
+    inspector_company_name_snapshot: settings.company_name ?? null,
     inspector_signature_url_snapshot: userData.signature_url ?? null,
     inspector_stamp_url_snapshot: userData.stamp_url ?? null,
     inspector_phone_snapshot: userData.phone ?? null,
