@@ -60,8 +60,8 @@ A repo audit on 2026-04-10 (`docs/audits/AUDIT_2026-04-10.md`) identified critic
 - 0.3 `.gitignore` cleanup (Zone.Identifier, supabase/snippets/)
 - 0.4 Docs commits — completed (508ed06: PM/agent templates; ce45c53: audit reports; a3b3f5b: RTL violations log)
 - 0.5 `.env.seed.local` moved to `scripts/` (audit M6 closed)
-- 0.6 Iron Rule residue: freeze 3 property fields into snapshot columns
-- 0.7 Design token fixes: warm shadows + color scale completion
+- 0.6 Iron Rule residue: freeze 3 property fields into snapshot columns — **deferred to Phase 1.1** (requires migration + data path changes, not a cleanup)
+- 0.7 Design token fixes: shadows.ts warmed to `rgba(60,54,42,x)`; colors.ts already complete (gold.600, danger.200, warning.50/200 pre-existed)
 
 **Feature status — post audit:**
 
