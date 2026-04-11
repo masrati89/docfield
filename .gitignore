@@ -33,6 +33,10 @@ Thumbs.db
 # Supabase
 supabase/.temp/
 supabase/.branches/
+supabase/snippets/
+
+# WSL artifacts
+*:Zone.Identifier
 
 # DB backups (local, not for repo)
 backups/
