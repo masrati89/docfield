@@ -93,8 +93,12 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
                 photo.annotations_json as unknown as AnnotationLayer;
               const composited = await renderFn(photo.image_url, layer);
               photoUrls.push(composited);
-            } catch {
+            } catch (err) {
               // Fallback to original if compositing fails
+              console.error(
+                '[usePdfGeneration] annotation compositing failed:',
+                err
+              );
               photoUrls.push(photo.image_url);
             }
           } else {
@@ -254,13 +258,53 @@ export function usePdfGeneration(
             ? generateBedekBayitHtml(data)
             : generateProtocolHtml(data);
 
-        // Generate PDF file
+        // --- Web path: open print dialog (user picks "Save as PDF") ---
+        // expo-print's printToFileAsync is not implemented on web, so we
+        // open the HTML in a hidden iframe and trigger window.print().
+        if (Platform.OS === 'web') {
+          if (
+            typeof window === 'undefined' ||
+            typeof document === 'undefined'
+          ) {
+            onError?.('הפקת הדוח אינה נתמכת בסביבה זו');
+            return null;
+          }
+
+          const blob = new Blob([html], { type: 'text/html' });
+          const blobUrl = URL.createObjectURL(blob);
+          const printWindow = window.open(blobUrl, '_blank');
+          if (!printWindow) {
+            URL.revokeObjectURL(blobUrl);
+            onError?.(
+              'חלונות קופצים חסומים בדפדפן — אפשר אותם כדי להפיק את הדוח'
+            );
+            return null;
+          }
+
+          // Give the window a moment to load then invoke print
+          printWindow.addEventListener('load', () => {
+            try {
+              printWindow.focus();
+              printWindow.print();
+            } catch (err) {
+              console.error('[usePdfGeneration] web print failed:', err);
+            }
+          });
+
+          onSuccess?.('הדוח נפתח להדפסה — בחר "שמור כ-PDF"');
+          // Return the blob URL so sharePdf can reuse it; caller should not
+          // persist it to DB (it is session-scoped).
+          return blobUrl;
+        }
+
+        // --- Native path: generate real PDF file via expo-print ---
         const { uri } = await Print.printToFileAsync({
           html,
           base64: false,
         });
 
-        // Update pdf_url in Supabase
+        // Update pdf_url in Supabase (native only — blob: URLs are useless
+        // to store)
         await supabase
           .from('delivery_reports')
           .update({ pdf_url: uri })
@@ -268,7 +312,8 @@ export function usePdfGeneration(
 
         onSuccess?.('הדוח הופק בהצלחה');
         return uri;
-      } catch {
+      } catch (err) {
+        console.error('[usePdfGeneration] generatePdf failed:', err);
         onError?.('שגיאה בהפקת הדוח');
         return null;
       } finally {
@@ -294,22 +339,59 @@ export function usePdfGeneration(
           return;
         }
 
+        // --- Web path: navigator.share with fallback ---
         if (Platform.OS === 'web') {
-          onError?.('שיתוף אינו נתמך בדפדפן');
+          if (typeof navigator !== 'undefined' && 'share' in navigator) {
+            try {
+              await (
+                navigator as Navigator & {
+                  share: (data: ShareData) => Promise<void>;
+                }
+              ).share({
+                title: 'דוח inField',
+                text: 'דוח inField',
+                url: uri,
+              });
+              return;
+            } catch (err) {
+              // AbortError = user cancelled — not an error
+              if ((err as Error)?.name === 'AbortError') return;
+              console.error('[usePdfGeneration] navigator.share failed:', err);
+              // Fall through to fallback
+            }
+          }
+
+          // Fallback: trigger download of the HTML blob
+          if (typeof document !== 'undefined') {
+            const link = document.createElement('a');
+            link.href = uri;
+            link.download = `infield-report-${reportId.slice(0, 8)}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            onSuccess?.('הדוח ירד — אפשר לשתף אותו מהדפדפן');
+            return;
+          }
+
+          onError?.('שיתוף לא נתמך בדפדפן זה');
           return;
         }
 
+        // --- Native path ---
         await Share.share({
           url: uri,
           title: 'דוח inField',
         });
-      } catch {
-        // User cancelled share — not an error
+      } catch (err) {
+        // User cancelled share — not an error, but log other failures
+        if ((err as Error)?.name !== 'AbortError') {
+          console.error('[usePdfGeneration] sharePdf failed:', err);
+        }
       } finally {
         setIsSharing(false);
       }
     },
-    [generatePdf, onError]
+    [generatePdf, onError, onSuccess]
   );
 
   return { isGenerating, isSharing, generatePdf, sharePdf };
