@@ -52,7 +52,7 @@ export function NewInspectionWizard({
         style={{
           flex: 1,
           justifyContent: 'flex-end',
-          backgroundColor: 'rgba(0,0,0,0.4)',
+          backgroundColor: 'rgba(60,54,42,0.4)',
         }}
       >
         <Pressable style={{ flex: 1 }} onPress={handleClose} />

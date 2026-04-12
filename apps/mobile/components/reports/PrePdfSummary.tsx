@@ -124,7 +124,7 @@ export function PrePdfSummary({
       <Pressable
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.4)',
+          backgroundColor: 'rgba(60,54,42,0.4)',
           justifyContent: 'flex-end',
         }}
         onPress={onClose}

@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
   },
   textModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(60,54,42,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,

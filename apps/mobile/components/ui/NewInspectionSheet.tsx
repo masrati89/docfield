@@ -76,7 +76,7 @@ export function NewInspectionSheet({
         entering={FadeIn.duration(200)}
         exiting={FadeOut.duration(200)}
         className="flex-1 justify-end"
-        style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+        style={{ backgroundColor: 'rgba(60,54,42,0.4)' }}
       >
         <Pressable className="flex-1" onPress={handleClose} />
 

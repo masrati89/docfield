@@ -131,7 +131,7 @@ export function StatusBadge({
           exiting={FadeOut.duration(200)}
           style={{
             flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.3)',
+            backgroundColor: 'rgba(60,54,42,0.3)',
             justifyContent: 'center',
             alignItems: 'center',
           }}

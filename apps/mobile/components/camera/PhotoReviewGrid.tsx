@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   // Enlarged overlay
   enlargedOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.85)',
+    backgroundColor: 'rgba(60,54,42,0.85)',
     alignItems: 'center',
     justifyContent: 'center',
   },

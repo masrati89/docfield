@@ -114,7 +114,7 @@ export function PhotoGrid({
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.35)',
+                    backgroundColor: 'rgba(60,54,42,0.35)',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}

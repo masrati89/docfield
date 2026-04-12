@@ -99,7 +99,7 @@ export function SideMenu({ visible, onClose }: SideMenuProps) {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
+          backgroundColor: 'rgba(60,54,42,0.5)',
         }}
       >
         <Pressable style={{ flex: 1 }} onPress={onClose} />
