@@ -11,6 +11,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { Feather } from '@expo/vector-icons';
 
 import { COLORS } from '@infield/ui';
 import { supabase } from '@/lib/supabase';
@@ -23,6 +24,7 @@ import { useToast } from '@/hooks/useToast';
 import { usePdfGeneration } from '@/hooks/usePdfGeneration';
 import { useReportStatus } from '@/hooks/useReportStatus';
 import { useReport } from '@/hooks/useReport';
+import { useDefectReviewStatus } from '@/hooks/useDefectReviewStatus';
 import { useSignature } from '@/hooks/useSignature';
 import { CategoryAccordion } from '@/components/reports/CategoryAccordion';
 import { ReportTabBar } from '@/components/reports/ReportTabBar';
@@ -111,6 +113,9 @@ export default function ReportDetailScreen() {
     getTenantSignature,
     isUploading: isSignatureUploading,
   } = useSignature();
+
+  const { updateReviewStatus, isUpdating: isReviewUpdating } =
+    useDefectReviewStatus(id);
 
   // Iron Rule: PDF generator reads all inspector/org data from snapshot columns.
 
@@ -212,6 +217,17 @@ export default function ReportDetailScreen() {
     setPdfAction('generate');
     setShowSummary(true);
   }, [id]);
+
+  // Called from inside ReportPreviewModal — must close preview first to
+  // avoid two React Native Modals stacking (BUG-02).
+  const handleGeneratePdfFromPreview = useCallback(() => {
+    setShowPreview(false);
+    // Defer to next tick so the preview finishes its close animation
+    // before the summary sheet mounts.
+    setTimeout(() => {
+      handleGeneratePdf();
+    }, 0);
+  }, [handleGeneratePdf]);
 
   const handleSharePdf = useCallback(() => {
     if (!id) return;
@@ -386,17 +402,56 @@ export default function ReportDetailScreen() {
                       onCta={() => navigateToAddDefect()}
                     />
                   ) : (
-                    categoryGroups.map((group, idx) => (
-                      <CategoryAccordion
-                        key={group.name}
-                        group={group}
-                        isOpen={openCategories[group.name] ?? false}
-                        onToggle={() => toggleCategory(group.name)}
-                        index={idx}
-                        onAddDefect={navigateToAddDefect}
-                        onDeleteDefect={handleDeleteDefect}
-                      />
-                    ))
+                    <>
+                      {/* Search pill — opens SearchOverlay */}
+                      <Pressable
+                        onPress={() => setShowSearch(true)}
+                        style={{
+                          flexDirection: 'row-reverse',
+                          alignItems: 'center',
+                          gap: 8,
+                          height: 40,
+                          borderRadius: 10,
+                          paddingHorizontal: 12,
+                          marginBottom: 12,
+                          backgroundColor: COLORS.cream[100],
+                          borderWidth: 1,
+                          borderColor: COLORS.cream[200],
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="חפש ממצא"
+                      >
+                        <Feather
+                          name="search"
+                          size={16}
+                          color={COLORS.neutral[400]}
+                        />
+                        <Text
+                          style={{
+                            flex: 1,
+                            fontSize: 13,
+                            fontFamily: 'Rubik-Regular',
+                            color: COLORS.neutral[400],
+                            textAlign: 'right',
+                          }}
+                        >
+                          חפש ממצא לפי תיאור או קטגוריה...
+                        </Text>
+                      </Pressable>
+                      {categoryGroups.map((group, idx) => (
+                        <CategoryAccordion
+                          key={group.name}
+                          group={group}
+                          isOpen={openCategories[group.name] ?? false}
+                          onToggle={() => toggleCategory(group.name)}
+                          index={idx}
+                          onAddDefect={navigateToAddDefect}
+                          onDeleteDefect={handleDeleteDefect}
+                          onReviewStatusChange={updateReviewStatus}
+                          isReviewUpdating={isReviewUpdating}
+                        />
+                      ))}
+                    </>
                   )}
                 </>
               )}
@@ -444,8 +499,16 @@ export default function ReportDetailScreen() {
           {showSearch && (
             <SearchOverlay
               defects={defects}
-              onSelect={(_defectId) => {
+              onSelect={(defectId) => {
                 setShowSearch(false);
+                // Open the category containing this defect so the user can see it
+                const defect = defects.find((d) => d.id === defectId);
+                if (defect?.category) {
+                  setOpenCategories((prev) => ({
+                    ...prev,
+                    [defect.category as string]: true,
+                  }));
+                }
               }}
               onClose={() => setShowSearch(false)}
             />
@@ -456,7 +519,7 @@ export default function ReportDetailScreen() {
             <ReportPreviewModal
               visible={showPreview}
               onClose={() => setShowPreview(false)}
-              onGeneratePdf={handleGeneratePdf}
+              onGeneratePdf={handleGeneratePdfFromPreview}
               reportId={id}
             />
           )}

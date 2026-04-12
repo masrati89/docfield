@@ -12,12 +12,15 @@ import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSw
 
 import { COLORS } from '@infield/ui';
 import { AnimatedPressable } from '@/components/reports/reportDetailConstants';
-import type { DefectItem } from '@/hooks/useReport';
+import type { DefectItem, ReviewStatus } from '@/hooks/useReport';
+import { ReviewStatusPill } from './ReviewStatusPill';
 
 interface DefectRowProps {
   defect: DefectItem;
   isLast: boolean;
   onDelete: (defectId: string) => void;
+  onReviewStatusChange?: (defectId: string, next: ReviewStatus) => void;
+  isReviewUpdating?: boolean;
 }
 
 function DeleteAction({ onPress }: { onPress: () => void }) {
@@ -46,7 +49,13 @@ function DeleteAction({ onPress }: { onPress: () => void }) {
   );
 }
 
-export function DefectRow({ defect, isLast, onDelete }: DefectRowProps) {
+export function DefectRow({
+  defect,
+  isLast,
+  onDelete,
+  onReviewStatusChange,
+  isReviewUpdating = false,
+}: DefectRowProps) {
   const scale = useSharedValue(1);
   const swipeableRef = useRef<SwipeableMethods>(null);
 
@@ -140,6 +149,53 @@ export function DefectRow({ defect, isLast, onDelete }: DefectRowProps) {
 
         {/* Defect info */}
         <View style={{ flex: 1, minWidth: 0 }}>
+          {/* Inherited badges row */}
+          {defect.source === 'inherited' && (
+            <View
+              style={{
+                flexDirection: 'row-reverse',
+                alignItems: 'center',
+                gap: 6,
+                marginBottom: 4,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: 'row-reverse',
+                  alignItems: 'center',
+                  gap: 3,
+                  paddingHorizontal: 6,
+                  paddingVertical: 2,
+                  borderRadius: 6,
+                  backgroundColor: COLORS.info[50],
+                  borderWidth: 1,
+                  borderColor: COLORS.info[500],
+                }}
+              >
+                <Feather
+                  name="corner-up-left"
+                  size={9}
+                  color={COLORS.info[700]}
+                />
+                <Text
+                  style={{
+                    fontSize: 9,
+                    fontFamily: 'Rubik-SemiBold',
+                    color: COLORS.info[700],
+                  }}
+                >
+                  מסבב קודם
+                </Text>
+              </View>
+              {defect.reviewStatus && onReviewStatusChange && (
+                <ReviewStatusPill
+                  status={defect.reviewStatus}
+                  isUpdating={isReviewUpdating}
+                  onChange={(next) => onReviewStatusChange(defect.id, next)}
+                />
+              )}
+            </View>
+          )}
           <Text
             style={{
               fontSize: 13,

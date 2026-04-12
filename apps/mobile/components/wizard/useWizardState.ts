@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 
 import { supabase } from '@/lib/supabase';
 import { createReportWithSnapshot } from '@/lib/createReportWithSnapshot';
+import { copyInheritedDefects } from '@/lib/copyInheritedDefects';
 import { useAuth } from '@/contexts/AuthContext';
 
 import type {
@@ -490,6 +491,23 @@ export function useWizardState(
         tenantPhone: state.tenantPhone.trim() || null,
         tenantEmail: state.tenantEmail.trim() || null,
       });
+
+      // Round 2+: copy unresolved defects forward from the previous round.
+      // Marks each copy as `source = 'inherited'` with `review_status = 'pending_review'`.
+      if (previousRoundId) {
+        try {
+          await copyInheritedDefects({
+            newReportId: reportId,
+            previousRoundId,
+          });
+        } catch (copyErr) {
+          // Non-fatal: report exists, user can add defects manually.
+          console.error(
+            '[useWizardState] copyInheritedDefects failed:',
+            copyErr
+          );
+        }
+      }
 
       // Reset submitting state before closing
       dispatch({ type: 'SET_SUBMITTING', payload: false });

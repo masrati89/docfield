@@ -13,6 +13,7 @@ import Animated, {
 import { COLORS, BORDER_RADIUS, SHADOWS } from '@infield/ui';
 import { DefectRow } from '@/components/reports/DefectRow';
 import type { CategoryGroup } from '@/components/reports/reportDetailConstants';
+import type { ReviewStatus } from '@/hooks/useReport';
 
 interface CategoryAccordionProps {
   group: CategoryGroup;
@@ -21,6 +22,8 @@ interface CategoryAccordionProps {
   index: number;
   onAddDefect: (category: string) => void;
   onDeleteDefect: (defectId: string) => void;
+  onReviewStatusChange?: (defectId: string, next: ReviewStatus) => void;
+  isReviewUpdating?: boolean;
 }
 
 export function CategoryAccordion({
@@ -30,6 +33,8 @@ export function CategoryAccordion({
   index,
   onAddDefect,
   onDeleteDefect,
+  onReviewStatusChange,
+  isReviewUpdating,
 }: CategoryAccordionProps) {
   const rotation = useSharedValue(0);
 
@@ -194,6 +199,8 @@ export function CategoryAccordion({
               defect={defect}
               isLast={di === group.defects.length - 1}
               onDelete={onDeleteDefect}
+              onReviewStatusChange={onReviewStatusChange}
+              isReviewUpdating={isReviewUpdating}
             />
           ))}
         </Animated.View>

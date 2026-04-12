@@ -31,6 +31,7 @@ import {
   ReportSettingsSheet,
   CHECKLIST_ROOMS,
 } from '@/components/checklist';
+import { SearchOverlay } from '@/components/reports/SearchOverlay';
 import { useChecklist } from '@/hooks/useChecklist';
 import { useReport } from '@/hooks/useReport';
 import { usePdfGeneration } from '@/hooks/usePdfGeneration';
@@ -81,6 +82,7 @@ export default function ChecklistScreen() {
   const [showAddDefect, setShowAddDefect] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const previewSheetRef = useRef<BottomSheetType>(null);
   const settingsSheetRef = useRef<BottomSheetType>(null);
 
@@ -371,8 +373,17 @@ export default function ChecklistScreen() {
             router.push(`/(app)/reports/${reportId}/add-defect`);
           }
         }}
-        onSearch={() => showToast('חיפוש — בקרוב', 'info')}
+        onSearch={() => setShowSearch(true)}
       />
+
+      {/* Search overlay */}
+      {showSearch && (
+        <SearchOverlay
+          defects={defects}
+          onSelect={() => setShowSearch(false)}
+          onClose={() => setShowSearch(false)}
+        />
+      )}
 
       {/* Add defect bottom sheet */}
       <AddDefectSheet
