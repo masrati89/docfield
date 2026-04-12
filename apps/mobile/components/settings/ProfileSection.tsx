@@ -1,9 +1,11 @@
 import { View, Text } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useQuery } from '@tanstack/react-query';
 
 import { COLORS } from '@infield/ui';
 import { PROFESSION_LABELS } from '@infield/shared';
 import type { ProfessionValue } from '@infield/shared';
+import { supabase } from '@/lib/supabase';
 
 // --- Types ---
 
@@ -37,6 +39,21 @@ export function ProfileSection({
   profession,
   organizationId,
 }: ProfileSectionProps) {
+  const { data: orgName } = useQuery({
+    queryKey: ['organization-name', organizationId],
+    queryFn: async () => {
+      if (!organizationId) return null;
+      const { data } = await supabase
+        .from('organizations')
+        .select('name')
+        .eq('id', organizationId)
+        .single();
+      return (data as { name: string } | null)?.name ?? null;
+    },
+    enabled: !!organizationId,
+    staleTime: Infinity,
+  });
+
   return (
     <Animated.View
       entering={FadeInUp.delay(100).duration(400)}
@@ -87,7 +104,7 @@ export function ProfileSection({
           ארגון
         </Text>
         <Text className="text-[15px] font-rubik text-neutral-700 text-right">
-          {organizationId ?? '---'}
+          {orgName ?? organizationId ?? '---'}
         </Text>
       </View>
     </Animated.View>

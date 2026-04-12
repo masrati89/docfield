@@ -56,7 +56,7 @@ export function ReportSettingsSheet({
         .from('delivery_reports')
         .update({
           tenant_name: name.trim() || null,
-          tenant_phone: phone.trim() || null,
+          tenant_phone: phone.trim().replace(/[-\s]/g, '') || null,
           notes: notes.trim() || null,
         })
         .eq('id', reportId);

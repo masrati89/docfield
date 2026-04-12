@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { forwardRef, useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -290,68 +290,71 @@ interface PasswordFieldProps {
   disabled: boolean;
   returnKeyType: 'next' | 'done';
   autoComplete: 'current-password' | 'new-password';
-  ref?: React.Ref<TextInput>;
 }
 
-const PasswordField = ({
-  ref,
-  label,
-  value,
-  onChangeText,
-  onSubmitEditing,
-  placeholder,
-  showPassword,
-  onToggleShow,
-  error,
-  disabled,
-  returnKeyType,
-  autoComplete,
-}: PasswordFieldProps & { ref?: React.Ref<TextInput> }) => (
-  <View className="mb-[16px]">
-    <Text className="text-[14px] font-rubik text-neutral-700 mb-[6px]">
-      {label}
-    </Text>
-    <View className="relative">
-      <TextInput
-        ref={ref}
-        value={value}
-        onChangeText={onChangeText}
-        onSubmitEditing={onSubmitEditing}
-        placeholder={placeholder}
-        placeholderTextColor={COLORS.neutral[400]}
-        secureTextEntry={showPassword !== undefined ? !showPassword : true}
-        autoCapitalize="none"
-        autoComplete={autoComplete}
-        returnKeyType={returnKeyType}
-        editable={!disabled}
-        className={`h-[50px] rounded-[10px] px-[16px] ${onToggleShow ? 'pe-[48px]' : ''} text-[16px] font-rubik text-neutral-700 bg-cream-50 ${error ? 'border-[1.5px] border-danger-500' : 'border-[1.5px] border-cream-300'} ${disabled ? 'opacity-50' : ''}`}
-        style={{ textAlign: 'right', writingDirection: 'ltr' }}
-      />
-      {onToggleShow && (
-        <Pressable
-          onPress={onToggleShow}
-          className="absolute start-[12px] top-[13px] p-[2px]"
-          hitSlop={8}
-          accessibilityLabel={showPassword ? 'הסתר סיסמה' : 'הצג סיסמה'}
+const PasswordField = forwardRef(function PasswordField(
+  {
+    label,
+    value,
+    onChangeText,
+    onSubmitEditing,
+    placeholder,
+    showPassword,
+    onToggleShow,
+    error,
+    disabled,
+    returnKeyType,
+    autoComplete,
+  }: PasswordFieldProps,
+  ref: React.Ref<TextInput>
+) {
+  return (
+    <View className="mb-[16px]">
+      <Text className="text-[14px] font-rubik text-neutral-700 mb-[6px]">
+        {label}
+      </Text>
+      <View className="relative">
+        <TextInput
+          ref={ref}
+          value={value}
+          onChangeText={onChangeText}
+          onSubmitEditing={onSubmitEditing}
+          placeholder={placeholder}
+          placeholderTextColor={COLORS.neutral[400]}
+          secureTextEntry={showPassword !== undefined ? !showPassword : true}
+          autoCapitalize="none"
+          autoComplete={autoComplete}
+          returnKeyType={returnKeyType}
+          editable={!disabled}
+          className={`h-[50px] rounded-[10px] px-[16px] ${onToggleShow ? 'pe-[48px]' : ''} text-[16px] font-rubik text-neutral-700 bg-cream-50 ${error ? 'border-[1.5px] border-danger-500' : 'border-[1.5px] border-cream-300'} ${disabled ? 'opacity-50' : ''}`}
+          style={{ textAlign: 'right', writingDirection: 'ltr' }}
+        />
+        {onToggleShow && (
+          <Pressable
+            onPress={onToggleShow}
+            className="absolute start-[12px] top-[13px] p-[2px]"
+            hitSlop={8}
+            accessibilityLabel={showPassword ? 'הסתר סיסמה' : 'הצג סיסמה'}
+          >
+            <Feather
+              name={showPassword ? 'eye-off' : 'eye'}
+              size={20}
+              color={COLORS.neutral[400]}
+            />
+          </Pressable>
+        )}
+      </View>
+      {error && (
+        <Animated.View
+          entering={FadeInUp.duration(200)}
+          className="flex-row items-center mt-[4px]"
         >
-          <Feather
-            name={showPassword ? 'eye-off' : 'eye'}
-            size={20}
-            color={COLORS.neutral[400]}
-          />
-        </Pressable>
+          <Feather name="alert-circle" size={16} color={COLORS.danger[700]} />
+          <Text className="text-[13px] font-rubik text-danger-700 me-[4px]">
+            {error}
+          </Text>
+        </Animated.View>
       )}
     </View>
-    {error && (
-      <Animated.View
-        entering={FadeInUp.duration(200)}
-        className="flex-row items-center mt-[4px]"
-      >
-        <Feather name="alert-circle" size={16} color={COLORS.danger[700]} />
-        <Text className="text-[13px] font-rubik text-danger-700 me-[4px]">
-          {error}
-        </Text>
-      </Animated.View>
-    )}
-  </View>
-);
+  );
+});

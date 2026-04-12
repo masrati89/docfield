@@ -170,7 +170,7 @@ export async function createReportWithSnapshot(
     project_name_freetext: params.projectNameFreetext ?? null,
     apartment_label_freetext: params.apartmentLabelFreetext ?? null,
     tenant_name: params.tenantName ?? null,
-    tenant_phone: params.tenantPhone ?? null,
+    tenant_phone: params.tenantPhone?.replace(/[-\s]/g, '') || null,
     tenant_email: params.tenantEmail ?? null,
 
     // Inspector snapshots (10)
