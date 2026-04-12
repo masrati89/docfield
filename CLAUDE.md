@@ -65,23 +65,28 @@ A repo audit on 2026-04-10 (`docs/audits/AUDIT_2026-04-10.md`) identified critic
 - 0.6 Iron Rule residue: 4 property fields frozen into snapshot columns via migration 033 + `fetchPropertySnapshot()` in `createReportWithSnapshot.ts`
 - 0.7 Design token fixes: shadows.ts warmed to `rgba(60,54,42,x)`; colors.ts already complete (gold.600, danger.200, warning.50/200 pre-existed)
 
+**Phase 1 — Feature Completion** (started 2026-04-12):
+
+- 1.1 Iron Rule property fields — migration 033 (4 snapshot columns) + `fetchPropertySnapshot()` + PDF reads from snapshots only
+- 1.2 Neutralize broken UI — web stubs → Coming Soon; mobile "בקרוב" buttons removed; bedek_bait settings button hidden; CLAUDE.md feature status updated
+
 **Feature status — post audit:**
 
-| Feature                     | Status                                                        |
-| --------------------------- | ------------------------------------------------------------- |
-| Digital signatures          | ✅ built                                                      |
-| Camera + annotations        | ✅ built                                                      |
-| Pre-PDF summary             | ✅ built                                                      |
-| OAuth (Google/Apple)        | ✅ built                                                      |
-| Iron Rule inspector/org     | ✅ built (18 snapshot columns)                                |
-| Notifications               | 🟡 partial — DB + hook + badge cell; panel UI pending         |
-| Search overlay              | 🟡 partial — component built; not wired to trigger button     |
-| Round 2 inherited defects   | 🟡 partial — DB schema ready; copy-forward logic + UI pending |
-| Iron Rule property fields   | ✅ built (migration 033 — 4 snapshot columns)                 |
-| WhatsApp send (Green API)   | 🔴 not built                                                  |
-| Offline sync (WatermelonDB) | 🔴 deferred post-MVP                                          |
-| Speech recognition          | 🔴 post-MVP                                                   |
-| Admin settings              | 🔴 not built — category/template/location management          |
+| Feature                     | Status                                                    |
+| --------------------------- | --------------------------------------------------------- |
+| Digital signatures          | ✅ built                                                  |
+| Camera + annotations        | ✅ built                                                  |
+| Pre-PDF summary             | ✅ built                                                  |
+| OAuth (Google/Apple)        | ✅ built                                                  |
+| Iron Rule inspector/org     | ✅ built (22 snapshot columns)                            |
+| Notifications               | ✅ built — DB + hook + badge + NotificationsPanel UI      |
+| Search overlay              | ✅ built — SearchOverlay component + wired to trigger     |
+| Round 2 inherited defects   | ✅ built — copyInheritedDefects + ReviewStatusPill + hook |
+| Iron Rule property fields   | ✅ built (migration 033 — 4 snapshot columns)             |
+| WhatsApp send (Green API)   | 🔴 not built                                              |
+| Offline sync (WatermelonDB) | 🔴 deferred post-MVP                                      |
+| Speech recognition          | 🔴 post-MVP                                               |
+| Admin settings              | 🔴 not built — category/template/location management      |
 
 ## Stack
 
@@ -241,7 +246,7 @@ packages/ui/       (@infield/ui)
 
 ## Database (supabase/migrations/)
 
-33 migrations through 033. See `supabase/migrations/` for the full list. Key milestones:
+34 migrations through 034. See `supabase/migrations/` for the full list. Key milestones:
 
 - **001–011** — core schema: organizations, users, projects, checklist_templates, delivery_reports, checklist_results, defects, defect_library, signatures, clients, storage_buckets
 - **012–015** — early extensions: round 2 fields + freetext (012), report_log audit trail (013), notifications (014), nullable apartment_id (015)
@@ -249,6 +254,7 @@ packages/ui/       (@infield/ui)
 - **028** — RLS recursion fix: `get_user_org_id()` SECURITY DEFINER helper breaks infinite recursion in users RLS policies
 - **029 + 032 + 033** — Iron Rule: 22 snapshot columns (10 inspector + 8 organization + 4 property) on delivery_reports; no backfill (test reports recreated via wizard)
 - **031** — global defect library seed: 338 canonical entries
+- **034** — defect_photos UPDATE RLS policy (same-org admin/PM or report owner)
 
 All tables: RLS enforced, organization_id tenant isolation.
 Signatures + report_log: no UPDATE/DELETE policies (immutable).
