@@ -10,9 +10,13 @@ export function ReportsPage() {
         </p>
       </header>
 
-      <div className="bg-white rounded-lg border border-cream-200 p-8 text-center">
+      <div className="bg-white rounded-lg border border-cream-200 p-12 text-center">
+        <p className="text-3xl mb-3">📋</p>
+        <h3 className="text-lg font-rubik font-semibold text-neutral-700 mb-2">
+          בקרוב
+        </h3>
         <p className="text-sm font-rubik text-neutral-400">
-          רשימת דוחות תופיע כאן
+          עמוד זה נמצא בפיתוח ויופיע בגרסה הבאה.
         </p>
       </div>
     </div>
