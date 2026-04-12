@@ -33,6 +33,14 @@ Reports are legal documents that must render from data frozen at report-creation
 
 **Rule:** any new PDF field goes through the snapshot path. If a snapshot column does not exist for it, add one in a migration — do not add a live join.
 
+## Strategic Decisions (2026-04-12)
+
+- **Web Admin Console** — retained, full build planned for Phase 2
+- **Checklist Templates** — will be made data-driven (migration 004 tables will be used); Phase 2
+- **Team Mode** — relevant for 1.0, Phase 2+
+- **Notifications server-side** — Edge Function + DB triggers approach, Phase 2+
+- **report_log writes** — deferred to P2 (no live customers yet)
+
 ## Current Status
 
 **Phase 0 — Post-Audit Remediation** (started 2026-04-11).
@@ -69,6 +77,8 @@ A repo audit on 2026-04-10 (`docs/audits/AUDIT_2026-04-10.md`) identified critic
 
 - 1.1 Iron Rule property fields — migration 033 (4 snapshot columns) + `fetchPropertySnapshot()` + PDF reads from snapshots only
 - 1.2 Neutralize broken UI — web stubs → Coming Soon; mobile "בקרוב" buttons removed; bedek_bait settings button hidden; CLAUDE.md feature status updated
+
+Next: Phase 2 — Web Admin Console + Checklist Templates (data-driven)
 
 **Feature status — post audit:**
 
