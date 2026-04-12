@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Redirect, Tabs, useSegments } from 'expo-router';
 import { Alert, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useSideMenu } from '@/hooks/useSideMenu';
-import { SharedTabHeader } from '@/components/ui';
+import { SharedTabHeader, NotificationsPanel } from '@/components/ui';
 import { SideMenu } from '@/components/ui/SideMenu';
 
 const TAB_ICON_SIZE = 22;
@@ -19,6 +19,7 @@ export default function AppLayout() {
   const resetTimerRef = useRef<() => void>(() => {});
   const { isOpen: menuOpen, open: openMenu, close: closeMenu } = useSideMenu();
   const { unreadCount: notificationCount } = useNotifications();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const handleIdleWarning = useCallback(() => {
     Alert.alert('אזהרת חוסר פעילות', 'תנותק בעוד 5 דקות בגלל חוסר פעילות.', [
@@ -64,7 +65,7 @@ export default function AppLayout() {
       {!isInsideReport && (
         <SharedTabHeader
           notificationCount={notificationCount}
-          onBell={() => {}}
+          onBell={() => setNotificationsOpen(true)}
           onMenu={openMenu}
         />
       )}
@@ -129,6 +130,10 @@ export default function AppLayout() {
       </Tabs>
 
       <SideMenu visible={menuOpen} onClose={closeMenu} />
+      <NotificationsPanel
+        visible={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+      />
     </View>
   );
 }
