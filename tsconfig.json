@@ -1,9 +1,19 @@
 {
   "files": [],
   "references": [
-    { "path": "apps/mobile" },
-    { "path": "apps/web/tsconfig.app.json" },
-    { "path": "packages/shared" },
-    { "path": "packages/ui" }
-  ]
+    {
+      "path": "apps/mobile"
+    },
+    {
+      "path": "apps/web/tsconfig.app.json"
+    },
+    {
+      "path": "packages/shared"
+    },
+    {
+      "path": "packages/ui"
+    }
+  ],
+  "compilerOptions": {},
+  "extends": "expo/tsconfig.base"
 }
