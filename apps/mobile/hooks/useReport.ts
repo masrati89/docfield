@@ -16,7 +16,15 @@ export interface ReportInfo {
   buildingName: string;
   apartmentNumber: string;
   address: string | null;
+  floor: number | null;
 }
+
+export type DefectSource = 'checklist' | 'manual' | 'library' | 'inherited';
+export type ReviewStatus =
+  | 'pending_review'
+  | 'fixed'
+  | 'not_fixed'
+  | 'partially_fixed';
 
 export interface DefectItem {
   id: string;
@@ -27,6 +35,8 @@ export interface DefectItem {
   status: string;
   standardRef: string | null;
   photoCount: number;
+  source: DefectSource;
+  reviewStatus: ReviewStatus | null;
 }
 
 export interface ReportDetail {
@@ -47,7 +57,7 @@ async function fetchReport(id: string): Promise<ReportDetail> {
   const { data: reportData, error: reportError } = await supabase
     .from('delivery_reports')
     .select(
-      `id, report_type, status, tenant_name, report_date, notes,
+      `id, report_type, status, tenant_name, report_date, notes, property_floor,
        apartments(number, buildings(name, projects(name, address)))`
     )
     .eq('id', id)
@@ -74,13 +84,14 @@ async function fetchReport(id: string): Promise<ReportDetail> {
     buildingName: apt?.buildings?.name ?? '',
     apartmentNumber: apt?.number ?? '',
     address: apt?.buildings?.projects?.address ?? null,
+    floor: (reportData.property_floor as number | null) ?? null,
   };
 
   // Fetch defects with photo count
   const { data: defectsData, error: defectsError } = await supabase
     .from('defects')
     .select(
-      'id, description, room, category, severity, status, standard_ref, defect_photos(id, caption)'
+      'id, description, room, category, severity, status, standard_ref, source, review_status, defect_photos(id, caption)'
     )
     .eq('delivery_report_id', id)
     .order('sort_order')
@@ -102,6 +113,8 @@ async function fetchReport(id: string): Promise<ReportDetail> {
         status: d.status as string,
         standardRef: d.standard_ref as string | null,
         photoCount: photos.length,
+        source: ((d.source as DefectSource) ?? 'manual') as DefectSource,
+        reviewStatus: (d.review_status as ReviewStatus | null) ?? null,
       };
     }
   );

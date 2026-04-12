@@ -46,6 +46,7 @@ function buildPreviewData(
       projectName: report.projectName,
       address: report.address ?? undefined,
       apartmentNumber: report.apartmentNumber,
+      floor: report.floor ?? undefined,
     },
     client: {
       name: report.tenantName ?? '',
@@ -125,7 +126,7 @@ export function ReportPreviewModal({
       <View
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.6)',
+          backgroundColor: 'rgba(60,54,42,0.6)',
           justifyContent: 'flex-end',
         }}
       >

@@ -7,6 +7,8 @@
 // - Signature/stamp placeholders instead of real images
 // - No QR code
 
+import { formatDate } from '@infield/shared';
+
 import type { PdfReportData, PdfChecklistItem } from './types';
 import {
   PDF,
@@ -14,6 +16,18 @@ import {
   formatCurrency,
   groupDefectsByCategory,
 } from './shared';
+
+// --- Date formatter (tolerant of bad input) ---
+
+function formatReportDate(raw: string): string {
+  try {
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return escapeHtml(raw);
+    return escapeHtml(formatDate(d, 'he'));
+  } catch {
+    return escapeHtml(raw);
+  }
+}
 
 // --- Preview-specific styles ---
 
@@ -338,10 +352,10 @@ function bedekBayitPreview(data: PdfReportData): string {
     <div class="detail-card">
       <div class="detail-row"><span class="detail-label">\u05E4\u05E8\u05D5\u05D9\u05E7\u05D8:</span> <span class="detail-value">${escapeHtml(data.property.projectName)}</span></div>
       ${data.property.address ? `<div class="detail-row"><span class="detail-label">\u05DB\u05EA\u05D5\u05D1\u05EA:</span> <span class="detail-value">${escapeHtml(data.property.address)}</span></div>` : ''}
-      <div class="detail-row"><span class="detail-label">\u05D3\u05D9\u05E8\u05D4:</span> <span class="detail-value">\u05D3\u05D9\u05E8\u05D4 ${escapeHtml(data.property.apartmentNumber)}${data.property.floor !== null ? `, \u05E7\u05D5\u05DE\u05D4 ${data.property.floor}` : ''}</span></div>
+      <div class="detail-row"><span class="detail-label">\u05D3\u05D9\u05E8\u05D4:</span> <span class="detail-value">\u05D3\u05D9\u05E8\u05D4 ${escapeHtml(data.property.apartmentNumber)}${typeof data.property.floor === 'number' ? `, \u05E7\u05D5\u05DE\u05D4 ${data.property.floor}` : ''}</span></div>
       <div class="detail-row"><span class="detail-label">\u05DE\u05D6\u05DE\u05D9\u05DF:</span> <span class="detail-value">${escapeHtml(data.client.name)}</span></div>
       <div class="detail-row"><span class="detail-label">\u05DE\u05E4\u05E7\u05D7:</span> <span class="detail-value">${escapeHtml(data.inspector.name)}</span></div>
-      <div class="detail-row"><span class="detail-label">\u05EA\u05D0\u05E8\u05D9\u05DA:</span> <span class="detail-value">${escapeHtml(data.reportDate)}</span></div>
+      <div class="detail-row"><span class="detail-label">\u05EA\u05D0\u05E8\u05D9\u05DA:</span> <span class="detail-value">${formatReportDate(data.reportDate)}</span></div>
       <div class="detail-row"><span class="detail-label">\u05DE\u05E1\u05E4\u05E8 \u05D3\u05D5\u05D7:</span> <span class="detail-value">${escapeHtml(data.reportNumber)}</span></div>
     </div>
 
@@ -363,7 +377,7 @@ function bedekBayitPreview(data: PdfReportData): string {
     <div style="text-align:center;">
       <div class="signature-placeholder">\u05D7\u05EA\u05D9\u05DE\u05D4 \u05EA\u05D5\u05D8\u05DE\u05E2 \u05D1-PDF</div>
       <div class="signature-name">${escapeHtml(data.inspector.name)}</div>
-      <div style="font-size:11px;color:${PDF.lt};">\u05EA\u05D0\u05E8\u05D9\u05DA: ${escapeHtml(data.reportDate)}</div>
+      <div style="font-size:11px;color:${PDF.lt};">\u05EA\u05D0\u05E8\u05D9\u05DA: ${formatReportDate(data.reportDate)}</div>
     </div>
   `;
 }
@@ -433,12 +447,12 @@ function protocolPreview(data: PdfReportData): string {
   return `
     <div class="report-header">
       <h1>\u05E4\u05E8\u05D5\u05D8\u05D5\u05E7\u05D5\u05DC \u05DE\u05E1\u05D9\u05E8\u05D4</h1>
-      <div class="subtitle">\u05DE\u05E1\u05D9\u05E8\u05D4 \u05E8\u05D0\u05E9\u05D5\u05E0\u05D9\u05EA | \u05EA\u05D0\u05E8\u05D9\u05DA: ${escapeHtml(data.reportDate)} | \u05DE\u05E1\u05E4\u05E8 \u05D3\u05D5\u05D7: ${escapeHtml(data.reportNumber)}</div>
+      <div class="subtitle">\u05DE\u05E1\u05D9\u05E8\u05D4 \u05E8\u05D0\u05E9\u05D5\u05E0\u05D9\u05EA | \u05EA\u05D0\u05E8\u05D9\u05DA: ${formatReportDate(data.reportDate)} | \u05DE\u05E1\u05E4\u05E8 \u05D3\u05D5\u05D7: ${escapeHtml(data.reportNumber)}</div>
     </div>
 
     <div class="detail-card">
       <div class="detail-row"><span class="detail-label">\u05E4\u05E8\u05D5\u05D9\u05E7\u05D8:</span> <span class="detail-value">${escapeHtml(data.property.projectName)}</span></div>
-      <div class="detail-row"><span class="detail-label">\u05D3\u05D9\u05E8\u05D4:</span> <span class="detail-value">\u05D3\u05D9\u05E8\u05D4 ${escapeHtml(data.property.apartmentNumber)}${data.property.floor !== null ? `, \u05E7\u05D5\u05DE\u05D4 ${data.property.floor}` : ''}</span></div>
+      <div class="detail-row"><span class="detail-label">\u05D3\u05D9\u05E8\u05D4:</span> <span class="detail-value">\u05D3\u05D9\u05E8\u05D4 ${escapeHtml(data.property.apartmentNumber)}${typeof data.property.floor === 'number' ? `, \u05E7\u05D5\u05DE\u05D4 ${data.property.floor}` : ''}</span></div>
       <div class="detail-row"><span class="detail-label">\u05D3\u05D9\u05D9\u05E8:</span> <span class="detail-value">${escapeHtml(data.client.name)}</span></div>
       <div class="detail-row"><span class="detail-label">\u05DE\u05E4\u05E7\u05D7:</span> <span class="detail-value">${escapeHtml(data.inspector.name)}</span></div>
     </div>
