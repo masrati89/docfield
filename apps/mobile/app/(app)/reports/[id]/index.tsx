@@ -336,7 +336,11 @@ export default function ReportDetailScreen() {
         reportDate={report?.reportDate ?? undefined}
         onPreview={() => setShowPreview(true)}
         onShare={handleSharePdf}
-        onSettings={() => showToast('הגדרות דוח — בקרוב', 'info')}
+        onSettings={
+          report?.reportType === 'delivery'
+            ? () => showToast('הגדרות דוח — בקרוב', 'info')
+            : undefined
+        }
         onDownload={handleGeneratePdf}
       />
 

@@ -57,10 +57,18 @@ export function ReportHeaderBar({
   const statusConfig = STATUS_CONFIG[status] ?? STATUS_CONFIG.draft;
 
   const actionButtons: ActionBtn[] = [
-    { label: 'הורדת דוח', icon: 'download', handler: onDownload },
-    { label: 'הגדרות דוח', icon: 'settings', handler: onSettings },
-    { label: 'שיתוף', icon: 'share', handler: onShare },
-    { label: 'תצוגה מקדימה', icon: 'eye', handler: onPreview },
+    { label: 'הורדת דוח', icon: 'download' as const, handler: onDownload },
+    ...(onSettings
+      ? [
+          {
+            label: 'הגדרות דוח',
+            icon: 'settings' as const,
+            handler: onSettings,
+          },
+        ]
+      : []),
+    { label: 'שיתוף', icon: 'share' as const, handler: onShare },
+    { label: 'תצוגה מקדימה', icon: 'eye' as const, handler: onPreview },
   ];
 
   return (

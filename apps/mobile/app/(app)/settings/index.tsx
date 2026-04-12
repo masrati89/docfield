@@ -41,10 +41,6 @@ export default function SettingsScreen() {
     [showToast]
   );
 
-  const handleComingSoon = useCallback(() => {
-    showToast('בקרוב', 'info');
-  }, [showToast]);
-
   return (
     <SafeAreaView className="flex-1 bg-cream-50">
       <StatusBar style="dark" />
@@ -128,7 +124,7 @@ export default function SettingsScreen() {
           <View className="mx-[20px] h-[1px] bg-cream-200 mb-[24px]" />
 
           {/* 6. Info */}
-          <InfoSection onComingSoon={handleComingSoon} />
+          <InfoSection />
 
           {/* Divider */}
           <View className="mx-[20px] h-[1px] bg-cream-200 mb-[24px]" />

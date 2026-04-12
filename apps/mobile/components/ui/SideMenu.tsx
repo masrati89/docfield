@@ -38,7 +38,6 @@ const MENU_ITEMS: MenuItemData[] = [
   { label: 'פרויקטים', icon: 'folder', route: '/(app)/projects' },
   { label: 'מאגר ממצאים', icon: 'book-open', route: '/(app)/library' },
   { label: 'הגדרות', icon: 'settings', route: '/(app)/settings' },
-  { label: 'עזרה', icon: 'help-circle', route: null, toastMessage: 'בקרוב' },
 ];
 
 // --- Component ---
