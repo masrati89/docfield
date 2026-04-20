@@ -4,9 +4,13 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "start": "dotenv -e .env.local -- expo start",
+    "start:local": "dotenv -e .env.local -- expo start",
+    "start:remote": "dotenv -e .env.remote -- expo start",
+    "android": "dotenv -e .env.local -- expo start --android",
+    "android:remote": "dotenv -e .env.remote -- expo start --android",
+    "ios": "dotenv -e .env.local -- expo start --ios",
+    "ios:remote": "dotenv -e .env.remote -- expo start --ios",
     "typecheck": "tsc --noEmit",
     "lint": "eslint app/ lib/ contexts/ constants/ --max-warnings 0",
     "clean": "rm -rf dist .expo node_modules/.cache"
@@ -60,6 +64,7 @@
     "@babel/core": "^7.25.0",
     "@expo/ngrok": "4.1.3",
     "@types/react": "~18.3.0",
+    "dotenv-cli": "11.0.0",
     "nativewind": "^4.1.0",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.7.0"
