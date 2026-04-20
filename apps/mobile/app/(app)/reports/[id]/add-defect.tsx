@@ -7,7 +7,8 @@ import {
   Pressable,
   Platform,
   KeyboardAvoidingView,
-  Alert,
+  Modal,
+  Dimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -24,10 +25,12 @@ import {
   DEFECT_CATEGORIES,
   ISRAELI_STANDARDS,
 } from '@infield/shared';
+import { createDefectSchema } from '@infield/shared/src/validation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useReport } from '@/hooks/useReport';
 import { useToast } from '@/hooks/useToast';
-import { Button, Toast } from '@/components/ui';
+import { Toast } from '@/components/ui';
 import { CameraCapture } from '@/components/camera';
 import type { CapturedPhoto } from '@/lib/annotations';
 import type { AnnotationLayer } from '@/lib/annotations';
@@ -38,6 +41,7 @@ import {
   ComboField,
   CostSection,
   PhotoGrid,
+  AppendixSection,
 } from '@/components/defect';
 
 import type { PhotoItem } from '@/components/defect/PhotoGrid';
@@ -46,7 +50,7 @@ import type { PhotoItem } from '@/components/defect/PhotoGrid';
 
 const MAX_PHOTOS = 20;
 
-const RECOMMENDATION_SUGGESTIONS = [
+const _RECOMMENDATION_SUGGESTIONS = [
   'החלפת אטם',
   'פירוק סיפון וניקוי',
   'החלפת אריח',
@@ -67,11 +71,23 @@ export default function AddDefectScreen() {
   const { profile } = useAuth();
   const { toast, showToast, hideToast } = useToast();
 
+  // Report data — detect mode (bedek_bait vs delivery)
+  const { report: reportInfo } = useReport(reportId);
+  const reportType = reportInfo?.reportType ?? 'bedek_bait';
+  const isDelivery = reportType === 'delivery';
+
+  // Apartment/room context for breadcrumb
+  const apartmentNumber = reportInfo?.apartmentNumber ?? '';
+  const roomLabel = initialCategory ?? '';
+
   // Form state
   const [category, setCategory] = useState(initialCategory ?? '');
+  const [categorySearch, setCategorySearch] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [severity] = useState<string>('medium');
   const [standardRef, setStandardRef] = useState('');
+  const [standardSection, _setStandardSection] = useState('');
   const [standardDisplay, setStandardDisplay] = useState('');
   const [recommendation, setRecommendation] = useState('');
   const [costUnit, setCostUnit] = useState('fixed');
@@ -83,9 +99,17 @@ export default function AddDefectScreen() {
   const [entrySource, setEntrySource] = useState<'direct' | 'library'>(
     'direct'
   );
+  const [appendixDocs, setAppendixDocs] = useState<
+    { id: string; uri: string }[]
+  >([]);
   const [isSaving, setIsSaving] = useState(false);
   const [cameraVisible, setCameraVisible] = useState(false);
   const savedRef = useRef(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   const organizationId = profile?.organizationId ?? '';
 
@@ -210,36 +234,17 @@ export default function AddDefectScreen() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (e as any).preventDefault();
 
-      Alert.alert(
-        'שינויים שלא נשמרו',
-        'יש שינויים שלא נשמרו. לצאת בלי לשמור?',
-        [
-          { text: 'ביטול', style: 'cancel' },
-          {
-            text: 'צא בלי לשמור',
-            style: 'destructive',
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onPress: () => navigation.dispatch((e as any).data.action),
-          },
-        ]
-      );
+      setConfirmAction({
+        title: 'שינויים שלא נשמרו',
+        message: 'יש שינויים שלא נשמרו. לצאת בלי לשמור?',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onConfirm: () => navigation.dispatch((e as any).data.action),
+      });
     });
 
     return unsubscribe;
   }, [isDirty, navigation]);
 
-  // Progress
-  const filledCount = [
-    category,
-    description,
-    location,
-    standardRef,
-    recommendation,
-    costAmount || costQty,
-    note,
-    photos.length > 0,
-  ].filter(Boolean).length;
-  const totalFields = 7;
   const canSave = !!category && description.trim().length > 0;
 
   const handleAddPhoto = useCallback(() => {
@@ -342,9 +347,45 @@ export default function AddDefectScreen() {
     }
     setIsSaving(true);
     try {
-      // Insert the defect
-      // Compute cost value
-      const costValue = costAmount ? parseFloat(costAmount) : null;
+      // Zod validation before Supabase insert (security M1)
+      const validation = createDefectSchema.safeParse({
+        deliveryReportId: reportId,
+        description: description.trim(),
+        room: location || '',
+        category: category || '',
+        severity,
+        source: 'manual' as const,
+        standardRef: standardRef.trim() || undefined,
+        standardSection: standardSection.trim() || undefined,
+        recommendation: recommendation.trim() || undefined,
+        notes: note.trim() || undefined,
+        cost: costAmount ? parseFloat(costAmount.replace(/,/g, '')) : undefined,
+        costUnit: costUnit || undefined,
+      });
+
+      if (!validation.success) {
+        const firstError =
+          validation.error.errors[0]?.message ?? 'שגיאה בנתונים';
+        showToast(firstError, 'error');
+        setIsSaving(false);
+        return;
+      }
+
+      // Compute cost fields based on cost unit type
+      const isFixedCost = costUnit === 'fixed';
+      const parsedAmount = costAmount
+        ? parseFloat(costAmount.replace(/,/g, ''))
+        : null;
+      const parsedUnitPrice = costPerUnit
+        ? parseFloat(costPerUnit.replace(/,/g, ''))
+        : null;
+      const parsedQty = costQty ? parseFloat(costQty.replace(/,/g, '')) : null;
+
+      const costValue = isFixedCost
+        ? parsedAmount
+        : parsedUnitPrice && parsedQty
+          ? parsedUnitPrice * parsedQty
+          : null;
 
       const { data: defectData, error: defectError } = await supabase
         .from('defects')
@@ -355,12 +396,16 @@ export default function AddDefectScreen() {
           room: location || null,
           category: category || null,
           standard_ref: standardRef.trim() || null,
-          severity: 'medium',
+          standard_section: standardSection.trim() || null,
+          severity,
           source: 'manual',
           recommendation: recommendation.trim() || null,
           notes: note.trim() || null,
           cost: costValue,
           cost_unit: costValue !== null ? costUnit : null,
+          unit_price: !isFixedCost ? parsedUnitPrice : null,
+          quantity: !isFixedCost ? parsedQty : null,
+          unit_label: !isFixedCost && costValue !== null ? costUnit : null,
         })
         .select('id')
         .single();
@@ -395,11 +440,16 @@ export default function AddDefectScreen() {
 
               if (uploadError) throw uploadError;
 
-              const {
-                data: { publicUrl },
-              } = supabase.storage.from('defect-photos').getPublicUrl(filePath);
+              const { data: signedData, error: signedError } =
+                await supabase.storage
+                  .from('defect-photos')
+                  .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year
 
-              imageUrl = publicUrl;
+              if (signedError || !signedData?.signedUrl) {
+                throw signedError ?? new Error('Failed to create signed URL');
+              }
+
+              imageUrl = signedData.signedUrl;
             } catch {
               showToast('חלק מהתמונות לא הועלו', 'error');
               continue;
@@ -438,11 +488,15 @@ export default function AddDefectScreen() {
     description,
     location,
     category,
+    severity,
     standardRef,
+    standardSection,
     recommendation,
     note,
     costAmount,
     costUnit,
+    costPerUnit,
+    costQty,
     photos,
     router,
     showToast,
@@ -465,529 +519,912 @@ export default function AddDefectScreen() {
     [standardDescMap]
   );
 
+  const screenHeight = Dimensions.get('window').height;
+
   return (
     <View
       style={{
         flex: 1,
-        backgroundColor: COLORS.cream[50],
+        backgroundColor: 'transparent',
       }}
     >
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
 
-      {/* Toast */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          visible={!!toast}
-          onDismiss={hideToast}
-        />
-      )}
-
-      {/* Camera Modal */}
-      <CameraCapture
-        visible={cameraVisible}
-        onClose={() => setCameraVisible(false)}
-        onPhotosConfirmed={handlePhotosConfirmed}
-        initialPhotoCount={photos.length}
-        maxPhotos={MAX_PHOTOS}
+      {/* Dimmed overlay — tap to dismiss */}
+      <Pressable
+        onPress={() => {
+          if (!isDirty || savedRef.current) {
+            savedRef.current = true;
+            router.back();
+          } else {
+            setConfirmAction({
+              title: 'שינויים שלא נשמרו',
+              message: 'יש שינויים שלא נשמרו. לצאת בלי לשמור?',
+              onConfirm: () => {
+                savedRef.current = true;
+                router.back();
+              },
+            });
+          }
+        }}
+        style={{
+          height: screenHeight * 0.1,
+          backgroundColor: 'rgba(0,0,0,0.35)',
+        }}
       />
 
-      {/* Header */}
+      {/* Sheet body */}
       <View
         style={{
-          paddingTop: insets.top + 8,
-          paddingHorizontal: 16,
-          paddingBottom: 8,
+          flex: 1,
           backgroundColor: COLORS.cream[50],
-          borderBottomWidth: 1,
-          borderBottomColor: COLORS.cream[200],
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+          overflow: 'hidden',
         }}
       >
-        {/* Progress bar */}
-        <View
-          style={{
-            height: 3,
-            borderRadius: 2,
-            backgroundColor: COLORS.cream[200],
-            overflow: 'hidden',
-            marginBottom: 8,
-          }}
-        >
+        {/* Toast */}
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            visible={!!toast}
+            onDismiss={hideToast}
+          />
+        )}
+
+        {/* Camera Modal */}
+        <CameraCapture
+          visible={cameraVisible}
+          onClose={() => setCameraVisible(false)}
+          onPhotosConfirmed={handlePhotosConfirmed}
+          initialPhotoCount={photos.length}
+          maxPhotos={MAX_PHOTOS}
+        />
+
+        {/* Grabber */}
+        <View style={{ alignItems: 'center', paddingTop: 8, paddingBottom: 4 }}>
           <View
             style={{
-              height: '100%',
+              width: 36,
+              height: 4,
               borderRadius: 2,
-              backgroundColor: COLORS.primary[500],
-              width: `${(filledCount / totalFields) * 100}%`,
+              backgroundColor: COLORS.cream[300],
             }}
           />
         </View>
 
-        {/* Title row */}
+        {/* Header — DS: breadcrumb + title + close button */}
         <View
           style={{
             flexDirection: 'row-reverse',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            gap: 12,
+            paddingTop: 6,
+            paddingHorizontal: 16,
+            paddingBottom: 12,
+            backgroundColor: COLORS.cream[50],
+            borderBottomWidth: 1,
+            borderBottomColor: COLORS.cream[200],
           }}
         >
-          <View
-            style={{
-              flexDirection: 'row-reverse',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
+          <View style={{ flex: 1 }}>
+            {isDelivery || apartmentNumber || roomLabel ? (
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontFamily: 'Rubik-Regular',
+                  color: COLORS.neutral[400],
+                  textAlign: 'right',
+                  marginBottom: 2,
+                }}
+              >
+                {[
+                  isDelivery ? 'פרוטוקול מסירה' : '',
+                  apartmentNumber ? `דירה ${apartmentNumber}` : '',
+                  roomLabel,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </Text>
+            ) : null}
             <Text
               style={{
-                fontSize: 17,
+                fontSize: 18,
                 fontWeight: '700',
                 color: COLORS.neutral[800],
                 fontFamily: 'Rubik-Bold',
+                letterSpacing: -0.2,
+                textAlign: 'right',
               }}
             >
-              הוספת ממצא
+              ממצא חדש
             </Text>
-            {entrySource === 'library' && (
-              <View
-                style={{
-                  backgroundColor: COLORS.gold[100],
-                  borderRadius: BORDER_RADIUS.sm,
-                  paddingHorizontal: 8,
-                  paddingVertical: 3,
-                  borderWidth: 1,
-                  borderColor: COLORS.gold[300],
-                }}
+          </View>
+          <Pressable
+            onPress={() => {
+              if (!isDirty || savedRef.current) {
+                savedRef.current = true;
+                router.back();
+              } else {
+                setConfirmAction({
+                  title: 'שינויים שלא נשמרו',
+                  message: 'יש שינויים שלא נשמרו. לצאת בלי לשמור?',
+                  onConfirm: () => {
+                    savedRef.current = true;
+                    router.back();
+                  },
+                });
+              }
+            }}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              backgroundColor: COLORS.cream[100],
+              borderWidth: 1,
+              borderColor: COLORS.cream[200],
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Feather name="x" size={18} color={COLORS.neutral[600]} />
+          </Pressable>
+        </View>
+
+        {/* Form */}
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <ScrollView
+            contentContainerStyle={{
+              paddingVertical: 14,
+              paddingHorizontal: 16,
+              paddingBottom: 20,
+            }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* 1. Category — search + chip grid */}
+            <View style={{ marginBottom: 16 }}>
+              <FormField
+                label="קטגוריה"
+                required
+                filled={!!category}
+                icon="grid"
               >
-                <Text
+                {/* Search / add input */}
+                <View
                   style={{
-                    fontSize: 11,
-                    color: COLORS.gold[700],
-                    fontFamily: 'Rubik-Medium',
+                    flexDirection: 'row-reverse',
+                    alignItems: 'center',
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: categorySearch
+                      ? COLORS.primary[200]
+                      : COLORS.cream[300],
+                    backgroundColor: COLORS.cream[100],
+                    paddingHorizontal: 10,
+                    marginBottom: 8,
+                    height: 40,
                   }}
                 >
-                  מהמאגר
+                  <Feather
+                    name="search"
+                    size={14}
+                    color={COLORS.neutral[400]}
+                    style={{ marginLeft: 6 }}
+                  />
+                  <TextInput
+                    value={categorySearch}
+                    onChangeText={setCategorySearch}
+                    placeholder="חפש או הוסף קטגוריה..."
+                    placeholderTextColor={COLORS.neutral[400]}
+                    style={{
+                      flex: 1,
+                      fontSize: 13,
+                      fontFamily: 'Rubik-Regular',
+                      color: COLORS.neutral[800],
+                      textAlign: 'right',
+                      paddingVertical: 0,
+                    }}
+                  />
+                  {/* Use as custom category button */}
+                  {categorySearch.trim().length > 0 &&
+                    !DEFECT_CATEGORIES.some(
+                      (c) => c.label === categorySearch.trim()
+                    ) && (
+                      <Pressable
+                        onPress={() => {
+                          setCategory(categorySearch.trim());
+                          if (Platform.OS !== 'web') {
+                            Haptics.impactAsync(
+                              Haptics.ImpactFeedbackStyle.Light
+                            );
+                          }
+                        }}
+                        style={{
+                          flexDirection: 'row-reverse',
+                          alignItems: 'center',
+                          gap: 3,
+                          paddingVertical: 4,
+                          paddingHorizontal: 8,
+                          borderRadius: 6,
+                          backgroundColor: COLORS.primary[50],
+                        }}
+                      >
+                        <Feather
+                          name="plus"
+                          size={12}
+                          color={COLORS.primary[500]}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontFamily: 'Rubik-Medium',
+                            color: COLORS.primary[500],
+                          }}
+                        >
+                          הוסף
+                        </Text>
+                      </Pressable>
+                    )}
+                </View>
+
+                {/* Filtered chips */}
+                <ScrollView
+                  style={{ maxHeight: 88 }}
+                  showsVerticalScrollIndicator={false}
+                  nestedScrollEnabled
+                >
+                  <View
+                    style={{
+                      flexDirection: 'row-reverse',
+                      flexWrap: 'wrap',
+                      gap: 6,
+                    }}
+                  >
+                    {DEFECT_CATEGORIES.filter(
+                      (cat) =>
+                        !categorySearch.trim() ||
+                        cat.label.includes(categorySearch.trim())
+                    ).map((cat) => {
+                      const isSelected = category === cat.label;
+                      return (
+                        <Pressable
+                          key={cat.label}
+                          onPress={() => {
+                            setCategory(cat.label);
+                            setCategorySearch('');
+                            if (Platform.OS !== 'web') {
+                              Haptics.impactAsync(
+                                Haptics.ImpactFeedbackStyle.Light
+                              );
+                            }
+                          }}
+                          style={{
+                            paddingVertical: 7,
+                            paddingHorizontal: 12,
+                            borderRadius: 18,
+                            backgroundColor: isSelected
+                              ? COLORS.primary[500]
+                              : 'transparent',
+                            borderWidth: 1,
+                            borderColor: isSelected
+                              ? COLORS.primary[500]
+                              : COLORS.cream[300],
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: isSelected ? '600' : '500',
+                              color: isSelected ? '#fff' : COLORS.neutral[600],
+                              fontFamily: isSelected
+                                ? 'Rubik-SemiBold'
+                                : 'Rubik-Medium',
+                            }}
+                          >
+                            {cat.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </ScrollView>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: COLORS.neutral[400],
+                    fontFamily: 'Rubik-Regular',
+                    marginTop: 4,
+                    textAlign: 'left',
+                  }}
+                >
+                  {categorySearch.trim()
+                    ? `${DEFECT_CATEGORIES.filter((c) => c.label.includes(categorySearch.trim())).length} תוצאות`
+                    : `${DEFECT_CATEGORIES.length} קטגוריות · גלול לעוד`}
                 </Text>
+              </FormField>
+            </View>
+
+            {/* 2. Description — DS: icon alert, g500 */}
+            <FormField
+              label="תיאור ממצא"
+              required
+              filled={!!description}
+              icon="alert-triangle"
+            >
+              <TextInput
+                value={description}
+                onChangeText={(text) => {
+                  setDescription(text);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => {
+                  // Delay hiding to allow suggestion tap
+                  setTimeout(() => setShowSuggestions(false), 200);
+                }}
+                placeholder="תאר את הממצא..."
+                placeholderTextColor={COLORS.neutral[400]}
+                multiline
+                style={{
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: BORDER_RADIUS.md,
+                  borderWidth: 1,
+                  borderColor: description
+                    ? COLORS.primary[200]
+                    : COLORS.cream[300],
+                  backgroundColor: description
+                    ? COLORS.primary[50]
+                    : COLORS.cream[50],
+                  fontSize: 15,
+                  lineHeight: 22,
+                  fontFamily: 'Rubik-Regular',
+                  color: COLORS.neutral[800],
+                  textAlign: 'right',
+                  minHeight: 68,
+                  maxHeight: 120,
+                }}
+              />
+
+              {/* Autocomplete suggestions from defect library */}
+              {showSuggestions && suggestions.length > 0 && (
+                <View
+                  style={{
+                    marginTop: 4,
+                    borderRadius: BORDER_RADIUS.md,
+                    borderWidth: 1,
+                    borderColor: COLORS.cream[200],
+                    backgroundColor: COLORS.cream[50],
+                    overflow: 'hidden',
+                  }}
+                >
+                  {suggestions.map((item) => (
+                    <Pressable
+                      key={item.id}
+                      onPress={() => handleSelectSuggestion(item)}
+                      style={({ pressed }) => ({
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        borderBottomWidth: 1,
+                        borderBottomColor: COLORS.cream[200],
+                        backgroundColor: pressed
+                          ? COLORS.primary[50]
+                          : 'transparent',
+                      })}
+                    >
+                      {/* Row 1: Title */}
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          fontFamily: 'Rubik-Medium',
+                          color: COLORS.neutral[800],
+                          textAlign: 'right',
+                        }}
+                        numberOfLines={1}
+                      >
+                        {item.title}
+                      </Text>
+
+                      {/* Row 2: Category badge + location + cost badge */}
+                      {item.category || item.location || item.cost !== null ? (
+                        <View
+                          style={{
+                            flexDirection: 'row-reverse',
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                            gap: 4,
+                            marginTop: 4,
+                          }}
+                        >
+                          {item.category ? (
+                            <View
+                              style={{
+                                backgroundColor: COLORS.primary[50],
+                                borderRadius: 4,
+                                paddingHorizontal: 6,
+                                paddingVertical: 1,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  fontSize: 10,
+                                  fontFamily: 'Rubik-Regular',
+                                  color: COLORS.primary[700],
+                                }}
+                              >
+                                {item.category}
+                              </Text>
+                            </View>
+                          ) : null}
+
+                          {item.location ? (
+                            <Text
+                              style={{
+                                fontSize: 10,
+                                fontFamily: 'Rubik-Regular',
+                                color: COLORS.neutral[400],
+                              }}
+                            >
+                              {item.location}
+                            </Text>
+                          ) : null}
+
+                          {item.cost !== null ? (
+                            <View
+                              style={{
+                                backgroundColor: COLORS.gold[100],
+                                borderRadius: 4,
+                                paddingHorizontal: 6,
+                                paddingVertical: 1,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  fontSize: 10,
+                                  fontFamily: 'Rubik-Regular',
+                                  color: COLORS.gold[700],
+                                }}
+                              >
+                                ₪{item.cost}
+                              </Text>
+                            </View>
+                          ) : null}
+                        </View>
+                      ) : null}
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+
+              {/* Add to Library button */}
+              {showAddToLibrary && !showSuggestions && (
+                <Pressable
+                  onPress={handleAddToLibrary}
+                  disabled={isAdding || addedToLibrary}
+                  style={{
+                    flexDirection: 'row-reverse',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderRadius: BORDER_RADIUS.sm,
+                    borderWidth: 1,
+                    borderStyle: 'dashed',
+                    borderColor: addedToLibrary
+                      ? COLORS.primary[500]
+                      : COLORS.primary[300],
+                    backgroundColor: addedToLibrary
+                      ? COLORS.primary[100]
+                      : COLORS.primary[50],
+                    marginTop: 8,
+                    opacity: isAdding ? 0.6 : 1,
+                  }}
+                >
+                  <Feather
+                    name={addedToLibrary ? 'check-circle' : 'plus-circle'}
+                    size={14}
+                    color={COLORS.primary[500]}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: COLORS.primary[500],
+                      fontFamily: 'Rubik-Medium',
+                    }}
+                  >
+                    {addedToLibrary ? 'נוסף!' : 'הוסף למאגר'}
+                  </Text>
+                </Pressable>
+              )}
+            </FormField>
+
+            {/* 3. Location */}
+            <FormField label="מיקום" filled={!!location} icon="map-pin">
+              <ComboField
+                value={location}
+                onSelect={setLocation}
+                options={locationLabels}
+                placeholder="הקלד או בחר מיקום..."
+                allowCustom
+              />
+            </FormField>
+
+            {/* 4. Israeli Standard — bedek_bait only */}
+            {!isDelivery && (
+              <FormField
+                label="תקן"
+                filled={!!standardRef}
+                icon="book"
+                labelExtra={
+                  standardRef.trim() ? (
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color: COLORS.primary[700],
+                        backgroundColor: COLORS.primary[50],
+                        paddingVertical: 1,
+                        paddingHorizontal: 6,
+                        borderRadius: 4,
+                        fontFamily: 'Inter-Regular',
+                        fontWeight: '500',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {standardRef.split(' סעיף ')[0] || standardRef}
+                    </Text>
+                  ) : undefined
+                }
+                hint={entrySource === 'library' ? 'מהספרייה' : undefined}
+              >
+                <ComboField
+                  value={standardRef}
+                  onSelect={handleSelectStandard}
+                  options={standardOptions}
+                  placeholder="חפש תקן ישראלי..."
+                  allowCustom
+                />
+                {standardDisplay ? (
+                  <View
+                    style={{
+                      marginTop: 8,
+                      paddingVertical: 10,
+                      paddingHorizontal: 12,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: COLORS.primary[200],
+                      backgroundColor: COLORS.cream[50],
+                      minHeight: 82,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        color: COLORS.neutral[800],
+                        fontFamily: 'Rubik-Regular',
+                        textAlign: 'right',
+                        lineHeight: 19,
+                      }}
+                    >
+                      {standardDisplay}
+                    </Text>
+                  </View>
+                ) : null}
+              </FormField>
+            )}
+
+            {/* 5. Recommendation — DS: icon tool g500; delivery: optional with hint */}
+            <FormField
+              label="המלצה לתיקון"
+              filled={!!recommendation}
+              icon="tool"
+              iconColor={COLORS.primary[500]}
+              labelExtra={
+                isDelivery ? (
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: '400',
+                      color: COLORS.neutral[400],
+                      fontFamily: 'Rubik-Regular',
+                    }}
+                  >
+                    · לא חובה
+                  </Text>
+                ) : undefined
+              }
+            >
+              <TextInput
+                value={recommendation}
+                onChangeText={setRecommendation}
+                placeholder={
+                  isDelivery
+                    ? 'ניתן להשאיר ריק או להוסיף המלצה ליזם/קבלן…'
+                    : 'הקלד המלצה לתיקון...'
+                }
+                placeholderTextColor={COLORS.neutral[400]}
+                multiline
+                style={{
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: recommendation
+                    ? COLORS.primary[200]
+                    : COLORS.cream[200],
+                  backgroundColor: recommendation
+                    ? COLORS.cream[50]
+                    : COLORS.cream[100],
+                  fontSize: 14,
+                  lineHeight: 20,
+                  fontFamily: 'Rubik-Regular',
+                  color: COLORS.neutral[800],
+                  textAlign: 'right',
+                  minHeight: 92,
+                }}
+              />
+            </FormField>
+
+            {/* 6. Cost — bedek_bait only, DS: custom header with ₪ icon */}
+            {!isDelivery && (
+              <View style={{ marginBottom: 14 }}>
+                <View
+                  style={{
+                    flexDirection: 'row-reverse',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginBottom: 6,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: COLORS.gold[500],
+                      fontWeight: '700',
+                      fontFamily: 'Inter-Bold',
+                    }}
+                  >
+                    ₪
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: '600',
+                      color: COLORS.neutral[700],
+                      fontFamily: 'Rubik-SemiBold',
+                    }}
+                  >
+                    עלות תיקון משוערת
+                  </Text>
+                </View>
+                <CostSection
+                  costUnit={costUnit}
+                  onCostUnitChange={setCostUnit}
+                  costAmount={costAmount}
+                  onCostAmountChange={setCostAmount}
+                  costQty={costQty}
+                  onCostQtyChange={setCostQty}
+                  costPerUnit={costPerUnit}
+                  onCostPerUnitChange={setCostPerUnit}
+                />
               </View>
             )}
-          </View>
-          <View
+
+            {/* 7. Photos — DS: icon camera n500, count as Inter number */}
+            <FormField
+              label="תמונות"
+              filled={photos.length > 0}
+              icon="camera"
+              count={photos.length > 0 ? photos.length : undefined}
+            >
+              <PhotoGrid
+                photos={photos}
+                onAddPhoto={handleAddPhoto}
+                onPickFromGallery={handlePickFromGallery}
+                onDeletePhoto={handleDeletePhoto}
+                onUpdateAnnotations={handleUpdateAnnotations}
+                onUpdateCaption={handleUpdateCaption}
+              />
+            </FormField>
+
+            {/* 8. Appendix — bedek_bait only, DS: icon file n500 */}
+            {!isDelivery && (
+              <FormField
+                label="נספח"
+                filled={appendixDocs.length > 0}
+                icon="file"
+                hint="תקנים ומסמכים"
+                count={
+                  appendixDocs.length > 0 ? appendixDocs.length : undefined
+                }
+              >
+                <AppendixSection
+                  documents={appendixDocs}
+                  onAddFromLibrary={() => {
+                    // Placeholder — library picker not yet implemented
+                  }}
+                  onAddFromCamera={() => {
+                    // Placeholder — camera capture for appendix not yet implemented
+                  }}
+                  onDelete={(id) =>
+                    setAppendixDocs((prev) => prev.filter((d) => d.id !== id))
+                  }
+                />
+              </FormField>
+            )}
+
+            {/* 9. Notes — DS: muted, icon file n500 */}
+            <FormField label="הערות" filled={!!note} icon="file" muted>
+              <TextInput
+                value={note}
+                onChangeText={setNote}
+                placeholder="הערות פנימיות, תזכורות לעצמך, תיאום עם הדייר…"
+                placeholderTextColor={COLORS.neutral[400]}
+                multiline
+                numberOfLines={2}
+                style={{
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: note ? COLORS.primary[200] : COLORS.cream[200],
+                  backgroundColor: note ? COLORS.cream[50] : COLORS.cream[100],
+                  fontSize: 13,
+                  lineHeight: 19,
+                  fontFamily: 'Rubik-Regular',
+                  color: COLORS.neutral[800],
+                  textAlign: 'right',
+                  minHeight: 72,
+                }}
+              />
+            </FormField>
+          </ScrollView>
+        </KeyboardAvoidingView>
+
+        {/* Footer — DS: shadow up, single green button */}
+        <View
+          style={{
+            paddingHorizontal: 16,
+            paddingTop: 10,
+            paddingBottom: Math.max(22, insets.bottom),
+            borderTopWidth: 1,
+            borderTopColor: COLORS.cream[200],
+            backgroundColor: COLORS.cream[50],
+            boxShadow: '0 -4px 20px rgba(60,54,42,.12)',
+          }}
+        >
+          <Pressable
+            onPress={handleSave}
+            disabled={!canSave || isSaving}
             style={{
-              flexDirection: 'row-reverse',
+              height: 46,
+              borderRadius: 10,
+              backgroundColor: COLORS.primary[500],
               alignItems: 'center',
-              gap: 8,
+              justifyContent: 'center',
+              opacity: canSave && !isSaving ? 1 : 0.5,
+              boxShadow: '0 2px 8px rgba(27,122,68,.18)',
             }}
           >
             <Text
               style={{
-                fontSize: 10,
-                color: COLORS.neutral[400],
-                fontFamily: 'Rubik-Regular',
+                fontSize: 14,
+                fontWeight: '600',
+                color: '#fff',
+                fontFamily: 'Rubik-SemiBold',
               }}
             >
-              {filledCount}/{totalFields}
+              {isSaving ? 'שומר...' : 'שמור ממצא'}
             </Text>
+          </Pressable>
+        </View>
+
+        {/* Confirmation modal (replaces Alert.alert for cross-platform) */}
+        <Modal
+          visible={!!confirmAction}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setConfirmAction(null)}
+        >
+          <Pressable
+            onPress={() => setConfirmAction(null)}
+            style={{
+              flex: 1,
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 32,
+            }}
+          >
             <Pressable
-              onPress={() => {
-                if (!isDirty || savedRef.current) {
-                  savedRef.current = true;
-                  router.back();
-                } else {
-                  Alert.alert(
-                    'שינויים שלא נשמרו',
-                    'יש שינויים שלא נשמרו. לצאת בלי לשמור?',
-                    [
-                      { text: 'ביטול', style: 'cancel' },
-                      {
-                        text: 'צא בלי לשמור',
-                        style: 'destructive',
-                        onPress: () => {
-                          savedRef.current = true;
-                          router.back();
-                        },
-                      },
-                    ]
-                  );
-                }
-              }}
+              onPress={() => {}}
               style={{
-                width: 30,
-                height: 30,
-                borderRadius: 8,
-                backgroundColor: COLORS.cream[100],
-                alignItems: 'center',
-                justifyContent: 'center',
+                width: '100%',
+                maxWidth: 320,
+                backgroundColor: COLORS.cream[50],
+                borderRadius: 14,
+                padding: 20,
               }}
             >
-              <Feather name="x" size={20} color={COLORS.neutral[500]} />
-            </Pressable>
-          </View>
-        </View>
-      </View>
-
-      {/* Form */}
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={{ padding: 16, paddingBottom: 20 }}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* 1. Category */}
-          <FormField label="קטגוריה" required filled={!!category} icon="grid">
-            <ComboField
-              value={category}
-              onSelect={setCategory}
-              options={DEFECT_CATEGORIES.map((c) => c.label)}
-              placeholder="הקלד או בחר קטגוריה..."
-              allowCustom
-            />
-          </FormField>
-
-          {/* 2. Description */}
-          <FormField
-            label="תיאור הממצא"
-            required
-            filled={!!description}
-            icon="alert-triangle"
-          >
-            <TextInput
-              value={description}
-              onChangeText={(text) => {
-                setDescription(text);
-                setShowSuggestions(true);
-              }}
-              onFocus={() => setShowSuggestions(true)}
-              onBlur={() => {
-                // Delay hiding to allow suggestion tap
-                setTimeout(() => setShowSuggestions(false), 200);
-              }}
-              placeholder="תאר את הממצא..."
-              placeholderTextColor={COLORS.neutral[400]}
-              multiline
-              style={{
-                paddingVertical: 9,
-                paddingHorizontal: 12,
-                borderRadius: BORDER_RADIUS.md,
-                borderWidth: 1,
-                borderColor: description
-                  ? COLORS.primary[200]
-                  : COLORS.cream[300],
-                backgroundColor: description
-                  ? COLORS.primary[50]
-                  : COLORS.cream[50],
-                fontSize: 14,
-                fontFamily: 'Rubik-Regular',
-                color: COLORS.neutral[800],
-                textAlign: 'right',
-                minHeight: 42,
-                maxHeight: 100,
-              }}
-            />
-
-            {/* Autocomplete suggestions from defect library */}
-            {showSuggestions && suggestions.length > 0 && (
-              <View
+              <Text
                 style={{
-                  marginTop: 4,
-                  borderRadius: BORDER_RADIUS.md,
-                  borderWidth: 1,
-                  borderColor: COLORS.cream[200],
-                  backgroundColor: COLORS.cream[50],
-                  overflow: 'hidden',
+                  fontSize: 16,
+                  fontFamily: 'Rubik-SemiBold',
+                  color: COLORS.neutral[800],
+                  textAlign: 'right',
+                  marginBottom: 8,
                 }}
               >
-                {suggestions.map((item) => (
-                  <Pressable
-                    key={item.id}
-                    onPress={() => handleSelectSuggestion(item)}
-                    style={({ pressed }) => ({
-                      paddingVertical: 10,
-                      paddingHorizontal: 12,
-                      borderBottomWidth: 1,
-                      borderBottomColor: COLORS.cream[200],
-                      backgroundColor: pressed
-                        ? COLORS.primary[50]
-                        : 'transparent',
-                    })}
+                {confirmAction?.title}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontFamily: 'Rubik-Regular',
+                  color: COLORS.neutral[600],
+                  textAlign: 'right',
+                  marginBottom: 20,
+                }}
+              >
+                {confirmAction?.message}
+              </Text>
+              <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
+                <Pressable
+                  onPress={() => {
+                    confirmAction?.onConfirm();
+                    setConfirmAction(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    height: 40,
+                    borderRadius: 10,
+                    backgroundColor: COLORS.primary[500],
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontFamily: 'Rubik-SemiBold',
+                      color: COLORS.white,
+                    }}
                   >
-                    {/* Row 1: Title */}
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        fontFamily: 'Rubik-Medium',
-                        color: COLORS.neutral[800],
-                        textAlign: 'right',
-                      }}
-                      numberOfLines={1}
-                    >
-                      {item.title}
-                    </Text>
-
-                    {/* Row 2: Category badge + location + cost badge */}
-                    {item.category || item.location || item.cost !== null ? (
-                      <View
-                        style={{
-                          flexDirection: 'row-reverse',
-                          alignItems: 'center',
-                          flexWrap: 'wrap',
-                          gap: 4,
-                          marginTop: 4,
-                        }}
-                      >
-                        {item.category ? (
-                          <View
-                            style={{
-                              backgroundColor: COLORS.primary[50],
-                              borderRadius: 4,
-                              paddingHorizontal: 6,
-                              paddingVertical: 1,
-                            }}
-                          >
-                            <Text
-                              style={{
-                                fontSize: 10,
-                                fontFamily: 'Rubik-Regular',
-                                color: COLORS.primary[700],
-                              }}
-                            >
-                              {item.category}
-                            </Text>
-                          </View>
-                        ) : null}
-
-                        {item.location ? (
-                          <Text
-                            style={{
-                              fontSize: 10,
-                              fontFamily: 'Rubik-Regular',
-                              color: COLORS.neutral[400],
-                            }}
-                          >
-                            {item.location}
-                          </Text>
-                        ) : null}
-
-                        {item.cost !== null ? (
-                          <View
-                            style={{
-                              backgroundColor: COLORS.gold[100],
-                              borderRadius: 4,
-                              paddingHorizontal: 6,
-                              paddingVertical: 1,
-                            }}
-                          >
-                            <Text
-                              style={{
-                                fontSize: 10,
-                                fontFamily: 'Rubik-Regular',
-                                color: COLORS.gold[700],
-                              }}
-                            >
-                              ₪{item.cost}
-                            </Text>
-                          </View>
-                        ) : null}
-                      </View>
-                    ) : null}
-                  </Pressable>
-                ))}
-              </View>
-            )}
-
-            {/* Add to Library button */}
-            {showAddToLibrary && !showSuggestions && (
-              <Pressable
-                onPress={handleAddToLibrary}
-                disabled={isAdding || addedToLibrary}
-                style={{
-                  flexDirection: 'row-reverse',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                  paddingVertical: 8,
-                  paddingHorizontal: 12,
-                  borderRadius: BORDER_RADIUS.sm,
-                  borderWidth: 1,
-                  borderStyle: 'dashed',
-                  borderColor: addedToLibrary
-                    ? COLORS.primary[500]
-                    : COLORS.primary[300],
-                  backgroundColor: addedToLibrary
-                    ? COLORS.primary[100]
-                    : COLORS.primary[50],
-                  marginTop: 8,
-                  opacity: isAdding ? 0.6 : 1,
-                }}
-              >
-                <Feather
-                  name={addedToLibrary ? 'check-circle' : 'plus-circle'}
-                  size={14}
-                  color={COLORS.primary[500]}
-                />
-                <Text
+                    אישור
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setConfirmAction(null)}
                   style={{
-                    fontSize: 12,
-                    color: COLORS.primary[500],
-                    fontFamily: 'Rubik-Medium',
+                    flex: 1,
+                    height: 40,
+                    borderRadius: 10,
+                    backgroundColor: COLORS.cream[100],
+                    borderWidth: 1,
+                    borderColor: COLORS.cream[200],
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
-                  {addedToLibrary ? 'נוסף!' : 'הוסף למאגר'}
-                </Text>
-              </Pressable>
-            )}
-          </FormField>
-
-          {/* 3. Location */}
-          <FormField label="מיקום" filled={!!location} icon="map-pin">
-            <ComboField
-              value={location}
-              onSelect={setLocation}
-              options={locationLabels}
-              placeholder="הקלד או בחר מיקום..."
-              allowCustom
-            />
-          </FormField>
-
-          {/* 4. Israeli Standard */}
-          <FormField label="תקן ישראלי" filled={!!standardRef} icon="book-open">
-            <ComboField
-              value={standardRef}
-              onSelect={handleSelectStandard}
-              options={standardOptions}
-              placeholder="חפש תקן ישראלי..."
-              allowCustom
-            />
-            {standardDisplay ? (
-              <View
-                style={{
-                  marginTop: 8,
-                  paddingVertical: 8,
-                  paddingHorizontal: 12,
-                  borderRightWidth: 2,
-                  borderRightColor: COLORS.primary[500],
-                  backgroundColor: COLORS.primary[50],
-                  borderRadius: BORDER_RADIUS.sm,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: COLORS.neutral[600],
-                    fontFamily: 'Rubik-Regular',
-                    textAlign: 'right',
-                    lineHeight: 18,
-                  }}
-                >
-                  {standardDisplay}
-                </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontFamily: 'Rubik-Medium',
+                      color: COLORS.neutral[600],
+                    }}
+                  >
+                    ביטול
+                  </Text>
+                </Pressable>
               </View>
-            ) : null}
-          </FormField>
-
-          {/* Separator */}
-          <View
-            style={{
-              height: 1,
-              backgroundColor: COLORS.cream[200],
-              marginTop: 4,
-              marginBottom: 12,
-            }}
-          />
-
-          {/* 5. Recommendation */}
-          <FormField label="המלצה לתיקון" filled={!!recommendation} icon="tool">
-            <ComboField
-              value={recommendation}
-              onSelect={setRecommendation}
-              options={RECOMMENDATION_SUGGESTIONS}
-              placeholder="הקלד או בחר המלצה..."
-              allowCustom
-            />
-          </FormField>
-
-          {/* 5. Cost */}
-          <FormField
-            label="עלות תיקון"
-            filled={!!(costAmount || costQty)}
-            icon="file-text"
-          >
-            <CostSection
-              costUnit={costUnit}
-              onCostUnitChange={setCostUnit}
-              costAmount={costAmount}
-              onCostAmountChange={setCostAmount}
-              costQty={costQty}
-              onCostQtyChange={setCostQty}
-              costPerUnit={costPerUnit}
-              onCostPerUnitChange={setCostPerUnit}
-            />
-          </FormField>
-
-          {/* 6. Notes */}
-          <FormField label="הערות" filled={!!note} icon="message-square">
-            <TextInput
-              value={note}
-              onChangeText={setNote}
-              placeholder="הערות נוספות (אופציונלי)..."
-              placeholderTextColor={COLORS.neutral[400]}
-              multiline
-              numberOfLines={2}
-              style={{
-                paddingVertical: 9,
-                paddingHorizontal: 12,
-                borderRadius: BORDER_RADIUS.md,
-                borderWidth: 1,
-                borderColor: note ? COLORS.primary[200] : COLORS.cream[300],
-                backgroundColor: note ? COLORS.primary[50] : COLORS.cream[50],
-                fontSize: 14,
-                fontFamily: 'Rubik-Regular',
-                color: COLORS.neutral[800],
-                textAlign: 'right',
-                minHeight: 56,
-              }}
-            />
-          </FormField>
-
-          {/* 7. Photos */}
-          <FormField
-            label={`תמונות${photos.length > 0 ? ` (${photos.length})` : ''}`}
-            filled={photos.length > 0}
-            icon="camera"
-          >
-            <PhotoGrid
-              photos={photos}
-              onAddPhoto={handleAddPhoto}
-              onPickFromGallery={handlePickFromGallery}
-              onDeletePhoto={handleDeletePhoto}
-              onUpdateAnnotations={handleUpdateAnnotations}
-              onUpdateCaption={handleUpdateCaption}
-            />
-          </FormField>
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      {/* Save button */}
-      <View
-        style={{
-          paddingHorizontal: 16,
-          paddingTop: 10,
-          paddingBottom: Math.max(20, insets.bottom),
-          borderTopWidth: 1,
-          borderTopColor: COLORS.cream[200],
-          backgroundColor: COLORS.cream[50],
-        }}
-      >
-        <Button
-          label="שמור ממצא"
-          onPress={handleSave}
-          disabled={!canSave}
-          loading={isSaving}
-          size="lg"
-        />
+            </Pressable>
+          </Pressable>
+        </Modal>
       </View>
     </View>
   );

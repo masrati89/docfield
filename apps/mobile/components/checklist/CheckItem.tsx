@@ -30,7 +30,7 @@ export function CheckItem({
   defectText,
   onStatus,
   onDefectText,
-  isChild,
+  isChild: _isChild,
   isHidden,
   isActiveDefect,
   onActivate,
@@ -40,6 +40,7 @@ export function CheckItem({
   const cfg = status ? STATUS[status] : null;
   const hasText = !!defectText?.trim();
 
+  // Tap on item: open status picker (or toggle defect input for defect/partial)
   const handleTap = useCallback(() => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -67,61 +68,56 @@ export function CheckItem({
     [onStatus, onActivate, item.id]
   );
 
+  // Long press to change status when already set
+  const handleLongPress = useCallback(() => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    if (status === 'defect' || status === 'partial') {
+      onActivate(null);
+    }
+    setExpanded((e) => !e);
+  }, [status, onActivate]);
+
   if (isHidden) return null;
 
   return (
     <View>
-      {/* Item row */}
+      {/* Item row — matches DS: badge + text + optional "ליקוי" badge */}
       <Pressable
         onPress={handleTap}
+        onLongPress={handleLongPress}
         style={{
-          paddingVertical: 12,
-          paddingLeft: 16,
-          paddingRight: isChild ? 32 : 16,
+          paddingVertical: 10,
+          paddingHorizontal: 14,
           borderBottomWidth: 1,
-          borderBottomColor: COLORS.cream[200],
+          borderBottomColor: COLORS.cream[100],
           flexDirection: 'row-reverse',
           alignItems: 'center',
-          gap: 12,
-          backgroundColor: COLORS.cream[50],
-          minHeight: 48,
+          gap: 10,
         }}
       >
-        {/* Child indent line */}
-        {isChild ? (
-          <View
-            style={{
-              position: 'absolute',
-              right: 20,
-              top: 0,
-              bottom: 0,
-              width: 2,
-              backgroundColor: COLORS.primary[200],
-              borderRadius: 1,
-              opacity: 0.3,
-            }}
-          />
-        ) : null}
-
-        {/* Status badge */}
+        {/* Status badge — 22×22, 6px radius */}
         {cfg ? (
           <View
             style={{
-              width: 24,
-              height: 24,
-              borderRadius: 5,
+              width: 22,
+              height: 22,
+              borderRadius: 6,
               backgroundColor: cfg.bg,
               borderWidth: 1,
               borderColor: cfg.border,
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
             <Text
               style={{
-                fontSize: 14,
+                fontSize: 12,
                 fontWeight: '700',
                 color: cfg.color,
+                fontFamily: 'Inter-Bold',
               }}
             >
               {cfg.sym}
@@ -130,14 +126,28 @@ export function CheckItem({
         ) : (
           <View
             style={{
-              width: 24,
-              height: 24,
-              borderRadius: 5,
-              borderWidth: 2,
+              width: 22,
+              height: 22,
+              borderRadius: 6,
+              borderWidth: 1,
               borderColor: COLORS.cream[300],
-              backgroundColor: COLORS.cream[50],
+              backgroundColor: COLORS.cream[200],
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
             }}
-          />
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: '700',
+                color: COLORS.neutral[400],
+                fontFamily: 'Inter-Bold',
+              }}
+            >
+              ·
+            </Text>
+          </View>
         )}
 
         {/* Text */}
@@ -145,11 +155,10 @@ export function CheckItem({
           <Text
             style={{
               fontSize: 13,
-              fontWeight: '500',
               color:
-                status === 'skip' ? COLORS.neutral[400] : COLORS.neutral[700],
-              lineHeight: 20,
-              fontFamily: 'Rubik-Medium',
+                status === 'skip' ? COLORS.neutral[400] : COLORS.neutral[800],
+              lineHeight: 17,
+              fontFamily: 'Rubik-Regular',
               textAlign: 'right',
             }}
           >
@@ -164,8 +173,6 @@ export function CheckItem({
                 color:
                   status === 'defect' ? COLORS.danger[700] : COLORS.gold[600],
                 marginTop: 2,
-                lineHeight: 16,
-                opacity: 0.8,
                 fontFamily: 'Rubik-Regular',
                 textAlign: 'right',
               }}
@@ -175,48 +182,43 @@ export function CheckItem({
           ) : null}
         </View>
 
-        {/* Change button */}
-        {cfg ? (
-          <Pressable
-            onPress={() => {
-              setExpanded((e) => !e);
-              if (status === 'defect' || status === 'partial') {
-                onActivate(null);
-              }
-            }}
+        {/* "ליקוי" badge for defect items */}
+        {status === 'defect' && (
+          <View
             style={{
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 6,
+              paddingHorizontal: 7,
+              paddingVertical: 2,
+              borderRadius: 5,
+              backgroundColor: COLORS.danger[50],
               borderWidth: 1,
-              borderColor: COLORS.cream[200],
-              backgroundColor: COLORS.cream[50],
+              borderColor: COLORS.danger[200],
             }}
           >
             <Text
               style={{
                 fontSize: 10,
-                color: COLORS.neutral[400],
-                fontFamily: 'Rubik-Regular',
+                fontWeight: '600',
+                color: COLORS.danger[700],
+                fontFamily: 'Rubik-SemiBold',
               }}
             >
-              שנה
+              ליקוי
             </Text>
-          </Pressable>
-        ) : null}
+          </View>
+        )}
       </Pressable>
 
-      {/* Status picker */}
+      {/* Status picker — shown on tap (no status) or long-press (has status) */}
       {expanded ? (
         <View
           style={{
             flexDirection: 'row-reverse',
             gap: 4,
             padding: 8,
-            paddingHorizontal: 16,
+            paddingHorizontal: 14,
             backgroundColor: COLORS.cream[100],
             borderBottomWidth: 1,
-            borderBottomColor: COLORS.cream[200],
+            borderBottomColor: COLORS.cream[100],
           }}
         >
           {Object.entries(STATUS).map(([key, s]) => {
@@ -294,13 +296,13 @@ function DefectInput({
   const accentColor = isDefect ? COLORS.danger[700] : COLORS.gold[600];
   const borderColor = isDefect ? COLORS.danger[200] : COLORS.warning[200];
   const bgColor = isDefect ? COLORS.danger[50] : COLORS.warning[50];
-  const canSave = !!defectText.trim();
+  const hasText = !!defectText.trim();
 
   return (
     <View
       style={{
         padding: 8,
-        paddingHorizontal: 16,
+        paddingHorizontal: 14,
         backgroundColor: bgColor,
         borderBottomWidth: 1,
         borderBottomColor: borderColor,
@@ -350,13 +352,13 @@ function DefectInput({
         </Pressable>
       </View>
       <Pressable
-        onPress={canSave ? onSave : undefined}
+        onPress={onSave}
         style={{
           marginTop: 8,
           height: 36,
           borderRadius: 8,
           backgroundColor: accentColor,
-          opacity: canSave ? 1 : 0.5,
+          opacity: hasText ? 1 : 0.7,
           flexDirection: 'row-reverse',
           alignItems: 'center',
           justifyContent: 'center',

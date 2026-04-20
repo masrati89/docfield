@@ -24,6 +24,8 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
 
+import * as Crypto from 'expo-crypto';
+
 import { COLORS } from '@infield/ui';
 import {
   fullRegisterSchema,
@@ -207,20 +209,28 @@ export default function RegisterScreen() {
 
       // Step 3: Create organization (generate UUID client-side —
       // SELECT policy requires user profile, which doesn't exist yet)
-      const newOrgId = crypto.randomUUID();
+      const newOrgId = Crypto.randomUUID();
+      console.warn('[Register] Step 3: creating org', newOrgId);
       const { error: orgError } = await supabase.from('organizations').insert({
         id: newOrgId,
         name: orgName.trim(),
       });
 
       if (orgError) {
+        console.error(
+          '[Register] Step 3 failed:',
+          orgError.message,
+          orgError.code
+        );
         await supabase.auth.signOut();
-        setErrors({ general: 'אירעה שגיאה ביצירת הארגון. נסה שוב' });
+        setErrors({ general: `שגיאה ביצירת הארגון: ${orgError.message}` });
         triggerShake();
         return;
       }
+      console.warn('[Register] Step 3: org created successfully');
 
       // Step 4: Create user profile
+      console.warn('[Register] Step 4: creating user profile', newUser.id);
       const { error: profileError } = await supabase.from('users').insert({
         id: newUser.id,
         organization_id: newOrgId,
@@ -233,13 +243,20 @@ export default function RegisterScreen() {
       });
 
       if (profileError) {
+        console.error(
+          '[Register] Step 4 failed:',
+          profileError.message,
+          profileError.code,
+          profileError.details
+        );
         // Rollback: delete org and sign out
         await supabase.from('organizations').delete().eq('id', newOrgId);
         await supabase.auth.signOut();
-        setErrors({ general: 'אירעה שגיאה ביצירת הפרופיל. נסה שוב' });
+        setErrors({ general: `שגיאה ביצירת הפרופיל: ${profileError.message}` });
         triggerShake();
         return;
       }
+      console.warn('[Register] Step 4: user profile created successfully');
 
       // Success — sign out so user must verify email first
       await supabase.auth.signOut();

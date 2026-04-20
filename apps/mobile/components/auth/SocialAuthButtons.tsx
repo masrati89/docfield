@@ -146,7 +146,7 @@ export function SocialAuthButtons({
                 fontWeight: '700',
                 color: '#4285F4',
                 lineHeight: 24,
-                fontFamily: 'Inter',
+                fontFamily: 'Inter-Bold',
               }}
             >
               G

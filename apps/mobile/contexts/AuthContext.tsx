@@ -8,7 +8,7 @@ import {
 } from 'react';
 
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
-import type { User } from '@infield/shared';
+import type { User, UserPreferences } from '@infield/shared';
 
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -20,6 +20,7 @@ interface AuthContextValue {
   user: SupabaseUser | null;
   profile: User | null;
   isLoading: boolean;
+  refreshProfile: () => Promise<User | null>;
   signIn: (
     email: string,
     password: string
@@ -66,11 +67,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select(
+          'id, organization_id, email, full_name, first_name, profession, role, phone, signature_url, stamp_url, avatar_url, provider, is_active, created_at, updated_at'
+        )
         .eq('id', userId)
         .single();
 
       if (error) {
+        console.error('[AuthContext] fetchProfile error:', error.message);
         return null;
       }
 
@@ -89,12 +93,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         avatarUrl: data.avatar_url ?? undefined,
         provider: data.provider ?? 'email',
         isActive: data.is_active,
+        preferences:
+          ((data as Record<string, unknown>).preferences as UserPreferences) ??
+          {},
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };
 
       return userProfile;
-    } catch {
+    } catch (err) {
+      console.error('[AuthContext] fetchProfile exception:', err);
       return null;
     }
   }, []);
@@ -119,10 +127,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      console.warn(
+        '[AuthContext] onAuthStateChange:',
+        _event,
+        newSession?.user?.id
+      );
       setSession(newSession);
 
       if (newSession?.user) {
         const userProfile = await fetchProfile(newSession.user.id);
+        console.warn(
+          '[AuthContext] profile loaded:',
+          userProfile ? 'yes' : 'null',
+          userProfile?.fullName
+        );
         setProfile(userProfile);
       } else {
         setProfile(null);
@@ -131,6 +149,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, [fetchProfile]);
+
+  // Re-fetch profile (e.g. after preferences change). Returns the updated profile.
+  const refreshProfile = useCallback(async (): Promise<User | null> => {
+    const userId = session?.user?.id;
+    if (!userId) return null;
+    const updated = await fetchProfile(userId);
+    if (updated) setProfile(updated);
+    return updated;
+  }, [session, fetchProfile]);
 
   // Sign in with email and password
   const signIn = useCallback(async (email: string, password: string) => {
@@ -192,11 +219,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user: session?.user ?? null,
       profile,
       isLoading,
+      refreshProfile,
       signIn,
       signUp,
       signOut,
     }),
-    [session, profile, isLoading, signIn, signUp, signOut]
+    [session, profile, isLoading, refreshProfile, signIn, signUp, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

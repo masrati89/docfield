@@ -3,13 +3,12 @@ import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
-import { COLORS, BORDER_RADIUS, SHADOWS } from '@infield/ui';
+import { COLORS } from '@infield/ui';
 
 // --- Types ---
 
 interface ChecklistFooterProps {
   onAddDefect: () => void;
-  onCamera: () => void;
   onSearch: () => void;
 }
 
@@ -17,7 +16,6 @@ interface ChecklistFooterProps {
 
 export function ChecklistFooter({
   onAddDefect,
-  onCamera,
   onSearch,
 }: ChecklistFooterProps) {
   const insets = useSafeAreaInsets();
@@ -39,13 +37,17 @@ export function ChecklistFooter({
         backgroundColor: COLORS.cream[50],
         borderTopWidth: 1,
         borderTopColor: COLORS.cream[200],
-        paddingHorizontal: 12,
-        paddingTop: 12,
-        paddingBottom: Math.max(24, insets.bottom),
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        paddingBottom: Math.max(22, insets.bottom),
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        gap: 8,
-        ...SHADOWS.lg,
+        gap: 10,
+        shadowColor: 'rgb(60,54,42)',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 20,
+        elevation: 12,
       }}
     >
       {/* Add defect — primary */}
@@ -58,8 +60,13 @@ export function ChecklistFooter({
           justifyContent: 'center',
           gap: 8,
           backgroundColor: COLORS.primary[500],
-          borderRadius: BORDER_RADIUS.md,
-          height: 44,
+          borderRadius: 12,
+          height: 48,
+          shadowColor: 'rgb(27,122,68)',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.26,
+          shadowRadius: 10,
+          elevation: 6,
         }}
       >
         <Feather name="plus" size={20} color={COLORS.white} />
@@ -71,42 +78,30 @@ export function ChecklistFooter({
             fontFamily: 'Rubik-SemiBold',
           }}
         >
-          הוסף ליקוי
+          הוסף ממצא
         </Text>
-      </Pressable>
-
-      {/* Camera */}
-      <Pressable
-        onPress={() => handlePress(onCamera)}
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: BORDER_RADIUS.md,
-          borderWidth: 1,
-          borderColor: COLORS.cream[200],
-          backgroundColor: COLORS.cream[50],
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Feather name="camera" size={20} color={COLORS.neutral[500]} />
       </Pressable>
 
       {/* Search */}
       <Pressable
         onPress={() => handlePress(onSearch)}
         style={{
-          width: 44,
-          height: 44,
-          borderRadius: BORDER_RADIUS.md,
+          width: 48,
+          height: 48,
+          borderRadius: 12,
           borderWidth: 1,
           borderColor: COLORS.cream[200],
-          backgroundColor: COLORS.cream[50],
+          backgroundColor: COLORS.white,
           alignItems: 'center',
           justifyContent: 'center',
+          shadowColor: 'rgb(60,54,42)',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.05,
+          shadowRadius: 2,
+          elevation: 2,
         }}
       >
-        <Feather name="search" size={20} color={COLORS.neutral[500]} />
+        <Feather name="search" size={20} color={COLORS.neutral[700]} />
       </Pressable>
     </View>
   );

@@ -18,6 +18,7 @@ export interface ChecklistItemData {
   hasChildren?: boolean;
   parentId?: string;
   bathType?: 'shower' | 'bath';
+  trade?: string;
 }
 
 export interface ChecklistRoom {

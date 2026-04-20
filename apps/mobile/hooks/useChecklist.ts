@@ -1,8 +1,12 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';
 import { CHECKLIST_ROOMS } from '@/components/checklist/constants';
+import { mapToChecklistRooms } from '@/hooks/useChecklistTemplate';
 import type {
+  ChecklistItemData,
+  ChecklistRoom,
   ChecklistStatus,
   StatusMap,
   DefectTextMap,
@@ -10,15 +14,34 @@ import type {
   OpenMap,
 } from '@/components/checklist/types';
 
+export type ChecklistViewMode = 'rooms' | 'trades';
+
+// Hebrew labels for each trade key
+const TRADE_LABELS: Record<string, string> = {
+  electrical: 'חשמל',
+  plumbing: 'אינסטלציה',
+  tiling: 'ריצוף וחיפוי',
+  painting: 'צבע וטיח',
+  aluminum: 'אלומיניום',
+  hvac: 'מיזוג ואוורור',
+  doors: 'דלתות',
+  kitchen: 'מטבח',
+  gas: 'גז',
+  steel_frames: 'מסגרות',
+  other: 'אחר',
+};
+
 // Shape stored in delivery_reports.checklist_state
 interface ChecklistState {
   statuses?: StatusMap;
   defectTexts?: DefectTextMap;
   bathTypes?: BathTypeMap;
+  viewMode?: ChecklistViewMode;
 }
 
 export function useChecklist(
   reportId: string | undefined,
+  templateId?: string | null,
   onSaveError?: (msg: string) => void
 ) {
   const [openRooms, setOpenRooms] = useState<OpenMap>({ entrance: true });
@@ -29,6 +52,7 @@ export function useChecklist(
   });
   const [activeDefect, setActiveDefect] = useState<string | null>(null);
   const [isLoadingState, setIsLoadingState] = useState(true);
+  const [viewMode, setViewMode] = useState<ChecklistViewMode>('rooms');
 
   // Track current values in refs so the persist callback always has fresh data
   // without needing them as dependencies (avoids stale closure loops).
@@ -38,6 +62,41 @@ export function useChecklist(
   statusesRef.current = statuses;
   defectTextsRef.current = defectTexts;
   bathTypesRef.current = bathTypes;
+
+  // --- Fetch template rooms from DB (when templateId is provided) ---
+  const { data: templateRooms } = useQuery({
+    queryKey: ['checklist-template-rooms', templateId],
+    queryFn: async (): Promise<ChecklistRoom[]> => {
+      const { data, error } = await supabase
+        .from('checklist_categories')
+        .select('*, checklist_items(*)')
+        .eq('template_id', templateId!)
+        .order('sort_order');
+
+      if (error) throw error;
+
+      return mapToChecklistRooms(
+        (data ?? []) as {
+          id: string;
+          name: string;
+          sort_order: number;
+          checklist_items: {
+            id: string;
+            description: string;
+            default_severity: string;
+            requires_photo: boolean;
+            sort_order: number;
+            metadata: Record<string, unknown>;
+          }[];
+        }[]
+      );
+    },
+    enabled: !!templateId,
+    staleTime: Infinity,
+  });
+
+  // Use template rooms if available, otherwise fall back to hardcoded constant
+  const rooms: ChecklistRoom[] = templateRooms ?? CHECKLIST_ROOMS;
 
   // --- Load persisted state on mount ---
   useEffect(() => {
@@ -79,11 +138,17 @@ export function useChecklist(
           if (saved.bathTypes && Object.keys(saved.bathTypes).length > 0) {
             setBathTypes((prev) => ({ ...prev, ...saved.bathTypes }));
           }
+          if (saved.viewMode) {
+            setViewMode(saved.viewMode);
+          }
         }
       } catch {
         // Non-fatal
       } finally {
-        if (!cancelled) setIsLoadingState(false);
+        // Always clear loading — even if cancelled (component remounted).
+        // Prevents isLoadingState from getting stuck on true during fast-refresh
+        // or useFocusEffect remount cycles, which hides all checklist UI.
+        setIsLoadingState(false);
       }
     }
 
@@ -92,6 +157,10 @@ export function useChecklist(
       cancelled = true;
     };
   }, [reportId]);
+
+  // Track viewMode in ref for persist callback
+  const viewModeRef = useRef(viewMode);
+  viewModeRef.current = viewMode;
 
   // --- Persist state to Supabase (fire-and-forget, optimistic) ---
   const persistState = useCallback(
@@ -106,6 +175,7 @@ export function useChecklist(
         statuses: nextStatuses,
         defectTexts: nextDefectTexts,
         bathTypes: nextBathTypes,
+        viewMode: viewModeRef.current,
       };
 
       const { error } = await supabase
@@ -180,9 +250,49 @@ export function useChecklist(
     [persistState]
   );
 
+  // --- Group by trade ---
+  const tradeRooms: ChecklistRoom[] = useMemo(() => {
+    const allItems = rooms.flatMap((r) => r.items);
+    const grouped: Record<string, ChecklistItemData[]> = {};
+
+    for (const item of allItems) {
+      const key = item.trade ?? 'other';
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    }
+
+    // Deterministic order: match TRADE_LABELS key order
+    const tradeOrder = Object.keys(TRADE_LABELS);
+    return tradeOrder
+      .filter((key) => grouped[key] && grouped[key].length > 0)
+      .map((key) => ({
+        id: `trade_${key}`,
+        name: TRADE_LABELS[key] ?? key,
+        items: grouped[key],
+      }));
+  }, [rooms]);
+
+  // Active rooms based on viewMode
+  const activeRooms = viewMode === 'trades' ? tradeRooms : rooms;
+
+  // --- Handle view mode change (persist) ---
+  const handleSetViewMode = useCallback(
+    (mode: ChecklistViewMode) => {
+      setViewMode(mode);
+      viewModeRef.current = mode;
+      // Persist with current state
+      persistState(
+        statusesRef.current,
+        defectTextsRef.current,
+        bathTypesRef.current
+      );
+    },
+    [persistState]
+  );
+
   // --- Computed stats ---
   const stats = useMemo(() => {
-    const allVisible = CHECKLIST_ROOMS.flatMap((r) =>
+    const allVisible = rooms.flatMap((r) =>
       r.items.filter((i) => {
         if (i.bathType && i.bathType !== (bathTypes[r.id] || 'shower'))
           return false;
@@ -196,9 +306,10 @@ export function useChecklist(
       (i) => statuses[i.id] === 'defect' || statuses[i.id] === 'partial'
     ).length;
     return { checked, total, defectCount };
-  }, [statuses, bathTypes]);
+  }, [statuses, bathTypes, rooms]);
 
   return {
+    rooms: activeRooms,
     openRooms,
     statuses,
     defectTexts,
@@ -206,6 +317,8 @@ export function useChecklist(
     activeDefect,
     stats,
     isLoadingState,
+    viewMode,
+    setViewMode: handleSetViewMode,
     toggleRoom,
     setItemStatus,
     setDefectText,

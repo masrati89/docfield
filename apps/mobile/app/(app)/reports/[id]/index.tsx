@@ -5,14 +5,12 @@ import {
   ScrollView,
   Pressable,
   Platform,
-  Alert,
+  Modal,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { Feather } from '@expo/vector-icons';
-
 import { COLORS } from '@infield/ui';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,21 +25,14 @@ import { useReport } from '@/hooks/useReport';
 import { useDefectReviewStatus } from '@/hooks/useDefectReviewStatus';
 import { useSignature } from '@/hooks/useSignature';
 import { CategoryAccordion } from '@/components/reports/CategoryAccordion';
-import { ReportTabBar } from '@/components/reports/ReportTabBar';
 import { ReportSkeleton } from '@/components/reports/ReportSkeleton';
-import { ReportDetailsTab } from '@/components/reports/ReportDetailsTab';
-import { ReportContentTab } from '@/components/reports/ReportContentTab';
-import { ReportShortagesTab } from '@/components/reports/ReportShortagesTab';
-import { useReportShortages } from '@/hooks/useReportShortages';
 import { ReportHeaderBar } from '@/components/reports/ReportHeaderBar';
+import { ReportActionsBar } from '@/components/reports/ReportActionsBar';
 import { PrePdfSummary } from '@/components/reports/PrePdfSummary';
 import { ReportPreviewModal } from '@/components/reports/ReportPreviewModal';
 import { TenantSignatureScreen } from '@/components/reports/TenantSignatureScreen';
 import { SearchOverlay } from '@/components/reports/SearchOverlay';
-import type {
-  CategoryGroup,
-  TabKey,
-} from '@/components/reports/reportDetailConstants';
+import type { CategoryGroup } from '@/components/reports/reportDetailConstants';
 
 type ReportStatus = 'draft' | 'in_progress' | 'completed' | 'sent';
 
@@ -68,9 +59,6 @@ export default function ReportDetailScreen() {
     }
   }, [report?.reportType, id, router]);
 
-  // Shortages count for tab badge
-  const { totalRequired: shortagesCount } = useReportShortages(id, defects);
-
   // Refetch when screen regains focus (e.g., after adding a defect)
   useFocusEffect(
     useCallback(() => {
@@ -78,7 +66,6 @@ export default function ReportDetailScreen() {
     }, [refetch])
   );
 
-  const [activeTab, setActiveTab] = useState<TabKey>('findings');
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
     {}
   );
@@ -88,6 +75,15 @@ export default function ReportDetailScreen() {
   const [showSearch, setShowSearch] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [pdfAction, setPdfAction] = useState<'generate' | 'share'>('generate');
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
+  const [alertMessage, setAlertMessage] = useState<{
+    title: string;
+    message: string;
+  } | null>(null);
 
   const { generatePdf, sharePdf } = usePdfGeneration(
     (msg) => showToast(msg, 'success'),
@@ -98,7 +94,9 @@ export default function ReportDetailScreen() {
     isUpdating: isStatusUpdating,
     markCompleted,
     reopenForEditing,
-    transitionToDraft,
+    finalizeFromDraft,
+    pendingAction: statusAction,
+    dismissAction: dismissStatusAction,
   } = useReportStatus(
     (msg) => {
       showToast(msg, 'success');
@@ -112,6 +110,8 @@ export default function ReportDetailScreen() {
     saveTenantSignature,
     getTenantSignature,
     isUploading: isSignatureUploading,
+    errorMessage: signatureError,
+    clearError: clearSignatureError,
   } = useSignature();
 
   const { updateReviewStatus, isUpdating: isReviewUpdating } =
@@ -140,52 +140,52 @@ export default function ReportDetailScreen() {
 
   const handleDeleteDefect = useCallback(
     (defectId: string) => {
-      Alert.alert('מחיקת ממצא', 'למחוק את הממצא? פעולה זו אינה הפיכה.', [
-        { text: 'ביטול', style: 'cancel' },
-        {
-          text: 'מחק',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { data: photoData } = await supabase
-                .from('defect_photos')
-                .select('id, image_url')
-                .eq('defect_id', defectId);
+      setConfirmAction({
+        title: 'מחיקת ממצא',
+        message: 'למחוק את הממצא? פעולה זו אינה הפיכה.',
+        onConfirm: async () => {
+          try {
+            const { data: photoData } = await supabase
+              .from('defect_photos')
+              .select('id, image_url')
+              .eq('defect_id', defectId);
 
-              if (photoData && photoData.length > 0) {
-                const storagePaths = photoData
-                  .map((p) => {
-                    const url = p.image_url as string;
-                    const match = url.match(/defect-photos\/(.+)$/);
-                    return match ? match[1] : null;
-                  })
-                  .filter((p): p is string => !!p);
+            if (photoData && photoData.length > 0) {
+              const storagePaths = photoData
+                .map((p) => {
+                  const url = p.image_url as string;
+                  const match = url.match(/defect-photos\/(.+)$/);
+                  return match ? match[1] : null;
+                })
+                .filter((p): p is string => !!p);
 
-                if (storagePaths.length > 0) {
-                  await supabase.storage
-                    .from('defect-photos')
-                    .remove(storagePaths);
-                }
+              if (storagePaths.length > 0) {
+                await supabase.storage
+                  .from('defect-photos')
+                  .remove(storagePaths);
               }
-
-              await supabase
-                .from('defect_photos')
-                .delete()
-                .eq('defect_id', defectId);
-
-              const { error: deleteError } = await supabase
-                .from('defects')
-                .delete()
-                .eq('id', defectId);
-
-              if (deleteError) throw deleteError;
-              refetch();
-            } catch {
-              Alert.alert('שגיאה', 'לא הצלחנו למחוק את הממצא. נסה שוב.');
             }
-          },
+
+            await supabase
+              .from('defect_photos')
+              .delete()
+              .eq('defect_id', defectId);
+
+            const { error: deleteError } = await supabase
+              .from('defects')
+              .delete()
+              .eq('id', defectId);
+
+            if (deleteError) throw deleteError;
+            refetch();
+          } catch {
+            setAlertMessage({
+              title: 'שגיאה',
+              message: 'לא הצלחנו למחוק את הממצא. נסה שוב.',
+            });
+          }
         },
-      ]);
+      });
     },
     [refetch]
   );
@@ -293,17 +293,17 @@ export default function ReportDetailScreen() {
         markCompleted(id);
       } else if (report.status === 'completed' && newStatus === 'in_progress') {
         reopenForEditing(id);
-      } else if (newStatus === 'in_progress') {
-        transitionToDraft(id);
-      } else {
-        supabase
-          .from('delivery_reports')
-          .update({ status: newStatus })
-          .eq('id', id)
-          .then(() => refetch());
+      } else if (report.status === 'draft' && newStatus === 'in_progress') {
+        // Draft → in_progress: billing moment with confirmation
+        finalizeFromDraft({
+          reportId: id,
+          userId: profile?.id ?? '',
+          organizationId: profile?.organizationId ?? '',
+        });
       }
+      // in_progress → draft: blocked (one-way transition)
     },
-    [id, report, markCompleted, reopenForEditing, transitionToDraft, refetch]
+    [id, report, profile, markCompleted, reopenForEditing, finalizeFromDraft]
   );
 
   return (
@@ -326,14 +326,12 @@ export default function ReportDetailScreen() {
         isStatusUpdating={isStatusUpdating}
         onMenu={openMenu}
         onStatusChange={handleStatusChange}
-        reportTitle={
-          report
-            ? `${report.reportType === 'bedek_bait' ? 'בדק בית' : 'פרוטוקול מסירה'} — דירה ${report.apartmentNumber}`
-            : undefined
+        totalFindings={defects.length}
+        totalCost={defects.reduce((sum, d) => sum + (d.cost ?? 0), 0)}
+        activeCategories={
+          categoryGroups.filter((g) => g.defects.length > 0).length
         }
-        projectName={report?.projectName ?? report?.address ?? undefined}
-        inspectorName={profile?.fullName ?? undefined}
-        reportDate={report?.reportDate ?? undefined}
+        totalCategories={categoryGroups.length}
         onPreview={() => setShowPreview(true)}
         onShare={handleSharePdf}
         onSettings={
@@ -385,96 +383,49 @@ export default function ReportDetailScreen() {
         <>
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 32 }}
+            contentContainerStyle={{ paddingBottom: 96 }}
           >
-            <ReportTabBar
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              shortagesCount={shortagesCount}
-            />
-
-            {/* Tab Content */}
-            <View style={{ padding: 12, paddingTop: 8 }}>
-              {activeTab === 'findings' && (
-                <>
-                  {categoryGroups.length === 0 ? (
-                    <EmptyState
-                      icon="file-text"
-                      title="אין ממצאים עדיין"
-                      subtitle="הוסף ממצא ראשון מהכפתור למטה, מהמאגר, או צלם תמונה"
-                      ctaLabel="הוסף ממצא"
-                      onCta={() => navigateToAddDefect()}
-                    />
-                  ) : (
-                    <>
-                      {/* Search pill — opens SearchOverlay */}
-                      <Pressable
-                        onPress={() => setShowSearch(true)}
-                        style={{
-                          flexDirection: 'row-reverse',
-                          alignItems: 'center',
-                          gap: 8,
-                          height: 40,
-                          borderRadius: 10,
-                          paddingHorizontal: 12,
-                          marginBottom: 12,
-                          backgroundColor: COLORS.cream[100],
-                          borderWidth: 1,
-                          borderColor: COLORS.cream[200],
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel="חפש ממצא"
-                      >
-                        <Feather
-                          name="search"
-                          size={16}
-                          color={COLORS.neutral[400]}
-                        />
-                        <Text
-                          style={{
-                            flex: 1,
-                            fontSize: 13,
-                            fontFamily: 'Rubik-Regular',
-                            color: COLORS.neutral[400],
-                            textAlign: 'right',
-                          }}
-                        >
-                          חפש ממצא לפי תיאור או קטגוריה...
-                        </Text>
-                      </Pressable>
-                      {categoryGroups.map((group, idx) => (
-                        <CategoryAccordion
-                          key={group.name}
-                          group={group}
-                          isOpen={openCategories[group.name] ?? false}
-                          onToggle={() => toggleCategory(group.name)}
-                          index={idx}
-                          onAddDefect={navigateToAddDefect}
-                          onDeleteDefect={handleDeleteDefect}
-                          onReviewStatusChange={updateReviewStatus}
-                          isReviewUpdating={isReviewUpdating}
-                        />
-                      ))}
-                    </>
-                  )}
-                </>
-              )}
-
-              {activeTab === 'details' && id && (
-                <ReportDetailsTab reportId={id} />
-              )}
-
-              {activeTab === 'content' && id && (
-                <ReportContentTab reportId={id} />
-              )}
-
-              {activeTab === 'shortages' && id && (
-                <ReportShortagesTab reportId={id} />
+            {/* Categories — grouped accordion, DS: padding 12px 16px 0, gap 10 */}
+            <View
+              style={{
+                padding: 12,
+                paddingHorizontal: 16,
+                paddingTop: 12,
+                gap: 10,
+              }}
+            >
+              {categoryGroups.length === 0 ? (
+                <EmptyState
+                  icon="file-text"
+                  title="אין ממצאים עדיין"
+                  subtitle="הוסף ממצא ראשון מהכפתור למטה, מהמאגר, או צלם תמונה"
+                  ctaLabel="הוסף ממצא"
+                  onCta={() => navigateToAddDefect()}
+                />
+              ) : (
+                categoryGroups.map((group, idx) => (
+                  <CategoryAccordion
+                    key={group.name}
+                    group={group}
+                    isOpen={openCategories[group.name] ?? false}
+                    onToggle={() => toggleCategory(group.name)}
+                    index={idx}
+                    onAddDefect={navigateToAddDefect}
+                    onDeleteDefect={handleDeleteDefect}
+                    onReviewStatusChange={updateReviewStatus}
+                    isReviewUpdating={isReviewUpdating}
+                  />
+                ))
               )}
             </View>
           </ScrollView>
 
-          {/* No footer for bedek_bait — the 4 SubHeader buttons handle all actions */}
+          {/* Bottom action bar: search + add defect */}
+          <ReportActionsBar
+            bottomInset={insets.bottom}
+            onAddDefect={() => navigateToAddDefect()}
+            onSearch={() => setShowSearch(true)}
+          />
 
           {/* Summary modal */}
           {report && (
@@ -529,6 +480,357 @@ export default function ReportDetailScreen() {
           )}
         </>
       )}
+
+      {/* Confirmation modal (replaces Alert.alert for cross-platform) */}
+      <Modal
+        visible={!!confirmAction}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmAction(null)}
+      >
+        <Pressable
+          onPress={() => setConfirmAction(null)}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 32,
+          }}
+        >
+          <Pressable
+            onPress={() => {}}
+            style={{
+              width: '100%',
+              maxWidth: 320,
+              backgroundColor: COLORS.cream[50],
+              borderRadius: 14,
+              padding: 20,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: 'Rubik-SemiBold',
+                color: COLORS.neutral[800],
+                textAlign: 'right',
+                marginBottom: 8,
+              }}
+            >
+              {confirmAction?.title}
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.neutral[600],
+                textAlign: 'right',
+                marginBottom: 20,
+              }}
+            >
+              {confirmAction?.message}
+            </Text>
+            <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
+              <Pressable
+                onPress={() => {
+                  confirmAction?.onConfirm();
+                  setConfirmAction(null);
+                }}
+                style={{
+                  flex: 1,
+                  height: 40,
+                  borderRadius: 10,
+                  backgroundColor: COLORS.primary[500],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontFamily: 'Rubik-SemiBold',
+                    color: COLORS.white,
+                  }}
+                >
+                  אישור
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setConfirmAction(null)}
+                style={{
+                  flex: 1,
+                  height: 40,
+                  borderRadius: 10,
+                  backgroundColor: COLORS.cream[100],
+                  borderWidth: 1,
+                  borderColor: COLORS.cream[200],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontFamily: 'Rubik-Medium',
+                    color: COLORS.neutral[600],
+                  }}
+                >
+                  ביטול
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Info/error alert modal (replaces Alert.alert for cross-platform) */}
+      <Modal
+        visible={!!alertMessage}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAlertMessage(null)}
+      >
+        <Pressable
+          onPress={() => setAlertMessage(null)}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 32,
+          }}
+        >
+          <Pressable
+            onPress={() => {}}
+            style={{
+              width: '100%',
+              maxWidth: 320,
+              backgroundColor: COLORS.cream[50],
+              borderRadius: 14,
+              padding: 20,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: 'Rubik-SemiBold',
+                color: COLORS.neutral[800],
+                textAlign: 'right',
+                marginBottom: 8,
+              }}
+            >
+              {alertMessage?.title}
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.neutral[600],
+                textAlign: 'right',
+                marginBottom: 20,
+              }}
+            >
+              {alertMessage?.message}
+            </Text>
+            <Pressable
+              onPress={() => setAlertMessage(null)}
+              style={{
+                height: 40,
+                borderRadius: 10,
+                backgroundColor: COLORS.primary[500],
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontFamily: 'Rubik-SemiBold',
+                  color: COLORS.white,
+                }}
+              >
+                הבנתי
+              </Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Signature error modal */}
+      <Modal
+        visible={!!signatureError}
+        transparent
+        animationType="fade"
+        onRequestClose={clearSignatureError}
+      >
+        <Pressable
+          onPress={clearSignatureError}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 32,
+          }}
+        >
+          <Pressable
+            onPress={() => {}}
+            style={{
+              width: '100%',
+              maxWidth: 320,
+              backgroundColor: COLORS.cream[50],
+              borderRadius: 14,
+              padding: 20,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: 'Rubik-SemiBold',
+                color: COLORS.neutral[800],
+                textAlign: 'right',
+                marginBottom: 8,
+              }}
+            >
+              שגיאה
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.neutral[600],
+                textAlign: 'right',
+                marginBottom: 20,
+              }}
+            >
+              {signatureError}
+            </Text>
+            <Pressable
+              onPress={clearSignatureError}
+              style={{
+                height: 40,
+                borderRadius: 10,
+                backgroundColor: COLORS.primary[500],
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontFamily: 'Rubik-SemiBold',
+                  color: COLORS.white,
+                }}
+              >
+                הבנתי
+              </Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Status action confirmation modal (from useReportStatus) */}
+      <Modal
+        visible={!!statusAction}
+        transparent
+        animationType="fade"
+        onRequestClose={dismissStatusAction}
+      >
+        <Pressable
+          onPress={dismissStatusAction}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 32,
+          }}
+        >
+          <Pressable
+            onPress={() => {}}
+            style={{
+              width: '100%',
+              maxWidth: 320,
+              backgroundColor: COLORS.cream[50],
+              borderRadius: 14,
+              padding: 20,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: 'Rubik-SemiBold',
+                color: COLORS.neutral[800],
+                textAlign: 'right',
+                marginBottom: 8,
+              }}
+            >
+              {statusAction?.title}
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.neutral[600],
+                textAlign: 'right',
+                marginBottom: 20,
+              }}
+            >
+              {statusAction?.message}
+            </Text>
+            <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
+              <Pressable
+                onPress={() => {
+                  statusAction?.onConfirm();
+                }}
+                style={{
+                  flex: 1,
+                  height: 40,
+                  borderRadius: 10,
+                  backgroundColor: statusAction?.destructive
+                    ? COLORS.danger[500]
+                    : COLORS.primary[500],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontFamily: 'Rubik-SemiBold',
+                    color: COLORS.white,
+                  }}
+                >
+                  {statusAction?.confirmLabel ?? 'אישור'}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={dismissStatusAction}
+                style={{
+                  flex: 1,
+                  height: 40,
+                  borderRadius: 10,
+                  backgroundColor: COLORS.cream[100],
+                  borderWidth: 1,
+                  borderColor: COLORS.cream[200],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontFamily: 'Rubik-Medium',
+                    color: COLORS.neutral[600],
+                  }}
+                >
+                  ביטול
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <SideMenu visible={menuOpen} onClose={closeMenu} />
     </View>

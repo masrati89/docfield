@@ -1,38 +1,49 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Text, Switch, Platform } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
 
 import { COLORS } from '@infield/ui';
-
-// --- Constants ---
-
-const NOTIFICATIONS_KEY = '@infield/notifications_enabled';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 // --- Component ---
 
 export function PreferencesSection() {
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const { profile, refreshProfile } = useAuth();
+  const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    AsyncStorage.getItem(NOTIFICATIONS_KEY).then(
-      (storedValue: string | null) => {
-        if (storedValue !== null) {
-          setNotificationsEnabled(storedValue === 'true');
-        }
+  const notificationsEnabled =
+    profile?.preferences?.notificationsEnabled ?? true;
+
+  const handleToggleNotifications = useCallback(
+    async (value: boolean) => {
+      if (!profile || isSaving) return;
+      setIsSaving(true);
+
+      try {
+        // Merge with existing preferences to preserve other settings
+        const updatedPreferences = {
+          ...profile.preferences,
+          notificationsEnabled: value,
+        };
+
+        const { error } = await supabase
+          .from('users')
+          .update({ preferences: updatedPreferences })
+          .eq('id', profile.id);
+
+        if (error) throw error;
+
+        await refreshProfile();
+      } catch {
+        // Silent fail — preference is non-critical
+      } finally {
+        setIsSaving(false);
       }
-    );
-  }, []);
-
-  const handleToggleNotifications = useCallback(async (value: boolean) => {
-    setNotificationsEnabled(value);
-    try {
-      await AsyncStorage.setItem(NOTIFICATIONS_KEY, value.toString());
-    } catch {
-      // Silent fail — preference is non-critical
-    }
-  }, []);
+    },
+    [profile, isSaving, refreshProfile]
+  );
 
   return (
     <Animated.View
@@ -63,6 +74,7 @@ export function PreferencesSection() {
         <Switch
           value={notificationsEnabled}
           onValueChange={handleToggleNotifications}
+          disabled={isSaving}
           trackColor={{
             false: COLORS.cream[300],
             true: COLORS.primary[200],

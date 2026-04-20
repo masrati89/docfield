@@ -27,8 +27,8 @@ const STATUS_OPTIONS: {
   {
     key: 'draft',
     label: 'טיוטה',
-    color: COLORS.neutral[500],
-    bg: COLORS.neutral[100],
+    color: COLORS.gold[700],
+    bg: COLORS.gold[100],
   },
   {
     key: 'in_progress',
@@ -166,7 +166,11 @@ export function StatusBadge({
                 elevation: 8,
               }}
             >
-              {STATUS_OPTIONS.map((option) => {
+              {STATUS_OPTIONS.filter((option) => {
+                // Can't go back to draft from in_progress or later
+                if (option.key === 'draft' && status !== 'draft') return false;
+                return true;
+              }).map((option) => {
                 const isSelected = option.key === status;
                 return (
                   <Pressable

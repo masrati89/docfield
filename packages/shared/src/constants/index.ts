@@ -25,3 +25,6 @@ export type { ChecklistTemplateValue } from './checklistTemplates';
 
 export { ISRAELI_STANDARDS } from './standards';
 export type { IsraeliStandard, StandardSection } from './standards';
+
+export { REPORT_DEFAULTS } from './reportDefaults';
+export type { ReportDefaultsKey } from './reportDefaults';

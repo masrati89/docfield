@@ -3,10 +3,22 @@ import { useQuery } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';
 
-import type {
-  BuildingGroup,
-  ApartmentOption,
-} from '@/components/wizard/NewInspectionWizard.types';
+// --- Types (previously in wizard types, now local) ---
+
+export interface ApartmentOption {
+  id: string;
+  number: string;
+  floor: number | null;
+  status: string;
+  buildingId: string;
+  buildingName: string;
+}
+
+export interface BuildingGroup {
+  id: string;
+  name: string;
+  apartments: ApartmentOption[];
+}
 
 // --- Query Key ---
 

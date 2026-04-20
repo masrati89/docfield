@@ -7,6 +7,8 @@ export interface PdfInspector {
   experience?: string;
   companyName?: string;
   companyLogoUrl?: string;
+  phone?: string;
+  email?: string;
 }
 
 export interface PdfProperty {
@@ -30,12 +32,17 @@ export interface PdfDefect {
   title: string;
   location: string;
   category: string;
+  severity?: string;
   description?: string;
   standardRef?: string;
   standardText?: string;
+  standardSection?: string;
   recommendation?: string;
   cost?: number;
   costLabel?: string;
+  unitPrice?: number;
+  quantity?: number;
+  unitLabel?: string;
   note?: string;
   photoUrls?: string[];
   photos?: { url: string; caption?: string }[];
@@ -86,6 +93,38 @@ export interface PdfReportData {
   propertyDescription?: string;
   contractorName?: string;
   contractorPhone?: string;
+  boqRates?: { batzam: number; supervision: number; vat: number };
+  generalNotes?: string;
+  roundNumber?: number;
+  /** All standards resolved from DB (explicit picks + parsed from free text) */
+  resolvedStandards?: Record<string, string>;
+
+  // --- Editable text defaults (from report_content snapshot) ---
+  workMethod?: string;
+  standardsBoilerplate?: string[];
+  tenantRightsText?: string;
+  warrantyPeriods?: { desc: string; period: string }[];
+  requiredDocs?: string[];
+  financialNotes?: string[];
+  disclaimerText?: string;
+  inspectorDeclaration?: string;
+  tenantAcknowledgment?: string;
+  protocolTerms?: string;
+
+  // --- Visibility flags (from report_content snapshot) ---
+  showDeclaration?: boolean;
+  showWorkMethod?: boolean;
+  showTools?: boolean;
+  showLimitations?: boolean;
+  showStandards?: boolean;
+  showTenantRights?: boolean;
+  showWarrantyPeriods?: boolean;
+  showRequiredDocs?: boolean;
+  showFinancialNotes?: boolean;
+  showDisclaimer?: boolean;
+  showInspectorDeclaration?: boolean;
+  showTenantAcknowledgment?: boolean;
+  showProtocolTerms?: boolean;
 }
 
 // --- Grouped defects by category ---

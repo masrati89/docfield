@@ -1,8 +1,9 @@
-import { View, Text, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
-import { COLORS, BORDER_RADIUS } from '@infield/ui';
+import { COLORS } from '@infield/ui';
+import { PressableScale } from '@/components/ui';
 
 // --- Types ---
 
@@ -17,25 +18,25 @@ const TOOLS: ToolItem[] = [
   {
     label: 'מאגר ממצאים',
     icon: 'database',
-    iconColor: COLORS.primary[500],
+    iconColor: COLORS.primary[600],
     bg: COLORS.primary[50],
   },
   {
     label: 'חיפוש',
     icon: 'search',
-    iconColor: COLORS.primary[500],
+    iconColor: COLORS.primary[600],
     bg: COLORS.primary[50],
   },
   {
     label: 'תבניות',
     icon: 'clipboard',
-    iconColor: COLORS.primary[600],
-    bg: COLORS.primary[50],
+    iconColor: COLORS.gold[700],
+    bg: COLORS.gold[100],
   },
   {
     label: 'עזרה',
     icon: 'help-circle',
-    iconColor: COLORS.neutral[500],
+    iconColor: COLORS.neutral[600],
     bg: COLORS.cream[100],
   },
 ];
@@ -44,45 +45,45 @@ const TOOLS: ToolItem[] = [
 
 function ToolCell({ tool, onPress }: { tool: ToolItem; onPress?: () => void }) {
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
-      style={({ pressed }) => ({
+      style={{
         flex: 1,
-        backgroundColor: pressed ? COLORS.cream[100] : COLORS.cream[50],
+        backgroundColor: '#fff',
         borderWidth: 1,
         borderColor: COLORS.cream[200],
-        borderRadius: BORDER_RADIUS.lg,
+        borderRadius: 12,
         padding: 12,
         flexDirection: 'row-reverse',
         alignItems: 'center',
         gap: 10,
-      })}
+      }}
     >
       <View
         style={{
           width: 36,
           height: 36,
-          borderRadius: BORDER_RADIUS.md,
+          borderRadius: 10,
           backgroundColor: tool.bg,
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Feather name={tool.icon} size={20} color={tool.iconColor} />
+        <Feather name={tool.icon} size={19} color={tool.iconColor} />
       </View>
       <Text
         style={{
-          fontSize: 12,
-          fontWeight: '500',
+          fontSize: 13,
+          fontWeight: '600',
           color: COLORS.neutral[700],
-          fontFamily: 'Rubik-Medium',
+          fontFamily: 'Rubik-SemiBold',
           flex: 1,
           textAlign: 'right',
         }}
       >
         {tool.label}
       </Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -93,47 +94,44 @@ interface ToolGridProps {
 }
 
 export function ToolGrid({ onToolPress }: ToolGridProps) {
-  const handleToolPress = (label: string) => {
-    onToolPress?.(label);
-  };
-
   return (
     <Animated.View
       entering={FadeInUp.delay(300).duration(400)}
-      style={{ marginHorizontal: 16, marginTop: 12 }}
+      style={{ marginTop: 14 }}
     >
       <Text
         style={{
-          fontSize: 13,
+          fontSize: 15,
           fontWeight: '700',
           color: COLORS.neutral[800],
           fontFamily: 'Rubik-Bold',
           textAlign: 'right',
-          marginBottom: 8,
+          marginBottom: 10,
           paddingRight: 2,
+          letterSpacing: -0.2,
         }}
       >
-        כלים
+        כלים מהירים
       </Text>
       <View style={{ gap: 8 }}>
         <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
           <ToolCell
             tool={TOOLS[0]}
-            onPress={() => handleToolPress(TOOLS[0].label)}
+            onPress={() => onToolPress?.(TOOLS[0].label)}
           />
           <ToolCell
             tool={TOOLS[1]}
-            onPress={() => handleToolPress(TOOLS[1].label)}
+            onPress={() => onToolPress?.(TOOLS[1].label)}
           />
         </View>
         <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
           <ToolCell
             tool={TOOLS[2]}
-            onPress={() => handleToolPress(TOOLS[2].label)}
+            onPress={() => onToolPress?.(TOOLS[2].label)}
           />
           <ToolCell
             tool={TOOLS[3]}
-            onPress={() => handleToolPress(TOOLS[3].label)}
+            onPress={() => onToolPress?.(TOOLS[3].label)}
           />
         </View>
       </View>

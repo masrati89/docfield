@@ -138,7 +138,7 @@ export function PrePdfSummary({
               backgroundColor: COLORS.cream[50],
               borderTopLeftRadius: 16,
               borderTopRightRadius: 16,
-              maxHeight: '85%',
+              maxHeight: '92%',
               minHeight: 300,
             },
             SHEET_SHADOW,
@@ -236,7 +236,7 @@ export function PrePdfSummary({
 
             {/* Category breakdown */}
             <ScrollView
-              style={{ paddingHorizontal: 20, maxHeight: 300 }}
+              style={{ paddingHorizontal: 20, flex: 1 }}
               contentContainerStyle={{ paddingBottom: 8 }}
               showsVerticalScrollIndicator={false}
             >

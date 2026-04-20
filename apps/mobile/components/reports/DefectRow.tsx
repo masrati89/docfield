@@ -33,6 +33,7 @@ function DeleteAction({ onPress }: { onPress: () => void }) {
         alignItems: 'center',
         justifyContent: 'center',
         gap: 4,
+        borderRadius: 10,
       }}
     >
       <Feather name="trash-2" size={20} color="white" />
@@ -51,13 +52,14 @@ function DeleteAction({ onPress }: { onPress: () => void }) {
 
 export function DefectRow({
   defect,
-  isLast,
+  isLast: _isLast,
   onDelete,
   onReviewStatusChange,
   isReviewUpdating = false,
 }: DefectRowProps) {
   const scale = useSharedValue(1);
   const swipeableRef = useRef<SwipeableMethods>(null);
+  const isDraft = defect.status === 'draft';
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -86,10 +88,6 @@ export function DefectRow({
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
       }}
-      containerStyle={{
-        borderBottomWidth: isLast ? 0 : 1,
-        borderBottomColor: COLORS.cream[200],
-      }}
     >
       <AnimatedPressable
         onPressIn={() => {
@@ -102,187 +100,203 @@ export function DefectRow({
           if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }
-          // TODO: navigate to defect detail
         }}
         style={[
           {
-            padding: 12,
-            paddingHorizontal: 16,
-            flexDirection: 'row-reverse',
-            alignItems: 'center',
-            gap: 8,
             backgroundColor: COLORS.cream[50],
+            borderWidth: 1,
+            borderColor: COLORS.cream[200],
+            borderRadius: 10,
+            padding: 10,
+            paddingHorizontal: 12,
+            overflow: 'hidden',
           },
           animatedStyle,
         ]}
       >
-        {/* Small grip */}
-        <View style={{ width: 6, alignItems: 'center' }}>
-          {[0, 4, 8].map((y) => (
-            <View
-              key={y}
-              style={{
-                flexDirection: 'row',
-                gap: 3,
-                marginBottom: y < 8 ? 2 : 0,
-              }}
-            >
-              <View
-                style={{
-                  width: 2,
-                  height: 2,
-                  borderRadius: 1,
-                  backgroundColor: COLORS.cream[300],
-                }}
-              />
-              <View
-                style={{
-                  width: 2,
-                  height: 2,
-                  borderRadius: 1,
-                  backgroundColor: COLORS.cream[300],
-                }}
-              />
-            </View>
-          ))}
-        </View>
+        {/* Right color bar — DS: 3px, go500 draft / g500 final */}
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            right: 0,
+            width: 3,
+            backgroundColor: isDraft ? COLORS.gold[500] : COLORS.primary[500],
+          }}
+        />
 
-        {/* Defect info */}
-        <View style={{ flex: 1, minWidth: 0 }}>
-          {/* Inherited badges row */}
+        {/* Top row: room + draft badge */}
+        <View
+          style={{
+            flexDirection: 'row-reverse',
+            alignItems: 'center',
+            gap: 6,
+            marginBottom: 4,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: '500',
+              color: COLORS.neutral[600],
+              fontFamily: 'Rubik-Medium',
+              textAlign: 'right',
+            }}
+          >
+            {defect.room || ''}
+          </Text>
+          <View style={{ flex: 1 }} />
+
+          {/* Inherited badge */}
           {defect.source === 'inherited' && (
             <View
               style={{
                 flexDirection: 'row-reverse',
                 alignItems: 'center',
-                gap: 6,
-                marginBottom: 4,
+                gap: 3,
+                paddingHorizontal: 6,
+                paddingVertical: 2,
+                borderRadius: 6,
+                backgroundColor: COLORS.info[50],
+                borderWidth: 1,
+                borderColor: COLORS.info[500],
               }}
             >
-              <View
-                style={{
-                  flexDirection: 'row-reverse',
-                  alignItems: 'center',
-                  gap: 3,
-                  paddingHorizontal: 6,
-                  paddingVertical: 2,
-                  borderRadius: 6,
-                  backgroundColor: COLORS.info[50],
-                  borderWidth: 1,
-                  borderColor: COLORS.info[500],
-                }}
-              >
-                <Feather
-                  name="corner-up-left"
-                  size={9}
-                  color={COLORS.info[700]}
-                />
-                <Text
-                  style={{
-                    fontSize: 9,
-                    fontFamily: 'Rubik-SemiBold',
-                    color: COLORS.info[700],
-                  }}
-                >
-                  מסבב קודם
-                </Text>
-              </View>
-              {defect.reviewStatus && onReviewStatusChange && (
-                <ReviewStatusPill
-                  status={defect.reviewStatus}
-                  isUpdating={isReviewUpdating}
-                  onChange={(next) => onReviewStatusChange(defect.id, next)}
-                />
-              )}
-            </View>
-          )}
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: '500',
-              color: COLORS.neutral[700],
-              fontFamily: 'Rubik-Medium',
-              textAlign: 'right',
-              lineHeight: 18,
-            }}
-            numberOfLines={2}
-          >
-            {defect.description}
-          </Text>
-          <View
-            style={{
-              flexDirection: 'row-reverse',
-              gap: 8,
-              marginTop: 4,
-            }}
-          >
-            {defect.room && (
-              <View
-                style={{
-                  flexDirection: 'row-reverse',
-                  alignItems: 'center',
-                  gap: 3,
-                }}
-              >
-                <Feather name="map-pin" size={12} color={COLORS.neutral[400]} />
-                <Text
-                  style={{
-                    fontSize: 10,
-                    color: COLORS.neutral[400],
-                    fontFamily: 'Rubik-Regular',
-                  }}
-                >
-                  {defect.room}
-                </Text>
-              </View>
-            )}
-          </View>
-          {defect.standardRef && (
-            <View
-              style={{
-                flexDirection: 'row-reverse',
-                alignItems: 'center',
-                gap: 4,
-                marginTop: 2,
-              }}
-            >
-              <Feather name="book-open" size={12} color={COLORS.neutral[400]} />
+              <Feather
+                name="corner-up-left"
+                size={9}
+                color={COLORS.info[700]}
+              />
               <Text
                 style={{
-                  fontSize: 11,
-                  color: COLORS.neutral[500],
-                  fontFamily: 'Rubik-Regular',
+                  fontSize: 9,
+                  fontFamily: 'Rubik-SemiBold',
+                  color: COLORS.info[700],
                 }}
               >
-                {defect.standardRef}
+                מסבב קודם
+              </Text>
+            </View>
+          )}
+
+          {defect.source === 'inherited' &&
+            defect.reviewStatus &&
+            onReviewStatusChange && (
+              <ReviewStatusPill
+                status={defect.reviewStatus}
+                isUpdating={isReviewUpdating}
+                onChange={(next) => onReviewStatusChange(defect.id, next)}
+              />
+            )}
+
+          {isDraft && (
+            <View
+              style={{
+                paddingVertical: 1,
+                paddingHorizontal: 6,
+                borderRadius: 4,
+                backgroundColor: COLORS.gold[100],
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 9,
+                  fontWeight: '600',
+                  color: COLORS.gold[700],
+                  fontFamily: 'Rubik-SemiBold',
+                }}
+              >
+                טיוטה
               </Text>
             </View>
           )}
         </View>
 
-        {/* Photo count */}
-        {defect.photoCount > 0 && (
-          <View
-            style={{
-              flexDirection: 'row-reverse',
-              alignItems: 'center',
-              gap: 3,
-              flexShrink: 0,
-            }}
-          >
-            <Feather name="camera" size={12} color={COLORS.neutral[400]} />
+        {/* Description */}
+        <Text
+          style={{
+            fontSize: 13,
+            color: COLORS.neutral[800],
+            fontFamily: 'Rubik-Regular',
+            textAlign: 'right',
+            lineHeight: 18,
+            marginBottom: 6,
+          }}
+          numberOfLines={2}
+        >
+          {defect.description}
+        </Text>
+
+        {/* Bottom row: standard + cost + photos */}
+        <View
+          style={{
+            flexDirection: 'row-reverse',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          {defect.standardRef ? (
             <Text
               style={{
                 fontSize: 10,
-                fontWeight: '500',
                 color: COLORS.neutral[400],
-                fontFamily: 'Rubik-Medium',
+                fontFamily: 'Rubik-Regular',
               }}
             >
-              {defect.photoCount}
+              {defect.standardRef}
             </Text>
-          </View>
-        )}
+          ) : null}
+
+          {defect.standardRef && defect.cost ? (
+            <Text
+              style={{
+                fontSize: 9,
+                color: COLORS.neutral[300],
+                fontFamily: 'Rubik-Regular',
+              }}
+            >
+              ·
+            </Text>
+          ) : null}
+
+          {defect.cost ? (
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: '600',
+                color: COLORS.gold[700],
+                fontFamily: 'Inter-SemiBold',
+                writingDirection: 'ltr',
+              }}
+            >
+              ₪{defect.cost.toLocaleString()}
+            </Text>
+          ) : null}
+
+          <View style={{ flex: 1 }} />
+
+          {defect.photoCount > 0 && (
+            <View
+              style={{
+                flexDirection: 'row-reverse',
+                alignItems: 'center',
+                gap: 3,
+              }}
+            >
+              <Feather name="camera" size={12} color={COLORS.neutral[400]} />
+              <Text
+                style={{
+                  fontSize: 10,
+                  color: COLORS.neutral[400],
+                  fontFamily: 'Inter-Regular',
+                }}
+              >
+                {defect.photoCount}
+              </Text>
+            </View>
+          )}
+        </View>
       </AnimatedPressable>
     </ReanimatedSwipeable>
   );

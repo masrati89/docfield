@@ -1,8 +1,10 @@
-import { View, Text, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
+
+import { PressableScale } from './PressableScale';
 
 interface SharedTabHeaderProps {
   notificationCount?: number;
@@ -36,8 +38,9 @@ export function SharedTabHeader({
         }}
       >
         {/* Hamburger (right in RTL) */}
-        <Pressable
+        <PressableScale
           onPress={onMenu}
+          accessibilityLabel="תפריט"
           style={{
             width: 36,
             height: 36,
@@ -50,7 +53,7 @@ export function SharedTabHeader({
           }}
         >
           <Feather name="menu" size={20} color={COLORS.neutral[700]} />
-        </Pressable>
+        </PressableScale>
 
         {/* Logo center */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
@@ -81,8 +84,9 @@ export function SharedTabHeader({
         </View>
 
         {/* Bell button (left in RTL) */}
-        <Pressable
+        <PressableScale
           onPress={onBell}
+          accessibilityLabel="התראות"
           style={{
             width: 36,
             height: 36,
@@ -124,7 +128,7 @@ export function SharedTabHeader({
               </Text>
             </View>
           )}
-        </Pressable>
+        </PressableScale>
       </View>
     </View>
   );

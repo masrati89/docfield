@@ -1,33 +1,18 @@
-import { View, Text, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { COLORS, BORDER_RADIUS, SHADOWS } from '@infield/ui';
+import { COLORS } from '@infield/ui';
+import { PressableScale } from '@/components/ui';
 
 interface ReportActionsBarProps {
   bottomInset: number;
-  defectsCount: number;
-  isGenerating: boolean;
-  isSharing: boolean;
-  onGeneratePdf: () => void;
-  onSharePdf: () => void;
-  onChecklist: () => void;
   onAddDefect: () => void;
-  onCamera: () => void;
-  onLibrary: () => void;
   onSearch?: () => void;
 }
 
 export function ReportActionsBar({
   bottomInset,
-  defectsCount,
-  isGenerating,
-  isSharing,
-  onGeneratePdf,
-  onSharePdf,
-  onChecklist,
   onAddDefect,
-  onCamera,
-  onLibrary,
   onSearch,
 }: ReportActionsBarProps) {
   return (
@@ -40,167 +25,60 @@ export function ReportActionsBar({
         backgroundColor: COLORS.cream[50],
         borderTopWidth: 1,
         borderTopColor: COLORS.cream[200],
-        paddingHorizontal: 12,
+        paddingHorizontal: 16,
         paddingTop: 10,
-        paddingBottom: Math.max(bottomInset, 24),
-        gap: 8,
-        ...SHADOWS.md,
+        paddingBottom: Math.max(bottomInset, 22),
+        flexDirection: 'row-reverse',
+        gap: 10,
+        boxShadow: '0 -4px 20px rgba(60,54,42,.12)',
       }}
     >
-      {/* PDF & Share row */}
-      <View
+      {/* Search button */}
+      <PressableScale
+        onPress={onSearch}
         style={{
-          flexDirection: 'row-reverse',
+          width: 48,
+          height: 48,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: COLORS.cream[200],
+          backgroundColor: '#fff',
           alignItems: 'center',
-          gap: 8,
+          justifyContent: 'center',
+          boxShadow: '0 1px 2px rgba(60,54,42,.05)',
         }}
       >
-        {/* PDF download - now primary */}
-        <Pressable
-          onPress={onGeneratePdf}
-          disabled={isGenerating}
-          style={{
-            flex: 1,
-            height: 38,
-            borderRadius: BORDER_RADIUS.md,
-            backgroundColor: COLORS.primary[500],
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-            opacity: isGenerating ? 0.5 : 1,
-          }}
-        >
-          <Feather name="download" size={16} color={COLORS.white} />
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: '600',
-              color: COLORS.white,
-              fontFamily: 'Rubik-SemiBold',
-            }}
-          >
-            {isGenerating ? 'מפיק...' : 'הפק PDF'}
-          </Text>
-        </Pressable>
+        <Feather name="search" size={20} color={COLORS.neutral[700]} />
+      </PressableScale>
 
-        {/* Share */}
-        <Pressable
-          onPress={onSharePdf}
-          disabled={isSharing}
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: BORDER_RADIUS.md,
-            borderWidth: 1,
-            borderColor: COLORS.cream[200],
-            backgroundColor: COLORS.cream[50],
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: isSharing ? 0.5 : 1,
-          }}
-        >
-          <Feather name="share-2" size={20} color={COLORS.primary[500]} />
-        </Pressable>
-      </View>
-
-      {/* Checklist button */}
-      <Pressable
-        onPress={onChecklist}
+      {/* Add defect button */}
+      <PressableScale
+        onPress={onAddDefect}
+        scale={0.96}
         style={{
-          height: 40,
-          borderRadius: BORDER_RADIUS.md,
-          backgroundColor: COLORS.gold[100],
-          borderWidth: 1,
-          borderColor: COLORS.gold[300],
-          flexDirection: 'row',
+          flex: 1,
+          height: 48,
+          borderRadius: 12,
+          backgroundColor: COLORS.primary[500],
+          flexDirection: 'row-reverse',
           alignItems: 'center',
           justifyContent: 'center',
           gap: 8,
+          boxShadow: '0 2px 10px rgba(27,122,68,.26)',
         }}
       >
-        <Feather name="check-square" size={16} color={COLORS.gold[700]} />
+        <Feather name="plus" size={20} color="#fff" />
         <Text
           style={{
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: '600',
-            color: COLORS.gold[700],
+            color: '#fff',
             fontFamily: 'Rubik-SemiBold',
           }}
         >
-          {defectsCount > 0 ? 'המשך בדיקה' : 'התחל בדיקה'}
+          הוסף ממצא
         </Text>
-      </Pressable>
-
-      {/* Add defect row — always visible per mockup */}
-      <View
-        style={{
-          flexDirection: 'row-reverse',
-          alignItems: 'center',
-          gap: 8,
-        }}
-      >
-        {/* Add defect — primary */}
-        <Pressable
-          onPress={onAddDefect}
-          style={{
-            flex: 1,
-            height: 44,
-            borderRadius: BORDER_RADIUS.md,
-            backgroundColor: COLORS.primary[500],
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-          }}
-        >
-          <Feather name="plus" size={20} color={COLORS.white} />
-          <Text
-            style={{
-              fontSize: 14,
-              fontWeight: '600',
-              color: COLORS.white,
-              fontFamily: 'Rubik-SemiBold',
-            }}
-          >
-            הוסף ממצא
-          </Text>
-        </Pressable>
-
-        {/* Camera button — adjacent to add defect */}
-        <Pressable
-          onPress={onCamera}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: BORDER_RADIUS.md,
-            borderWidth: 1,
-            borderColor: COLORS.cream[200],
-            backgroundColor: COLORS.cream[50],
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Feather name="camera" size={20} color={COLORS.neutral[500]} />
-        </Pressable>
-
-        {/* Search button */}
-        <Pressable
-          onPress={onSearch ?? onLibrary}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: BORDER_RADIUS.md,
-            borderWidth: 1,
-            borderColor: COLORS.cream[200],
-            backgroundColor: COLORS.cream[50],
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Feather name="search" size={20} color={COLORS.neutral[500]} />
-        </Pressable>
-      </View>
+      </PressableScale>
     </View>
   );
 }

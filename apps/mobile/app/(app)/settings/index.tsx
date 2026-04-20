@@ -1,11 +1,5 @@
-import { useCallback } from 'react';
-import {
-  View,
-  Text,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from 'react-native';
+import { useCallback, useState } from 'react';
+import { Text, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -14,25 +8,32 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Toast } from '@/components/ui/Toast';
 import { useToast } from '@/hooks/useToast';
 import {
-  ProfileSection,
-  ChangePasswordSection,
-  PreferencesSection,
-  SignatureStampSection,
-  InspectorProfileSection,
-  StatisticsSection,
-  InfoSection,
-  SignOutButton,
+  SettingsTabBar,
+  GeneralTab,
+  InspectorTab,
+  ReportTab,
+  ChangePasswordSheet,
 } from '@/components/settings';
+import type { SettingsTab } from '@/components/settings';
 
 // --- Screen ---
 
 export default function SettingsScreen() {
   const { user, profile, signOut } = useAuth();
   const { toast, showToast, hideToast } = useToast();
+  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+  const [showPasswordSheet, setShowPasswordSheet] = useState(false);
 
   const handlePasswordSuccess = useCallback(() => {
     showToast('הסיסמה עודכנה בהצלחה', 'success');
   }, [showToast]);
+
+  const handleSuccess = useCallback(
+    (message: string) => {
+      showToast(message, 'success');
+    },
+    [showToast]
+  );
 
   const handleError = useCallback(
     (message: string) => {
@@ -42,7 +43,7 @@ export default function SettingsScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-cream-50">
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FEFDFB' }}>
       <StatusBar style="dark" />
 
       {/* Toast */}
@@ -55,84 +56,75 @@ export default function SettingsScreen() {
         />
       )}
 
+      {/* Header */}
+      <Animated.View
+        entering={FadeInUp.duration(400)}
+        style={{
+          paddingHorizontal: 20,
+          paddingTop: 16,
+          paddingBottom: 8,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 28,
+            fontFamily: 'Rubik-Bold',
+            color: '#1f1f1f',
+            textAlign: 'right',
+          }}
+        >
+          הגדרות
+        </Text>
+      </Animated.View>
+
+      {/* Tab bar */}
+      <SettingsTabBar activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Tab content */}
       <KeyboardAvoidingView
-        className="flex-1"
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingBottom: 40,
+            paddingTop: 12,
+          }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
-          <Animated.View
-            entering={FadeInUp.duration(400)}
-            className="px-[20px] pt-[16px] pb-[24px]"
-          >
-            <Text className="text-[28px] font-rubik-bold text-neutral-800 text-right">
-              הגדרות
-            </Text>
-          </Animated.View>
+          {activeTab === 'general' && (
+            <GeneralTab
+              fullName={profile?.fullName}
+              email={user?.email}
+              role={profile?.role}
+              profession={profile?.profession}
+              organizationId={profile?.organizationId}
+              onChangePassword={() => setShowPasswordSheet(true)}
+              onSignOut={signOut}
+              onError={handleError}
+            />
+          )}
 
-          {/* 1. Profile */}
-          <ProfileSection
-            fullName={profile?.fullName}
-            email={user?.email}
-            role={profile?.role}
-            profession={profile?.profession}
-            organizationId={profile?.organizationId}
-          />
+          {activeTab === 'inspector' && (
+            <InspectorTab onSuccess={handleSuccess} onError={handleError} />
+          )}
 
-          {/* Divider */}
-          <View className="mx-[20px] h-[1px] bg-cream-200 mb-[24px]" />
-
-          {/* 2. Security (Change password) */}
-          <ChangePasswordSection
-            userEmail={user?.email ?? ''}
-            onSuccess={handlePasswordSuccess}
-            onError={handleError}
-          />
-
-          {/* Divider */}
-          <View className="mx-[20px] h-[1px] bg-cream-200 mb-[24px]" />
-
-          {/* 3. Preferences */}
-          <PreferencesSection />
-
-          {/* Divider */}
-          <View className="mx-[20px] h-[1px] bg-cream-200 mb-[24px]" />
-
-          {/* 3.5 Signature & Stamp */}
-          <SignatureStampSection
-            onSuccess={(msg) => showToast(msg, 'success')}
-            onError={(msg) => showToast(msg, 'error')}
-          />
-
-          {/* Divider */}
-          <View className="mx-[20px] h-[1px] bg-cream-200 mb-[24px]" />
-
-          {/* 4. Inspector Profile */}
-          <InspectorProfileSection />
-
-          {/* Divider */}
-          <View className="mx-[20px] h-[1px] bg-cream-200 mb-[24px]" />
-
-          {/* 5. Statistics */}
-          <StatisticsSection organizationId={profile?.organizationId} />
-
-          {/* Divider */}
-          <View className="mx-[20px] h-[1px] bg-cream-200 mb-[24px]" />
-
-          {/* 6. Info */}
-          <InfoSection />
-
-          {/* Divider */}
-          <View className="mx-[20px] h-[1px] bg-cream-200 mb-[24px]" />
-
-          {/* 5. Sign out */}
-          <SignOutButton onSignOut={signOut} onError={handleError} />
+          {activeTab === 'report' && (
+            <ReportTab onSuccess={handleSuccess} onError={handleError} />
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Change password bottom sheet */}
+      <ChangePasswordSheet
+        visible={showPasswordSheet}
+        onClose={() => setShowPasswordSheet(false)}
+        userEmail={user?.email ?? ''}
+        onSuccess={handlePasswordSuccess}
+        onError={handleError}
+      />
     </SafeAreaView>
   );
 }

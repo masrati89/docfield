@@ -26,10 +26,10 @@ export function EmptyState({
   return (
     <View
       style={{
-        flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 32,
+        paddingVertical: 28,
         gap: 12,
       }}
     >

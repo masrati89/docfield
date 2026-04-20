@@ -6,9 +6,11 @@ export default function ReportDetailLayout() {
       <Stack.Screen
         name="add-defect"
         options={{
+          presentation: 'transparentModal',
           animation: 'slide_from_bottom',
           gestureEnabled: true,
           gestureDirection: 'vertical',
+          contentStyle: { backgroundColor: 'transparent' },
         }}
       />
     </Stack>

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Alert,
   Dimensions,
   Modal,
   Platform,
@@ -59,6 +58,11 @@ export function PhotoReviewGrid({
     null
   );
   const [editingPhoto, setEditingPhoto] = useState<CapturedPhoto | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   useEffect(() => {
     if (visible) setLocalPhotos(photos);
@@ -70,18 +74,15 @@ export function PhotoReviewGrid({
   }, []);
 
   const handleDelete = useCallback((photo: CapturedPhoto) => {
-    Alert.alert('מחיקת תמונה', 'האם למחוק את התמונה?', [
-      { text: 'ביטול', style: 'cancel' },
-      {
-        text: 'מחק',
-        style: 'destructive',
-        onPress: () => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          setLocalPhotos((prev) => prev.filter((p) => p.id !== photo.id));
-          setEnlargedPhoto(null);
-        },
+    setConfirmAction({
+      title: 'מחיקת תמונה',
+      message: 'האם למחוק את התמונה?',
+      onConfirm: () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setLocalPhotos((prev) => prev.filter((p) => p.id !== photo.id));
+        setEnlargedPhoto(null);
       },
-    ]);
+    });
   }, []);
 
   const handleEditPress = useCallback((photo: CapturedPhoto) => {
@@ -213,6 +214,108 @@ export function PhotoReviewGrid({
             </>
           )}
         </View>
+      </Modal>
+
+      {/* Confirmation modal (replaces Alert.alert for cross-platform) */}
+      <Modal
+        visible={!!confirmAction}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmAction(null)}
+      >
+        <Pressable
+          onPress={() => setConfirmAction(null)}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 32,
+          }}
+        >
+          <Pressable
+            onPress={() => {}}
+            style={{
+              width: '100%',
+              maxWidth: 320,
+              backgroundColor: COLORS.cream[50],
+              borderRadius: 14,
+              padding: 20,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: 'Rubik-SemiBold',
+                color: COLORS.neutral[800],
+                textAlign: 'right',
+                marginBottom: 8,
+              }}
+            >
+              {confirmAction?.title}
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.neutral[600],
+                textAlign: 'right',
+                marginBottom: 20,
+              }}
+            >
+              {confirmAction?.message}
+            </Text>
+            <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
+              <Pressable
+                onPress={() => {
+                  confirmAction?.onConfirm();
+                  setConfirmAction(null);
+                }}
+                style={{
+                  flex: 1,
+                  height: 40,
+                  borderRadius: 10,
+                  backgroundColor: COLORS.primary[500],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontFamily: 'Rubik-SemiBold',
+                    color: COLORS.white,
+                  }}
+                >
+                  אישור
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setConfirmAction(null)}
+                style={{
+                  flex: 1,
+                  height: 40,
+                  borderRadius: 10,
+                  backgroundColor: COLORS.cream[100],
+                  borderWidth: 1,
+                  borderColor: COLORS.cream[200],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontFamily: 'Rubik-Medium',
+                    color: COLORS.neutral[600],
+                  }}
+                >
+                  ביטול
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       {/* Annotation editor */}

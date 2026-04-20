@@ -234,7 +234,7 @@ export function ReportContentTab({ reportId }: ReportContentTabProps) {
   // Initialize defaults on first load
   useEffect(() => {
     if (!isLoading && !settingsLoading) {
-      initializeDefaults(settings as Record<string, unknown>);
+      initializeDefaults(settings as unknown as Record<string, unknown>);
     }
   }, [isLoading, settingsLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 

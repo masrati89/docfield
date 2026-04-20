@@ -1,4 +1,5 @@
 export { Button } from './Button';
+export { PressableScale } from './PressableScale';
 export { Toast } from './Toast';
 export { BottomSheetWrapper } from './BottomSheetWrapper';
 export { SkeletonBlock } from './SkeletonBlock';

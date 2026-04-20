@@ -18,12 +18,8 @@ import * as Haptics from 'expo-haptics';
 import { COLORS } from '@infield/ui';
 
 import { StepReportType } from './StepReportType';
-import { StepProject } from './StepProject';
-import { StepBuildings } from './StepBuildings';
-import { StepApartmentCounts } from './StepApartmentCounts';
-import { StepApartment } from './StepApartment';
+import { StepProperty } from './StepProperty';
 import { StepClientDetails } from './StepClientDetails';
-import { StepProtocol } from './StepProtocol';
 
 import type {
   WizardState,
@@ -35,12 +31,8 @@ import type {
 
 const STEP_TITLES: Record<WizardStepId, string> = {
   report_type: 'בדיקה חדשה',
-  project: 'שיוך לפרויקט',
-  buildings: 'הגדרת בניינים',
-  apartment_counts: 'מספר דירות',
-  apartment: 'בחירת דירה',
-  client_details: 'פרטי מזמין',
-  protocol: 'מצב פרוטוקול',
+  property: 'פרטי נכס (אופציונלי)',
+  client_details: 'פרטי מזמין (אופציונלי)',
 };
 
 // --- Props ---
@@ -53,7 +45,6 @@ interface WizardShellProps {
   isLastStep: boolean;
   canGoNext: boolean;
   isStepPrefilled: (stepId: WizardStepId) => boolean;
-  onSkipProject: () => void;
   onSubmit: () => void;
   onClose: () => void;
 }
@@ -68,7 +59,6 @@ export function WizardShell({
   isLastStep,
   canGoNext,
   isStepPrefilled,
-  onSkipProject,
   onSubmit,
   onClose,
 }: WizardShellProps) {
@@ -224,7 +214,7 @@ export function WizardShell({
         </Animated.View>
       </View>
 
-      {/* Footer — CTA + optional skip */}
+      {/* Footer — CTA */}
       <View
         style={{
           paddingHorizontal: 20,
@@ -234,75 +224,6 @@ export function WizardShell({
           borderTopColor: COLORS.cream[200],
         }}
       >
-        {/* Skip button (project step) */}
-        {currentStepId === 'project' && !isStepPrefilled('project') && (
-          <Pressable
-            onPress={onSkipProject}
-            style={{
-              alignItems: 'center',
-              paddingVertical: 8,
-              marginBottom: 8,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 14,
-                fontFamily: 'Rubik-Medium',
-                color: COLORS.neutral[500],
-                textDecorationLine: 'underline',
-              }}
-            >
-              דלג - ללא שיוך לפרויקט
-            </Text>
-          </Pressable>
-        )}
-
-        {/* Skip button (client details — optional) */}
-        {currentStepId === 'client_details' && (
-          <Pressable
-            onPress={handleNext}
-            style={{
-              alignItems: 'center',
-              paddingVertical: 8,
-              marginBottom: 8,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 14,
-                fontFamily: 'Rubik-Medium',
-                color: COLORS.neutral[500],
-                textDecorationLine: 'underline',
-              }}
-            >
-              דלג - ללא פרטי מזמין
-            </Text>
-          </Pressable>
-        )}
-
-        {/* Skip button (apartment step — optional per FLOW_SPEC §3) */}
-        {currentStepId === 'apartment' && !isStepPrefilled('apartment') && (
-          <Pressable
-            onPress={handleNext}
-            style={{
-              alignItems: 'center',
-              paddingVertical: 8,
-              marginBottom: 8,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 14,
-                fontFamily: 'Rubik-Medium',
-                color: COLORS.neutral[500],
-                textDecorationLine: 'underline',
-              }}
-            >
-              דלג - ללא שיוך לדירה
-            </Text>
-          </Pressable>
-        )}
-
         {/* CTA button */}
         <Pressable
           onPress={handleNext}
@@ -371,17 +292,9 @@ function renderStep(
   switch (stepId) {
     case 'report_type':
       return <StepReportType {...props} />;
-    case 'project':
-      return <StepProject {...props} />;
-    case 'buildings':
-      return <StepBuildings {...props} />;
-    case 'apartment_counts':
-      return <StepApartmentCounts {...props} />;
-    case 'apartment':
-      return <StepApartment {...props} />;
+    case 'property':
+      return <StepProperty {...props} />;
     case 'client_details':
       return <StepClientDetails {...props} />;
-    case 'protocol':
-      return <StepProtocol {...props} />;
   }
 }

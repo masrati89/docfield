@@ -3,6 +3,7 @@ import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { COLORS } from '@infield/ui';
+import { PressableScale } from '@/components/ui';
 
 import { STATUS_CHIPS, TYPE_LABELS, haptic } from './reportsConstants';
 import type { StatusFilter, SortBy, TypeFilter } from './reportsConstants';
@@ -126,7 +127,7 @@ export function FilterChips({
         {STATUS_CHIPS.map((ch) => {
           const on = statusFilter === ch.key;
           return (
-            <Pressable
+            <PressableScale
               key={ch.key}
               onPress={() => {
                 haptic();
@@ -151,12 +152,12 @@ export function FilterChips({
               >
                 {ch.label}
               </Text>
-            </Pressable>
+            </PressableScale>
           );
         })}
       </View>
 
-      <Pressable
+      <PressableScale
         onPress={() => {
           haptic();
           onOpenSort();
@@ -196,7 +197,7 @@ export function FilterChips({
             }}
           />
         )}
-      </Pressable>
+      </PressableScale>
     </Animated.View>
   );
 }
@@ -225,7 +226,7 @@ export function ActiveTags({
       }}
     >
       {hasType && (
-        <Pressable
+        <PressableScale
           onPress={() => setTypeFilter('all')}
           style={{
             minHeight: 36,
@@ -257,7 +258,7 @@ export function ActiveTags({
           >
             {TYPE_LABELS[typeFilter]}
           </Text>
-        </Pressable>
+        </PressableScale>
       )}
       {hasSort && (
         <View

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { View, RefreshControl } from 'react-native';
+import { View, RefreshControl, Modal, Pressable, Text } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -32,7 +32,13 @@ import type { ProjectItem } from '@/hooks/useProjects';
 export default function ProjectsScreen() {
   const router = useRouter();
   const { projects, isLoading, isRefreshing, error, refetch } = useProjects();
-  const handleDeleteProject = useDeleteProject(projects, refetch);
+  const {
+    handleDeleteProject,
+    pendingAction: deleteAction,
+    dismissAction: dismissDelete,
+    errorMessage: deleteError,
+    clearError: clearDeleteError,
+  } = useDeleteProject(projects, refetch);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -108,8 +114,7 @@ export default function ProjectsScreen() {
   }, []);
 
   const closeSheet = useCallback(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (sheetRef.current as any)?.close?.();
+    setSheetOpen(false);
   }, []);
 
   // --- Render ---
@@ -130,7 +135,7 @@ export default function ProjectsScreen() {
       <ProjectCard
         item={item}
         onPress={() => handleProjectPress(item)}
-        onDelete={handleDeleteProject}
+        onDelete={(id: string) => handleDeleteProject(id)}
       />
     ),
     [handleProjectPress, handleDeleteProject]
@@ -228,7 +233,7 @@ export default function ProjectsScreen() {
       {newProjectOpen && (
         <BottomSheetWrapper
           ref={newProjectSheetRef}
-          enableDynamicSizing
+          snapPoints={['90%']}
           onClose={() => setNewProjectOpen(false)}
         >
           <NewProjectSheet
@@ -242,6 +247,181 @@ export default function ProjectsScreen() {
           />
         </BottomSheetWrapper>
       )}
+      {/* Delete confirmation modal */}
+      <Modal
+        visible={!!deleteAction}
+        transparent
+        animationType="fade"
+        onRequestClose={dismissDelete}
+      >
+        <Pressable
+          onPress={dismissDelete}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 32,
+          }}
+        >
+          <Pressable
+            onPress={() => {}}
+            style={{
+              width: '100%',
+              maxWidth: 320,
+              backgroundColor: COLORS.cream[50],
+              borderRadius: 14,
+              padding: 20,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: 'Rubik-SemiBold',
+                color: COLORS.neutral[800],
+                textAlign: 'right',
+                marginBottom: 8,
+              }}
+            >
+              {deleteAction?.title}
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.neutral[600],
+                textAlign: 'right',
+                marginBottom: 20,
+              }}
+            >
+              {deleteAction?.message}
+            </Text>
+            <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
+              <Pressable
+                onPress={() => {
+                  deleteAction?.onConfirm();
+                }}
+                style={{
+                  flex: 1,
+                  height: 40,
+                  borderRadius: 10,
+                  backgroundColor: deleteAction?.destructive
+                    ? COLORS.danger[500]
+                    : COLORS.primary[500],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontFamily: 'Rubik-SemiBold',
+                    color: COLORS.white,
+                  }}
+                >
+                  {deleteAction?.confirmLabel ?? 'אישור'}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={dismissDelete}
+                style={{
+                  flex: 1,
+                  height: 40,
+                  borderRadius: 10,
+                  backgroundColor: COLORS.cream[100],
+                  borderWidth: 1,
+                  borderColor: COLORS.cream[200],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontFamily: 'Rubik-Medium',
+                    color: COLORS.neutral[600],
+                  }}
+                >
+                  ביטול
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Delete error modal */}
+      <Modal
+        visible={!!deleteError}
+        transparent
+        animationType="fade"
+        onRequestClose={clearDeleteError}
+      >
+        <Pressable
+          onPress={clearDeleteError}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 32,
+          }}
+        >
+          <Pressable
+            onPress={() => {}}
+            style={{
+              width: '100%',
+              maxWidth: 320,
+              backgroundColor: COLORS.cream[50],
+              borderRadius: 14,
+              padding: 20,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: 'Rubik-SemiBold',
+                color: COLORS.neutral[800],
+                textAlign: 'right',
+                marginBottom: 8,
+              }}
+            >
+              שגיאה
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.neutral[600],
+                textAlign: 'right',
+                marginBottom: 20,
+              }}
+            >
+              {deleteError}
+            </Text>
+            <Pressable
+              onPress={clearDeleteError}
+              style={{
+                height: 40,
+                borderRadius: 10,
+                backgroundColor: COLORS.primary[500],
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontFamily: 'Rubik-SemiBold',
+                  color: COLORS.white,
+                }}
+              >
+                הבנתי
+              </Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }

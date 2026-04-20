@@ -9,7 +9,10 @@ export type ReportLogAction =
   | 'defect_updated'
   | 'defect_deleted'
   | 'photos_updated'
-  | 'whatsapp_sent';
+  | 'whatsapp_sent'
+  | 'report_created_billable'
+  | 'report_created_draft'
+  | 'report_finalized';
 
 export interface ReportLog extends TenantEntity {
   deliveryReportId: string;

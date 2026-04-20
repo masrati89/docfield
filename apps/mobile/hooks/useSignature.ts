@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { Alert } from 'react-native';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { decode } from 'base64-arraybuffer';
 
@@ -24,6 +23,8 @@ interface UseSignatureReturn {
   getTenantSignature: (reportId: string) => Promise<PdfSignature | null>;
   isUploading: boolean;
   error: string | null;
+  errorMessage: string | null;
+  clearError: () => void;
 }
 
 // --- Hook ---
@@ -32,6 +33,9 @@ export function useSignature(): UseSignatureReturn {
   const { profile } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const clearError = useCallback(() => setErrorMessage(null), []);
 
   const inspectorSignatureUrl = profile?.signatureUrl ?? null;
   const inspectorStampUrl = profile?.stampUrl ?? null;
@@ -56,20 +60,24 @@ export function useSignature(): UseSignatureReturn {
 
         if (uploadError) throw uploadError;
 
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('signatures').getPublicUrl(filePath);
+        const { data: signedData, error: signedError } = await supabase.storage
+          .from('signatures')
+          .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year
+
+        if (signedError || !signedData?.signedUrl) {
+          throw signedError ?? new Error('Failed to create signed URL');
+        }
 
         const { error: updateError } = await supabase
           .from('users')
-          .update({ signature_url: publicUrl })
+          .update({ signature_url: signedData.signedUrl })
           .eq('id', profile.id);
 
         if (updateError) throw updateError;
       } catch {
         const msg = 'שגיאה בשמירת החתימה';
         setError(msg);
-        Alert.alert(msg);
+        setErrorMessage(msg);
       } finally {
         setIsUploading(false);
       }
@@ -97,7 +105,7 @@ export function useSignature(): UseSignatureReturn {
     } catch {
       const msg = 'שגיאה במחיקת החתימה';
       setError(msg);
-      Alert.alert(msg);
+      setErrorMessage(msg);
     } finally {
       setIsUploading(false);
     }
@@ -134,20 +142,24 @@ export function useSignature(): UseSignatureReturn {
 
         if (uploadError) throw uploadError;
 
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('signatures').getPublicUrl(filePath);
+        const { data: signedData, error: signedError } = await supabase.storage
+          .from('signatures')
+          .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year
+
+        if (signedError || !signedData?.signedUrl) {
+          throw signedError ?? new Error('Failed to create signed URL');
+        }
 
         const { error: updateError } = await supabase
           .from('users')
-          .update({ stamp_url: publicUrl })
+          .update({ stamp_url: signedData.signedUrl })
           .eq('id', profile.id);
 
         if (updateError) throw updateError;
       } catch {
         const msg = 'שגיאה בשמירת החותמת';
         setError(msg);
-        Alert.alert(msg);
+        setErrorMessage(msg);
       } finally {
         setIsUploading(false);
       }
@@ -175,7 +187,7 @@ export function useSignature(): UseSignatureReturn {
     } catch {
       const msg = 'שגיאה במחיקת החותמת';
       setError(msg);
-      Alert.alert(msg);
+      setErrorMessage(msg);
     } finally {
       setIsUploading(false);
     }
@@ -202,9 +214,13 @@ export function useSignature(): UseSignatureReturn {
 
         if (uploadError) throw uploadError;
 
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('signatures').getPublicUrl(filePath);
+        const { data: signedData, error: signedError } = await supabase.storage
+          .from('signatures')
+          .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year
+
+        if (signedError || !signedData?.signedUrl) {
+          throw signedError ?? new Error('Failed to create signed URL');
+        }
 
         const { error: insertError } = await supabase
           .from('signatures')
@@ -213,14 +229,14 @@ export function useSignature(): UseSignatureReturn {
             organization_id: profile.organizationId,
             signer_type: 'tenant',
             signer_name: name,
-            image_url: publicUrl,
+            image_url: signedData.signedUrl,
           });
 
         if (insertError) throw insertError;
       } catch {
         const msg = 'שגיאה בשמירת חתימת הדייר';
         setError(msg);
-        Alert.alert(msg);
+        setErrorMessage(msg);
       } finally {
         setIsUploading(false);
       }
@@ -265,5 +281,7 @@ export function useSignature(): UseSignatureReturn {
     getTenantSignature,
     isUploading,
     error,
+    errorMessage,
+    clearError,
   };
 }

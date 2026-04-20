@@ -10,7 +10,7 @@ import Animated, {
   FadeOutUp,
 } from 'react-native-reanimated';
 
-import { COLORS, BORDER_RADIUS, SHADOWS } from '@infield/ui';
+import { COLORS } from '@infield/ui';
 
 import { CheckItem } from './CheckItem';
 import { BathTypeSelect } from './BathTypeSelect';
@@ -77,13 +77,7 @@ export function RoomAccordion({
     return { ok, defect, partial, skip, done, total, pct };
   }, [visibleItems, statuses]);
 
-  const badgeBg =
-    counts.done > 0
-      ? counts.defect > 0 || counts.partial > 0
-        ? COLORS.danger[700]
-        : COLORS.primary[500]
-      : COLORS.cream[200];
-  const badgeColor = counts.done > 0 ? COLORS.white : COLORS.neutral[500];
+  const hasDefects = counts.defect > 0 || counts.partial > 0;
 
   const rotation = useSharedValue(isOpen ? 180 : 0);
 
@@ -98,13 +92,16 @@ export function RoomAccordion({
   return (
     <View
       style={{
-        marginBottom: 8,
-        borderRadius: BORDER_RADIUS.md,
-        overflow: 'hidden',
-        backgroundColor: COLORS.cream[50],
+        backgroundColor: COLORS.white,
         borderWidth: 1,
-        borderColor: isOpen ? COLORS.primary[200] : COLORS.cream[200],
-        ...SHADOWS.sm,
+        borderColor: hasDefects ? COLORS.danger[200] : COLORS.primary[200],
+        borderRadius: 12,
+        overflow: 'hidden',
+        shadowColor: 'rgb(60,54,42)',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 3,
+        elevation: 2,
       }}
     >
       {/* Room header */}
@@ -118,70 +115,43 @@ export function RoomAccordion({
         style={{
           flexDirection: 'row-reverse',
           alignItems: 'center',
-          gap: 8,
-          paddingVertical: 14,
-          paddingLeft: 12,
-          paddingRight: 12,
-          backgroundColor: COLORS.primary[50],
-          borderRightWidth: 4,
-          borderRightColor: COLORS.primary[500],
+          gap: 10,
+          paddingVertical: 12,
+          paddingLeft: 14,
+          paddingRight: 0,
+          backgroundColor: isOpen
+            ? hasDefects
+              ? COLORS.danger[50]
+              : COLORS.primary[50]
+            : 'transparent',
+          borderBottomWidth: isOpen ? 1 : 0,
+          borderBottomColor: hasDefects
+            ? COLORS.danger[200]
+            : COLORS.primary[200],
         }}
       >
-        {/* Grip dots */}
-        <View style={{ width: 10, alignItems: 'center', gap: 3 }}>
-          {[0, 1, 2].map((row) => (
-            <View key={row} style={{ flexDirection: 'row', gap: 4 }}>
-              <View
-                style={{
-                  width: 3,
-                  height: 3,
-                  borderRadius: 1.5,
-                  backgroundColor: COLORS.neutral[300],
-                }}
-              />
-              <View
-                style={{
-                  width: 3,
-                  height: 3,
-                  borderRadius: 1.5,
-                  backgroundColor: COLORS.neutral[300],
-                }}
-              />
-            </View>
-          ))}
-        </View>
-
-        {/* Count badge */}
+        {/* Color bar (right side = leading edge in RTL) */}
         <View
           style={{
-            width: 22,
-            height: 22,
-            borderRadius: 5,
-            backgroundColor: badgeBg,
-            alignItems: 'center',
-            justifyContent: 'center',
+            width: 6,
+            height: 28,
+            borderRadius: 3,
+            backgroundColor: hasDefects
+              ? COLORS.danger[700]
+              : COLORS.primary[500],
           }}
-        >
-          <Text
-            style={{
-              fontSize: 10,
-              fontWeight: '700',
-              color: badgeColor,
-            }}
-          >
-            {counts.done > 0 ? counts.done : counts.total}
-          </Text>
-        </View>
+        />
 
-        {/* Room name + status counts */}
+        {/* Room name + status line */}
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text
             style={{
               fontSize: 14,
               fontWeight: '700',
-              color: COLORS.primary[700],
+              color: COLORS.neutral[800],
               fontFamily: 'Rubik-Bold',
               textAlign: 'right',
+              letterSpacing: -0.1,
             }}
           >
             {room.name}
@@ -190,75 +160,36 @@ export function RoomAccordion({
             style={{
               flexDirection: 'row-reverse',
               alignItems: 'center',
-              gap: 8,
-              marginTop: 4,
+              gap: 6,
+              marginTop: 3,
             }}
           >
-            {counts.done > 0 ? (
-              <>
-                {counts.ok > 0 ? (
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      color: COLORS.primary[500],
-                      fontWeight: '500',
-                      fontFamily: 'Rubik-Medium',
-                    }}
-                  >
-                    {counts.ok} {'\u2713'}
-                  </Text>
-                ) : null}
-                {counts.defect > 0 ? (
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      color: COLORS.danger[700],
-                      fontWeight: '500',
-                      fontFamily: 'Rubik-Medium',
-                    }}
-                  >
-                    {counts.defect} {'\u2717'}
-                  </Text>
-                ) : null}
-                {counts.partial > 0 ? (
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      color: COLORS.gold[600],
-                      fontWeight: '500',
-                      fontFamily: 'Rubik-Medium',
-                    }}
-                  >
-                    {counts.partial} ~
-                  </Text>
-                ) : null}
-                {counts.skip > 0 ? (
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      color: COLORS.neutral[400],
-                      fontFamily: 'Rubik-Regular',
-                    }}
-                  >
-                    {counts.skip} דלג
-                  </Text>
-                ) : null}
-                {counts.done < counts.total ? (
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      color: COLORS.neutral[400],
-                      fontFamily: 'Rubik-Regular',
-                    }}
-                  >
-                    {counts.total - counts.done} נותרו
-                  </Text>
-                ) : null}
-              </>
+            {hasDefects ? (
+              <Text
+                style={{
+                  fontSize: 10,
+                  color: COLORS.danger[700],
+                  fontWeight: '600',
+                  fontFamily: 'Rubik-SemiBold',
+                }}
+              >
+                {counts.defect + counts.partial} ליקויים
+              </Text>
+            ) : counts.done > 0 ? (
+              <Text
+                style={{
+                  fontSize: 10,
+                  color: COLORS.primary[700],
+                  fontWeight: '600',
+                  fontFamily: 'Rubik-SemiBold',
+                }}
+              >
+                הכל תקין ✓
+              </Text>
             ) : (
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 10,
                   color: COLORS.neutral[500],
                   fontFamily: 'Rubik-Regular',
                 }}
@@ -266,70 +197,30 @@ export function RoomAccordion({
                 {counts.total} פריטים
               </Text>
             )}
+            <Text style={{ fontSize: 9, color: COLORS.neutral[300] }}>·</Text>
+            <Text
+              style={{
+                fontSize: 10,
+                color: COLORS.neutral[500],
+                fontFamily: 'Inter-Regular',
+              }}
+            >
+              {counts.done}/{counts.total} · {counts.pct}%
+            </Text>
           </View>
         </View>
 
         {/* Chevron */}
         <Animated.View style={chevronStyle}>
-          <Feather name="chevron-down" size={16} color={COLORS.neutral[400]} />
+          <Feather name="chevron-down" size={16} color={COLORS.neutral[500]} />
         </Animated.View>
       </Pressable>
-
-      {/* Progress bar (when open) */}
-      {isOpen && counts.total > 0 ? (
-        <Animated.View
-          entering={FadeInDown.duration(250)}
-          exiting={FadeOutUp.duration(200)}
-          style={{
-            flexDirection: 'row-reverse',
-            alignItems: 'center',
-            gap: 8,
-            paddingHorizontal: 12,
-            paddingBottom: 8,
-          }}
-        >
-          <View
-            style={{
-              flex: 1,
-              height: 3,
-              backgroundColor: COLORS.cream[200],
-              borderRadius: 2,
-              overflow: 'hidden',
-            }}
-          >
-            <View
-              style={{
-                height: '100%',
-                width: `${counts.pct}%`,
-                backgroundColor:
-                  counts.pct === 100 ? COLORS.primary[500] : COLORS.gold[500],
-                borderRadius: 2,
-              }}
-            />
-          </View>
-          <Text
-            style={{
-              fontSize: 10,
-              color:
-                counts.pct === 100 ? COLORS.primary[500] : COLORS.neutral[400],
-              fontWeight: '500',
-              fontFamily: 'Rubik-Medium',
-            }}
-          >
-            {counts.done}/{counts.total}
-          </Text>
-        </Animated.View>
-      ) : null}
 
       {/* Accordion content */}
       {isOpen ? (
         <Animated.View
           entering={FadeInDown.duration(250)}
           exiting={FadeOutUp.duration(200)}
-          style={{
-            borderTopWidth: 1,
-            borderTopColor: COLORS.cream[200],
-          }}
         >
           {room.hasBathType ? (
             <BathTypeSelect value={bathType} onChange={onBathTypeChange} />

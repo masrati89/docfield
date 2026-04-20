@@ -7,7 +7,6 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -77,12 +76,11 @@ export function TenantSignatureScreen({
     onSign(trimmedName, signatureBase64);
   }, [name, signatureBase64, onSign]);
 
+  const [unsavedConfirm, setUnsavedConfirm] = useState(false);
+
   const handleClose = useCallback(() => {
     if (hasDrawn.current && signatureBase64) {
-      Alert.alert('חתימה לא נשמרה', 'יש חתימה שלא נשמרה. לצאת?', [
-        { text: 'ביטול', style: 'cancel' },
-        { text: 'כן, צא', style: 'destructive', onPress: onClose },
-      ]);
+      setUnsavedConfirm(true);
     } else {
       onClose();
     }
@@ -302,6 +300,107 @@ export function TenantSignatureScreen({
           </Animated.View>
         </KeyboardAvoidingView>
       </Pressable>
+      {/* Unsaved signature confirmation */}
+      <Modal
+        visible={unsavedConfirm}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setUnsavedConfirm(false)}
+      >
+        <Pressable
+          onPress={() => setUnsavedConfirm(false)}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 32,
+          }}
+        >
+          <Pressable
+            onPress={() => {}}
+            style={{
+              width: '100%',
+              maxWidth: 320,
+              backgroundColor: COLORS.cream[50],
+              borderRadius: 14,
+              padding: 20,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: 'Rubik-SemiBold',
+                color: COLORS.neutral[800],
+                textAlign: 'right',
+                marginBottom: 8,
+              }}
+            >
+              חתימה לא נשמרה
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.neutral[600],
+                textAlign: 'right',
+                marginBottom: 20,
+              }}
+            >
+              יש חתימה שלא נשמרה. לצאת?
+            </Text>
+            <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
+              <Pressable
+                onPress={() => {
+                  setUnsavedConfirm(false);
+                  onClose();
+                }}
+                style={{
+                  flex: 1,
+                  height: 40,
+                  borderRadius: 10,
+                  backgroundColor: COLORS.danger[500],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontFamily: 'Rubik-SemiBold',
+                    color: COLORS.white,
+                  }}
+                >
+                  כן, צא
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setUnsavedConfirm(false)}
+                style={{
+                  flex: 1,
+                  height: 40,
+                  borderRadius: 10,
+                  backgroundColor: COLORS.cream[100],
+                  borderWidth: 1,
+                  borderColor: COLORS.cream[200],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontFamily: 'Rubik-Medium',
+                    color: COLORS.neutral[600],
+                  }}
+                >
+                  ביטול
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Modal>
   );
 }

@@ -7,26 +7,20 @@
 // - Signature/stamp placeholders instead of real images
 // - No QR code
 
-import { formatDate } from '@infield/shared';
-
 import type { PdfReportData, PdfChecklistItem } from './types';
 import {
   PDF,
+  escapeAttr,
   escapeHtml,
   formatCurrency,
+  formatDate,
   groupDefectsByCategory,
 } from './shared';
 
 // --- Date formatter (tolerant of bad input) ---
 
 function formatReportDate(raw: string): string {
-  try {
-    const d = new Date(raw);
-    if (Number.isNaN(d.getTime())) return escapeHtml(raw);
-    return escapeHtml(formatDate(d, 'he'));
-  } catch {
-    return escapeHtml(raw);
-  }
+  return escapeHtml(formatDate(raw));
 }
 
 // --- Preview-specific styles ---
@@ -304,7 +298,7 @@ function bedekBayitPreview(data: PdfReportData): string {
         ${d.recommendation ? `<div class="defect-recommendation"><strong>\u05D4\u05DE\u05DC\u05E6\u05D4: </strong>${escapeHtml(d.recommendation)}</div>` : ''}
         ${
           photos.length > 0
-            ? `<div class="defect-images">${photos.map((url) => `<img class="defect-image" src="${url}" onerror="this.style.display='none'" />`).join('')}</div>`
+            ? `<div class="defect-images">${photos.map((url) => `<img class="defect-image" src="${escapeAttr(url)}" onerror="this.style.display='none'" />`).join('')}</div>`
             : ''
         }
       </div>`;
@@ -327,8 +321,15 @@ function bedekBayitPreview(data: PdfReportData): string {
         costRows += `<tr><td>${d.number}</td><td>${escapeHtml(d.recommendation ?? d.title)}</td><td style="text-align:left;font-weight:600;">${costStr}</td></tr>`;
       }
     }
-    const vat = subtotal * 0.17;
-    const total = subtotal + vat;
+    const vatRate = data.boqRates?.vat ?? 0.18;
+    const batzamRate = data.boqRates?.batzam ?? 0.1;
+    const supervisionRate = data.boqRates?.supervision ?? 0.1;
+    const batzam = subtotal * batzamRate;
+    const supervision = (subtotal + batzam) * supervisionRate;
+    const preVat = subtotal + batzam + supervision;
+    const vat = preVat * vatRate;
+    const total = preVat + vat;
+    const vatPct = Math.round(vatRate * 100);
 
     costTableHtml = `
       <div class="section-title">\u05DB\u05EA\u05D1 \u05DB\u05DE\u05D5\u05D9\u05D5\u05EA</div>
@@ -336,8 +337,10 @@ function bedekBayitPreview(data: PdfReportData): string {
         <thead><tr><th>#</th><th>\u05EA\u05D9\u05D0\u05D5\u05E8</th><th style="text-align:left;">\u05E2\u05DC\u05D5\u05EA (\u20AA)</th></tr></thead>
         <tbody>
           ${costRows}
-          <tr class="subtotal-row"><td></td><td>\u05E1\u05D4\u0022\u05DB \u05DC\u05E4\u05E0\u05D9 \u05DE\u05E2\u0022\u05DE</td><td style="text-align:left;">${subtotal.toLocaleString('he-IL')}</td></tr>
-          <tr><td></td><td style="color:${PDF.lt};">\u05DE\u05E2\u0022\u05DE (17%)</td><td style="text-align:left;">${vat.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td></tr>
+          <tr class="subtotal-row"><td></td><td>\u05E1\u05D4\u0022\u05DB \u05E2\u05D1\u05D5\u05D3\u05D5\u05EA</td><td style="text-align:left;">${subtotal.toLocaleString('he-IL')}</td></tr>
+          <tr><td></td><td style="color:${PDF.lt};">\u05D1\u05E6\u05DE (${Math.round(batzamRate * 100)}%)</td><td style="text-align:left;">${batzam.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td></tr>
+          <tr><td></td><td style="color:${PDF.lt};">\u05E4\u05D9\u05E7\u05D5\u05D7 (${Math.round(supervisionRate * 100)}%)</td><td style="text-align:left;">${supervision.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td></tr>
+          <tr><td></td><td style="color:${PDF.lt};">\u05DE\u05E2\u0022\u05DE (${vatPct}%)</td><td style="text-align:left;">${vat.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td></tr>
           <tr class="total-row"><td></td><td>\u05E1\u05D4\u0022\u05DB \u05DB\u05D5\u05DC\u05DC \u05DE\u05E2\u0022\u05DE</td><td style="text-align:left;">${total.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td></tr>
         </tbody>
       </table>`;
@@ -437,7 +440,7 @@ function protocolPreview(data: PdfReportData): string {
         </div>
         ${
           photos.length > 0
-            ? `<div class="defect-images">${photos.map((url) => `<img class="defect-image" src="${url}" onerror="this.style.display='none'" />`).join('')}</div>`
+            ? `<div class="defect-images">${photos.map((url) => `<img class="defect-image" src="${escapeAttr(url)}" onerror="this.style.display='none'" />`).join('')}</div>`
             : ''
         }
       </div>`;
@@ -508,7 +511,7 @@ function protocolPreview(data: PdfReportData): string {
 // --- Main export ---
 
 export function generatePreviewHtml(data: PdfReportData): string {
-  const isDraft = data.status === 'draft' || data.status === 'in_progress';
+  const isDraft = data.status === 'draft';
   const content =
     data.reportType === 'bedek_bait'
       ? bedekBayitPreview(data)

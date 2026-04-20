@@ -1,6 +1,6 @@
 import type { BaseEntity, TenantEntity } from './common.types';
 
-export type DefectSeverity = 'critical' | 'medium' | 'low';
+export type DefectSeverity = 'critical' | 'high' | 'medium' | 'low';
 
 export type DefectStatus = 'open' | 'in_progress' | 'fixed' | 'not_fixed';
 
@@ -25,6 +25,15 @@ export interface Defect extends TenantEntity {
   sourceDefectId?: string;
   reviewStatus?: ReviewStatus;
   reviewNote?: string;
+  standardRef?: string;
+  standardSection?: string;
+  recommendation?: string;
+  notes?: string;
+  cost?: number;
+  costUnit?: string;
+  unitPrice?: number;
+  quantity?: number;
+  unitLabel?: string;
 }
 
 export interface DefectPhoto extends BaseEntity {

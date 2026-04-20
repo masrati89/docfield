@@ -65,12 +65,43 @@ interface SyncResponse {
   timestamp: string;
 }
 
+// Allowed CORS origins for dev/local environments.
+// For production, set ALLOWED_ORIGIN env var to your deployed domain.
+const ALLOWED_ORIGINS = [
+  'http://localhost:8081',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+
+function getCorsOrigin(request: Request): string | null {
+  const origin = request.headers.get('Origin');
+  if (!origin) return null;
+
+  const envOrigin = Deno.env.get('ALLOWED_ORIGIN');
+  if (envOrigin && origin === envOrigin) return origin;
+
+  if (ALLOWED_ORIGINS.includes(origin)) return origin;
+
+  return null;
+}
+
+function corsHeaders(request: Request): Record<string, string> {
+  const origin = getCorsOrigin(request);
+  if (!origin) return {};
+  return { 'Access-Control-Allow-Origin': origin };
+}
+
 serve(async (request: Request) => {
-  // CORS
+  // CORS preflight
   if (request.method === 'OPTIONS') {
-    return new Response('ok', {
+    const origin = getCorsOrigin(request);
+    if (!origin) {
+      return new Response(null, { status: 204 });
+    }
+    return new Response(null, {
+      status: 204,
       headers: {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'authorization, content-type',
       },
@@ -142,7 +173,7 @@ serve(async (request: Request) => {
     status: 200,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
+      ...corsHeaders(request),
     },
   });
 });

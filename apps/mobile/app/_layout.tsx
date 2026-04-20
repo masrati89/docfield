@@ -14,6 +14,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 import { COLORS } from '@infield/ui';
 import { AuthProvider } from '@/contexts/AuthContext';
 
@@ -151,6 +153,9 @@ export default function RootLayout() {
     'Rubik-Medium': require('../assets/fonts/Rubik-Medium.ttf'),
     'Rubik-SemiBold': require('../assets/fonts/Rubik-SemiBold.ttf'),
     'Rubik-Bold': require('../assets/fonts/Rubik-Bold.ttf'),
+    'Inter-Regular': require('@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf'),
+    'Inter-SemiBold': require('@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf'),
+    'Inter-Bold': require('@expo-google-fonts/inter/700Bold/Inter_700Bold.ttf'),
   });
   /* eslint-enable @typescript-eslint/no-require-imports */
 
@@ -167,13 +172,15 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <View style={{ flex: 1 }}>
-          <Slot />
-          {!splashDone && <AnimatedSplash onFinish={handleSplashFinish} />}
-        </View>
-      </AuthProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <View style={{ flex: 1 }}>
+            <Slot />
+            {!splashDone && <AnimatedSplash onFinish={handleSplashFinish} />}
+          </View>
+        </AuthProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }

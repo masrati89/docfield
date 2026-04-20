@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -104,174 +104,193 @@ export function NotificationsPanel({
     markAllRead();
   }, [markAllRead]);
 
-  if (!visible) return null;
+  // Keep modal mounted during exit animation so SlideOutUp can play
+  const [showContent, setShowContent] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setModalVisible(true);
+      requestAnimationFrame(() => setShowContent(true));
+    } else if (showContent) {
+      setShowContent(false);
+      const timer = setTimeout(() => setModalVisible(false), 260);
+      return () => clearTimeout(timer);
+    }
+  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!modalVisible) return null;
 
   return (
     <Modal
-      visible={visible}
+      visible={modalVisible}
       transparent
       animationType="none"
       onRequestClose={onClose}
       statusBarTranslucent
     >
       {/* Backdrop */}
-      <Animated.View
-        entering={FadeIn.duration(180)}
-        exiting={FadeOut.duration(180)}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(60,54,42,0.4)',
-        }}
-      >
-        <Pressable style={{ flex: 1 }} onPress={onClose} />
-      </Animated.View>
-
-      {/* Panel — slides down from top */}
-      <Animated.View
-        entering={SlideInUp.duration(300).springify()}
-        exiting={SlideOutUp.duration(220)}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: COLORS.cream[50],
-          borderBottomLeftRadius: 16,
-          borderBottomRightRadius: 16,
-          maxHeight: '85%',
-          shadowColor: 'rgb(60,54,42)',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.15,
-          shadowRadius: 20,
-          elevation: 20,
-        }}
-      >
-        {/* Header */}
-        <View
+      {showContent && (
+        <Animated.View
+          entering={FadeIn.duration(180)}
+          exiting={FadeOut.duration(220)}
           style={{
-            paddingTop: insets.top + 12,
-            paddingHorizontal: 16,
-            paddingBottom: 12,
-            borderBottomWidth: 1,
-            borderBottomColor: COLORS.cream[200],
-            flexDirection: 'row-reverse',
-            alignItems: 'center',
-            gap: 12,
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(60,54,42,0.4)',
           }}
         >
-          {/* Close */}
-          <Pressable
-            onPress={onClose}
+          <Pressable style={{ flex: 1 }} onPress={onClose} />
+        </Animated.View>
+      )}
+
+      {/* Panel — slides down from top */}
+      {showContent && (
+        <Animated.View
+          entering={SlideInUp.duration(300).springify()}
+          exiting={SlideOutUp.duration(220)}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: COLORS.cream[50],
+            borderBottomLeftRadius: 16,
+            borderBottomRightRadius: 16,
+            maxHeight: '85%',
+            shadowColor: 'rgb(60,54,42)',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 20,
+            elevation: 20,
+          }}
+        >
+          {/* Header */}
+          <View
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: BORDER_RADIUS.md,
+              paddingTop: insets.top + 12,
+              paddingHorizontal: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: COLORS.cream[200],
+              flexDirection: 'row-reverse',
               alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: COLORS.cream[100],
-              borderWidth: 1,
-              borderColor: COLORS.cream[200],
+              gap: 12,
             }}
-            accessibilityLabel="סגור התראות"
-            accessibilityRole="button"
           >
-            <Feather name="x" size={20} color={COLORS.neutral[600]} />
-          </Pressable>
-
-          {/* Title + count */}
-          <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                fontSize: 18,
-                fontFamily: 'Rubik-SemiBold',
-                color: COLORS.neutral[800],
-                textAlign: 'right',
-              }}
-            >
-              התראות
-            </Text>
-            {unreadCount > 0 && (
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontFamily: 'Rubik-Regular',
-                  color: COLORS.neutral[500],
-                  textAlign: 'right',
-                  marginTop: 2,
-                }}
-              >
-                {unreadCount} חדשות
-              </Text>
-            )}
-          </View>
-
-          {/* Mark all as read */}
-          {unreadCount > 0 && (
+            {/* Close */}
             <Pressable
-              onPress={handleMarkAllRead}
+              onPress={onClose}
               style={{
-                paddingHorizontal: 12,
+                width: 36,
                 height: 36,
                 borderRadius: BORDER_RADIUS.md,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: COLORS.primary[50],
+                backgroundColor: COLORS.cream[100],
                 borderWidth: 1,
-                borderColor: COLORS.primary[200],
+                borderColor: COLORS.cream[200],
               }}
-              accessibilityLabel="סמן הכל כנקרא"
+              accessibilityLabel="סגור התראות"
               accessibilityRole="button"
             >
+              <Feather name="x" size={20} color={COLORS.neutral[600]} />
+            </Pressable>
+
+            {/* Title + count */}
+            <View style={{ flex: 1 }}>
               <Text
                 style={{
-                  fontSize: 12,
-                  fontFamily: 'Rubik-Medium',
-                  color: COLORS.primary[700],
+                  fontSize: 18,
+                  fontFamily: 'Rubik-SemiBold',
+                  color: COLORS.neutral[800],
+                  textAlign: 'right',
                 }}
               >
-                סמן הכל כנקרא
+                התראות
               </Text>
-            </Pressable>
-          )}
-        </View>
+              {unreadCount > 0 && (
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontFamily: 'Rubik-Regular',
+                    color: COLORS.neutral[500],
+                    textAlign: 'right',
+                    marginTop: 2,
+                  }}
+                >
+                  {unreadCount} חדשות
+                </Text>
+              )}
+            </View>
 
-        {/* Body */}
-        {isLoading ? (
-          <View style={{ padding: 16, gap: 12 }}>
-            <SkeletonBlock width="100%" height={72} borderRadius={12} />
-            <SkeletonBlock width="100%" height={72} borderRadius={12} />
-            <SkeletonBlock width="100%" height={72} borderRadius={12} />
+            {/* Mark all as read */}
+            {unreadCount > 0 && (
+              <Pressable
+                onPress={handleMarkAllRead}
+                style={{
+                  paddingHorizontal: 12,
+                  height: 36,
+                  borderRadius: BORDER_RADIUS.md,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: COLORS.primary[50],
+                  borderWidth: 1,
+                  borderColor: COLORS.primary[200],
+                }}
+                accessibilityLabel="סמן הכל כנקרא"
+                accessibilityRole="button"
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontFamily: 'Rubik-Medium',
+                    color: COLORS.primary[700],
+                  }}
+                >
+                  סמן הכל כנקרא
+                </Text>
+              </Pressable>
+            )}
           </View>
-        ) : notifications.length === 0 ? (
-          <View style={{ minHeight: 220, paddingVertical: 24 }}>
-            <EmptyState
-              icon="bell-off"
-              title="אין התראות"
-              subtitle="התראות חדשות יופיעו כאן"
-            />
-          </View>
-        ) : (
-          <ScrollView
-            style={{ maxHeight: 560 }}
-            contentContainerStyle={{ paddingVertical: 8 }}
-            showsVerticalScrollIndicator={false}
-          >
-            {notifications.map((item, idx) => (
-              <NotificationRow
-                key={item.id}
-                item={item}
-                index={idx}
-                onPress={() => handleItemPress(item)}
+
+          {/* Body */}
+          {isLoading ? (
+            <View style={{ padding: 16, gap: 12 }}>
+              <SkeletonBlock width="100%" height={72} borderRadius={12} />
+              <SkeletonBlock width="100%" height={72} borderRadius={12} />
+              <SkeletonBlock width="100%" height={72} borderRadius={12} />
+            </View>
+          ) : notifications.length === 0 ? (
+            <View style={{ minHeight: 220, paddingVertical: 24 }}>
+              <EmptyState
+                icon="bell-off"
+                title="אין התראות"
+                subtitle="התראות חדשות יופיעו כאן"
               />
-            ))}
-            <View style={{ height: 12 }} />
-          </ScrollView>
-        )}
-      </Animated.View>
+            </View>
+          ) : (
+            <ScrollView
+              style={{ maxHeight: 560 }}
+              contentContainerStyle={{ paddingVertical: 8 }}
+              showsVerticalScrollIndicator={false}
+            >
+              {notifications.map((item, idx) => (
+                <NotificationRow
+                  key={item.id}
+                  item={item}
+                  index={idx}
+                  onPress={() => handleItemPress(item)}
+                />
+              ))}
+              <View style={{ height: 12 }} />
+            </ScrollView>
+          )}
+        </Animated.View>
+      )}
     </Modal>
   );
 }

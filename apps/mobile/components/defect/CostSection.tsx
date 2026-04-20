@@ -309,14 +309,15 @@ export function CostSection({
                   fontFamily: 'Rubik-Medium',
                 }}
               >
-                סה&quot;כ
+                מחיר משוער
               </Text>
               <Text
                 style={{
-                  fontSize: 15,
+                  fontSize: 20,
                   fontWeight: '700',
                   color: COLORS.gold[700],
-                  fontFamily: 'Rubik-Bold',
+                  fontFamily: 'Inter-Bold',
+                  writingDirection: 'ltr',
                 }}
               >
                 ₪{totalCost.toLocaleString()}

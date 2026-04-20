@@ -170,7 +170,7 @@ export function ProjectCard({
           <Text
             style={{
               fontSize: 10,
-              fontFamily: 'Inter',
+              fontFamily: 'Inter-SemiBold',
               fontWeight: '600',
               color: isComplete ? COLORS.primary[500] : COLORS.neutral[600],
             }}
@@ -201,7 +201,7 @@ export function ProjectCard({
           <Text
             style={{
               fontSize: 11,
-              fontFamily: 'Inter',
+              fontFamily: 'Inter-Bold',
               fontWeight: '700',
               color: isComplete ? COLORS.primary[500] : COLORS.neutral[700],
             }}
@@ -263,7 +263,7 @@ export function ProjectCard({
                 <Text
                   style={{
                     fontSize: 10,
-                    fontFamily: 'Inter',
+                    fontFamily: 'Inter-SemiBold',
                     fontWeight: '600',
                     color: COLORS.gold[700],
                   }}

@@ -3,10 +3,17 @@ import { COLORS } from '@infield/ui';
 export const DEFECT_SEVERITIES = [
   {
     value: 'critical' as const,
-    label: 'חמור',
+    label: 'קריטי',
     color: COLORS.danger[500],
     backgroundColor: COLORS.danger[50],
     textColor: COLORS.danger[700],
+  },
+  {
+    value: 'high' as const,
+    label: 'גבוה',
+    color: COLORS.warning[700],
+    backgroundColor: COLORS.warning[50],
+    textColor: COLORS.warning[700],
   },
   {
     value: 'medium' as const,

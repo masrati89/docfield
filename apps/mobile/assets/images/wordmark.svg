@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="40" viewBox="0 0 160 40" fill="none">
+  <rect x="3" y="1" width="34" height="38" rx="9" fill="#F0F7F4" stroke="#A3D1B5" stroke-width="1"></rect>
+  <rect x="10" y="7" width="20" height="3" rx="1.5" fill="#1B7A44"></rect>
+  <rect x="10" y="13" width="20" height="3" rx="1.5" fill="#1B7A44"></rect>
+  <rect x="10" y="19" width="20" height="3" rx="1.5" fill="#1B7A44"></rect>
+  <rect x="10" y="27" width="20" height="6" rx="3" fill="#1B7A44"></rect>
+  <text x="48" y="27" font-family="Inter, Rubik, sans-serif" font-weight="700" font-size="22" fill="#0F4F2E" letter-spacing="-0.4">in<tspan font-weight="800">Field</tspan></text>
+</svg>

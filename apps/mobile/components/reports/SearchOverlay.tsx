@@ -20,9 +20,20 @@ import type BottomSheet from '@gorhom/bottom-sheet';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
 import { BottomSheetWrapper } from '@/components/ui/BottomSheetWrapper';
+import { useDefectLibrary } from '@/hooks/useDefectLibrary';
 import type { DefectItem } from '@/hooks/useReport';
 
 // --- Types ---
+
+/** Unified item for both report defects and library entries */
+interface SearchItem {
+  id: string;
+  description: string;
+  category: string | null;
+  room: string | null;
+  photoCount: number;
+  origin: 'report' | 'library';
+}
 
 interface SearchOverlayProps {
   defects: DefectItem[];
@@ -89,7 +100,7 @@ function CategoryChip({ label, isActive, onPress }: ChipProps) {
 // --- Result item component ---
 
 interface ResultItemProps {
-  item: DefectItem;
+  item: SearchItem;
   index: number;
   onPress: () => void;
 }
@@ -112,9 +123,11 @@ function ResultItem({ item, index, onPress }: ResultItemProps) {
     scale.value = withSpring(1);
   };
 
+  const isLibrary = item.origin === 'library';
+
   return (
     <Animated.View
-      entering={FadeInUp.delay(index * 40).duration(200)}
+      entering={FadeInUp.delay(Math.min(index, 10) * 40).duration(200)}
       style={animatedStyle}
     >
       <Pressable
@@ -131,7 +144,7 @@ function ResultItem({ item, index, onPress }: ResultItemProps) {
           gap: 10,
         }}
       >
-        {/* Left side: description + metadata */}
+        {/* Description + metadata */}
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text
             style={{
@@ -154,11 +167,33 @@ function ResultItem({ item, index, onPress }: ResultItemProps) {
               flexWrap: 'wrap',
             }}
           >
+            {/* Origin badge */}
+            <View
+              style={{
+                backgroundColor: isLibrary
+                  ? COLORS.gold[100]
+                  : COLORS.primary[50],
+                borderRadius: 4,
+                paddingHorizontal: 6,
+                paddingVertical: 2,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontFamily: 'Rubik-Medium',
+                  color: isLibrary ? COLORS.gold[600] : COLORS.primary[700],
+                }}
+              >
+                {isLibrary ? 'מאגר' : 'דוח'}
+              </Text>
+            </View>
+
             {/* Category badge */}
             {item.category ? (
               <View
                 style={{
-                  backgroundColor: COLORS.primary[50],
+                  backgroundColor: COLORS.cream[100],
                   borderRadius: 4,
                   paddingHorizontal: 6,
                   paddingVertical: 2,
@@ -168,7 +203,7 @@ function ResultItem({ item, index, onPress }: ResultItemProps) {
                   style={{
                     fontSize: 10,
                     fontFamily: 'Rubik-Regular',
-                    color: COLORS.primary[700],
+                    color: COLORS.neutral[600],
                   }}
                 >
                   {item.category}
@@ -236,22 +271,49 @@ export function SearchOverlay({
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('הכל');
 
-  // Build unique category list from defects
+  // Fetch global defect library
+  const { items: libraryItems, isLoading: libraryLoading } = useDefectLibrary();
+
+  // Merge report defects + library items into unified SearchItem[]
+  const allItems: SearchItem[] = useMemo(() => {
+    const reportItems: SearchItem[] = defects.map((d) => ({
+      id: d.id,
+      description: d.description,
+      category: d.category,
+      room: d.room,
+      photoCount: d.photoCount,
+      origin: 'report' as const,
+    }));
+
+    const libItems: SearchItem[] = libraryItems.map((lib) => ({
+      id: `lib-${lib.id}`,
+      description: lib.title,
+      category: lib.category || null,
+      room: null,
+      photoCount: 0,
+      origin: 'library' as const,
+    }));
+
+    // Report defects first, then library
+    return [...reportItems, ...libItems];
+  }, [defects, libraryItems]);
+
+  // Build unique category list from all items
   const categories = useMemo(() => {
     const seen = new Set<string>();
     const result: string[] = ['הכל'];
-    defects.forEach((d) => {
+    allItems.forEach((d) => {
       if (d.category && !seen.has(d.category)) {
         seen.add(d.category);
         result.push(d.category);
       }
     });
     return result;
-  }, [defects]);
+  }, [allItems]);
 
   // Filter logic
   const filtered = useMemo(() => {
-    let items = defects;
+    let items = allItems;
     if (activeCategory !== 'הכל') {
       items = items.filter((d) => d.category === activeCategory);
     }
@@ -260,14 +322,20 @@ export function SearchOverlay({
       items = items.filter((d) => d.description.toLowerCase().includes(q));
     }
     return items;
-  }, [defects, activeCategory, query]);
+  }, [allItems, activeCategory, query]);
+
+  const handleClose = useCallback(() => {
+    onClose();
+  }, [onClose]);
 
   const handleSelect = useCallback(
-    (defectId: string) => {
-      sheetRef.current?.close();
-      onSelect(defectId);
+    (item: SearchItem) => {
+      if (item.origin === 'report') {
+        onSelect(item.id);
+      }
+      onClose();
     },
-    [onSelect]
+    [onSelect, onClose]
   );
 
   const handleCategoryPress = (cat: string) => {
@@ -277,8 +345,15 @@ export function SearchOverlay({
     setActiveCategory(cat);
   };
 
+  const reportCount = filtered.filter((i) => i.origin === 'report').length;
+  const libraryCount = filtered.filter((i) => i.origin === 'library').length;
+
   return (
-    <BottomSheetWrapper ref={sheetRef} snapPoints={['85%']} onClose={onClose}>
+    <BottomSheetWrapper
+      ref={sheetRef}
+      snapPoints={['85%']}
+      onClose={handleClose}
+    >
       <View style={{ flex: 1 }}>
         {/* Header */}
         <View
@@ -301,7 +376,7 @@ export function SearchOverlay({
           >
             חיפוש ממצאים
           </Text>
-          <Pressable onPress={() => sheetRef.current?.close()} hitSlop={8}>
+          <Pressable onPress={handleClose} hitSlop={8}>
             <Feather name="x" size={20} color={COLORS.neutral[400]} />
           </Pressable>
         </View>
@@ -325,7 +400,7 @@ export function SearchOverlay({
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="חפש ממצא..."
+            placeholder="חפש ממצא בדוח או במאגר..."
             placeholderTextColor={COLORS.neutral[400]}
             textAlign="right"
             autoFocus
@@ -385,7 +460,8 @@ export function SearchOverlay({
             paddingVertical: 6,
           }}
         >
-          {filtered.length} ממצאים
+          {reportCount} בדוח · {libraryCount} במאגר
+          {libraryLoading ? ' (טוען...)' : ''}
         </Text>
 
         {/* Results list */}
@@ -431,7 +507,7 @@ export function SearchOverlay({
               <ResultItem
                 item={item}
                 index={index}
-                onPress={() => handleSelect(item.id)}
+                onPress={() => handleSelect(item)}
               />
             )}
             contentContainerStyle={{ paddingBottom: 32 }}

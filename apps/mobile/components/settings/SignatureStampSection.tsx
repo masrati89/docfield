@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { View, Text, Pressable, Alert, Image, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Modal, Image, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -33,6 +33,11 @@ export function SignatureStampSection({
   } = useSignature();
 
   const [showSignaturePad, setShowSignaturePad] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   // --- Signature handlers ---
 
@@ -50,22 +55,19 @@ export function SignatureStampSection({
   );
 
   const handleDeleteSignature = useCallback(() => {
-    Alert.alert('מחיקת חתימה', 'למחוק את החתימה?', [
-      { text: 'ביטול', style: 'cancel' },
-      {
-        text: 'מחק',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteInspectorSignature();
-            setShowSignaturePad(false);
-            onSuccess?.('החתימה נמחקה');
-          } catch {
-            onError?.('שגיאה במחיקת החתימה');
-          }
-        },
+    setConfirmAction({
+      title: 'מחיקת חתימה',
+      message: 'למחוק את החתימה?',
+      onConfirm: async () => {
+        try {
+          await deleteInspectorSignature();
+          setShowSignaturePad(false);
+          onSuccess?.('החתימה נמחקה');
+        } catch {
+          onError?.('שגיאה במחיקת החתימה');
+        }
       },
-    ]);
+    });
   }, [deleteInspectorSignature, onSuccess, onError]);
 
   const handleReplaceSignature = useCallback(() => {
@@ -94,21 +96,18 @@ export function SignatureStampSection({
   }, [saveInspectorStamp, onSuccess, onError]);
 
   const handleDeleteStamp = useCallback(() => {
-    Alert.alert('מחיקת חותמת', 'למחוק את החותמת?', [
-      { text: 'ביטול', style: 'cancel' },
-      {
-        text: 'מחק',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteInspectorStamp();
-            onSuccess?.('החותמת נמחקה');
-          } catch {
-            onError?.('שגיאה במחיקת החותמת');
-          }
-        },
+    setConfirmAction({
+      title: 'מחיקת חותמת',
+      message: 'למחוק את החותמת?',
+      onConfirm: async () => {
+        try {
+          await deleteInspectorStamp();
+          onSuccess?.('החותמת נמחקה');
+        } catch {
+          onError?.('שגיאה במחיקת החותמת');
+        }
       },
-    ]);
+    });
   }, [deleteInspectorStamp, onSuccess, onError]);
 
   const handleReplaceStamp = useCallback(() => {
@@ -188,6 +187,108 @@ export function SignatureStampSection({
           </Pressable>
         )}
       </View>
+
+      {/* Confirmation modal (replaces Alert.alert for cross-platform) */}
+      <Modal
+        visible={!!confirmAction}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmAction(null)}
+      >
+        <Pressable
+          onPress={() => setConfirmAction(null)}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 32,
+          }}
+        >
+          <Pressable
+            onPress={() => {}}
+            style={{
+              width: '100%',
+              maxWidth: 320,
+              backgroundColor: COLORS.cream[50],
+              borderRadius: 14,
+              padding: 20,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: 'Rubik-SemiBold',
+                color: COLORS.neutral[800],
+                textAlign: 'right',
+                marginBottom: 8,
+              }}
+            >
+              {confirmAction?.title}
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.neutral[600],
+                textAlign: 'right',
+                marginBottom: 20,
+              }}
+            >
+              {confirmAction?.message}
+            </Text>
+            <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
+              <Pressable
+                onPress={() => {
+                  confirmAction?.onConfirm();
+                  setConfirmAction(null);
+                }}
+                style={{
+                  flex: 1,
+                  height: 40,
+                  borderRadius: 10,
+                  backgroundColor: COLORS.primary[500],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontFamily: 'Rubik-SemiBold',
+                    color: COLORS.white,
+                  }}
+                >
+                  אישור
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setConfirmAction(null)}
+                style={{
+                  flex: 1,
+                  height: 40,
+                  borderRadius: 10,
+                  backgroundColor: COLORS.cream[100],
+                  borderWidth: 1,
+                  borderColor: COLORS.cream[200],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontFamily: 'Rubik-Medium',
+                    color: COLORS.neutral[600],
+                  }}
+                >
+                  ביטול
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }

@@ -15,7 +15,6 @@ import * as Haptics from 'expo-haptics';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type BottomSheetType from '@gorhom/bottom-sheet';
@@ -35,7 +34,7 @@ import { SideMenu } from '@/components/ui/SideMenu';
 
 import type { WizardPrefill } from '@/components/wizard/NewInspectionWizard.types';
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const _AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 import type { ApartmentItem } from '@/components/projects';
 
@@ -161,7 +160,7 @@ function AddReportSheetContent({
   isCreating: boolean;
 }) {
   return (
-    <View style={{ paddingBottom: 32 }}>
+    <View style={{ paddingBottom: 100 }}>
       {/* Header */}
       <View
         style={{
@@ -463,6 +462,10 @@ export default function ApartmentsScreen() {
         reportType: selectedReportType,
         roundNumber: 1,
         reportDate: new Date().toISOString().split('T')[0],
+        projectNameFreetext: info?.projectName ?? null,
+        apartmentLabelFreetext: `דירה ${selectedApartment.number}`,
+        propertyAddress: info?.address ?? null,
+        propertyFloor: selectedApartment.floor ?? null,
       });
 
       sheetRef.current?.close();
@@ -473,14 +476,22 @@ export default function ApartmentsScreen() {
     } finally {
       setIsCreating(false);
     }
-  }, [selectedApartment, profile, selectedReportType, router, showToast]);
+  }, [
+    selectedApartment,
+    profile,
+    selectedReportType,
+    router,
+    showToast,
+    info?.address,
+    info?.projectName,
+  ]);
 
   const closeSheet = useCallback(() => {
     sheetRef.current?.close();
   }, []);
 
   // FAB press — open wizard with project/building prefill
-  const handleFabPress = useCallback(() => {
+  const _handleFabPress = useCallback(() => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -488,12 +499,13 @@ export default function ApartmentsScreen() {
       projectId: projectId ?? undefined,
       projectName: info?.projectName ?? undefined,
       buildingName: info?.buildingName ?? undefined,
+      propertyAddress: info?.address ?? undefined,
     });
     setShowWizard(true);
-  }, [projectId, info]);
+  }, [projectId, info?.projectName, info?.buildingName, info?.address]);
 
   const fabScale = useSharedValue(1);
-  const fabAnimStyle = useAnimatedStyle(() => ({
+  const _fabAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: fabScale.value }],
   }));
 
@@ -604,38 +616,6 @@ export default function ApartmentsScreen() {
           />
         </BottomSheetWrapper>
       )}
-
-      {/* FAB — New Inspection */}
-      <AnimatedPressable
-        onPress={handleFabPress}
-        onPressIn={() => {
-          fabScale.value = withSpring(0.92, { damping: 15, stiffness: 150 });
-        }}
-        onPressOut={() => {
-          fabScale.value = withSpring(1, { damping: 15, stiffness: 150 });
-        }}
-        style={[
-          {
-            position: 'absolute',
-            bottom: 24 + insets.bottom,
-            left: 16,
-            width: 48,
-            height: 48,
-            borderRadius: 24,
-            backgroundColor: COLORS.primary[500],
-            alignItems: 'center',
-            justifyContent: 'center',
-            shadowColor: '#1B7A44',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 16,
-            elevation: 8,
-          },
-          fabAnimStyle,
-        ]}
-      >
-        <Feather name="plus" size={24} color={COLORS.white} />
-      </AnimatedPressable>
 
       {/* New Inspection Wizard */}
       <NewInspectionWizard

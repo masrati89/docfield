@@ -132,7 +132,8 @@
     "addPhoto": "הוסף תמונה",
     "fromLibrary": "מהמאגר",
     "severity": {
-      "critical": "חמור",
+      "critical": "קריטי",
+      "high": "גבוה",
       "medium": "בינוני",
       "low": "קל"
     },

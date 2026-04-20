@@ -8,7 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
-import { COLORS, BORDER_RADIUS } from '@infield/ui';
+import { COLORS, SHADOWS } from '@infield/ui';
 import { SkeletonBlock, EmptyState } from '@/components/ui';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -64,44 +64,66 @@ function ProjectRow({
         }}
         style={[
           {
-            paddingVertical: 11,
+            paddingVertical: 12,
             paddingHorizontal: 16,
             borderBottomWidth: isLast ? 0 : 1,
-            borderBottomColor: COLORS.cream[200],
+            borderBottomColor: COLORS.cream[100],
           },
           animStyle,
         ]}
       >
-        {/* Row 1: dot + name + chevron */}
+        {/* Row 1: name + completion chip + percentage */}
         <View
           style={{
             flexDirection: 'row-reverse',
             alignItems: 'center',
-            marginBottom: 3,
+            gap: 8,
+            marginBottom: 4,
           }}
         >
-          <View
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: 3.5,
-              backgroundColor: isFull ? COLORS.primary[500] : COLORS.gold[500],
-              marginLeft: 6,
-            }}
-          />
           <Text
+            numberOfLines={1}
             style={{
               flex: 1,
-              fontSize: 13,
-              fontWeight: '600',
+              fontSize: 14,
+              fontWeight: '700',
               color: COLORS.neutral[800],
-              fontFamily: 'Rubik-SemiBold',
+              fontFamily: 'Rubik-Bold',
               textAlign: 'right',
+              letterSpacing: -0.15,
             }}
           >
             {project.name}
           </Text>
-          <Feather name="chevron-left" size={14} color={COLORS.neutral[300]} />
+          {isFull && (
+            <Text
+              style={{
+                fontSize: 9,
+                fontWeight: '700',
+                color: COLORS.primary[700],
+                backgroundColor: COLORS.primary[50],
+                borderWidth: 1,
+                borderColor: COLORS.primary[200],
+                borderRadius: 4,
+                paddingHorizontal: 6,
+                paddingVertical: 1,
+                overflow: 'hidden',
+                fontFamily: 'Rubik-Bold',
+              }}
+            >
+              הושלם
+            </Text>
+          )}
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: '700',
+              color: isFull ? COLORS.primary[700] : COLORS.gold[700],
+              fontFamily: 'Inter-Bold',
+            }}
+          >
+            {pct}%
+          </Text>
         </View>
 
         {/* Row 2: address */}
@@ -109,15 +131,16 @@ function ProjectRow({
           style={{
             flexDirection: 'row-reverse',
             alignItems: 'center',
-            gap: 3,
+            gap: 4,
             marginBottom: 7,
           }}
         >
-          <Feather name="map-pin" size={11} color={COLORS.neutral[400]} />
+          <Feather name="map-pin" size={10} color={COLORS.neutral[400]} />
           <Text
+            numberOfLines={1}
             style={{
-              fontSize: 11,
-              color: COLORS.neutral[400],
+              fontSize: 10,
+              color: COLORS.neutral[500],
               fontFamily: 'Rubik-Regular',
             }}
           >
@@ -125,53 +148,47 @@ function ProjectRow({
           </Text>
         </View>
 
-        {/* Row 3: progress bar */}
+        {/* Row 3: progress bar + count */}
         <View
           style={{
             flexDirection: 'row-reverse',
             alignItems: 'center',
-            gap: 8,
+            gap: 10,
           }}
         >
-          <Text
-            style={{
-              fontSize: 10,
-              color: COLORS.neutral[400],
-              fontFamily: 'Rubik-Regular',
-            }}
-          >
-            דירות
-          </Text>
-          <Text
-            style={{
-              fontSize: 10,
-              fontWeight: '600',
-              color: isFull ? COLORS.primary[500] : COLORS.neutral[600],
-              fontFamily: 'Rubik-SemiBold',
-            }}
-          >
-            {project.done}/{project.total}
-          </Text>
           <View
             style={{
               flex: 1,
-              height: 4,
-              borderRadius: 2,
+              height: 5,
               backgroundColor: COLORS.cream[200],
+              borderRadius: 3,
               overflow: 'hidden',
+              direction: 'ltr',
             }}
           >
             <View
               style={{
                 width: `${pct}%`,
                 height: '100%',
-                borderRadius: 2,
+                borderRadius: 3,
                 backgroundColor: isFull
                   ? COLORS.primary[500]
                   : COLORS.gold[500],
               }}
             />
           </View>
+          <Text
+            style={{
+              fontSize: 10,
+              color: COLORS.neutral[500],
+              fontFamily: 'Inter-Regular',
+            }}
+          >
+            <Text style={{ fontWeight: '700', color: COLORS.neutral[700] }}>
+              {project.done}
+            </Text>
+            /{project.total} דירות
+          </Text>
         </View>
       </AnimatedPressable>
     </Animated.View>
@@ -189,13 +206,12 @@ export function ProjectsSection({
   return (
     <View
       style={{
-        marginHorizontal: 16,
-        marginTop: 12,
-        backgroundColor: COLORS.cream[50],
-        borderRadius: BORDER_RADIUS.lg,
+        backgroundColor: '#fff',
+        borderRadius: 14,
         borderWidth: 1,
         borderColor: COLORS.cream[200],
         overflow: 'hidden',
+        ...SHADOWS.sm,
       }}
     >
       {/* Section header */}
@@ -203,24 +219,44 @@ export function ProjectsSection({
         style={{
           flexDirection: 'row-reverse',
           alignItems: 'center',
-          paddingVertical: 10,
+          paddingVertical: 12,
           paddingHorizontal: 16,
-          borderBottomWidth: 1,
-          borderBottomColor: COLORS.cream[200],
         }}
       >
         <Text
           style={{
-            fontSize: 13,
+            fontSize: 15,
             fontWeight: '700',
             color: COLORS.neutral[800],
             fontFamily: 'Rubik-Bold',
-            flex: 1,
-            textAlign: 'right',
+            letterSpacing: -0.2,
           }}
         >
           הפרויקטים שלי
         </Text>
+        {!isLoading && projects.length > 0 && (
+          <View
+            style={{
+              backgroundColor: COLORS.cream[100],
+              paddingHorizontal: 7,
+              paddingVertical: 2,
+              borderRadius: 10,
+              marginRight: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 10,
+                fontWeight: '600',
+                color: COLORS.neutral[500],
+                fontFamily: 'Inter-SemiBold',
+              }}
+            >
+              {projects.length}
+            </Text>
+          </View>
+        )}
+        <View style={{ flex: 1 }} />
         <Pressable
           onPress={onViewAll}
           style={{
@@ -232,16 +268,18 @@ export function ProjectsSection({
           <Text
             style={{
               fontSize: 12,
-              fontWeight: '500',
+              fontWeight: '600',
               color: COLORS.primary[500],
-              fontFamily: 'Rubik-Medium',
+              fontFamily: 'Rubik-SemiBold',
             }}
           >
             עוד
           </Text>
-          <Feather name="chevron-left" size={14} color={COLORS.neutral[300]} />
+          <Feather name="chevron-left" size={14} color={COLORS.primary[500]} />
         </Pressable>
       </View>
+
+      <View style={{ height: 1, backgroundColor: COLORS.cream[200] }} />
 
       {/* Project rows, loading skeleton, or empty state */}
       {isLoading ? (
@@ -250,7 +288,7 @@ export function ProjectsSection({
             <View key={i} style={{ gap: 6 }}>
               <SkeletonBlock width="60%" height={14} borderRadius={4} />
               <SkeletonBlock width="80%" height={10} borderRadius={4} />
-              <SkeletonBlock width="100%" height={4} borderRadius={2} />
+              <SkeletonBlock width="100%" height={5} borderRadius={3} />
             </View>
           ))}
         </View>

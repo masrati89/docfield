@@ -28,6 +28,49 @@ export interface DeliveryReport extends TenantEntity {
   apartmentLabelFreetext?: string;
   reportDate: string;
   completedAt?: string;
+  // PDF infrastructure (migration 026)
+  reportNumber?: string;
+  clientName?: string;
+  clientPhone?: string;
+  clientEmail?: string;
+  clientIdNumber?: string;
+  propertyType?: string;
+  propertyArea?: number;
+  propertyFloor?: number;
+  propertyDescription?: string;
+  reportContent?: Record<string, unknown>;
+  weatherConditions?: string;
+  contractorName?: string;
+  contractorPhone?: string;
+  // Inspector snapshots (migrations 029 + 032)
+  inspectorFullNameSnapshot?: string;
+  inspectorLicenseNumberSnapshot?: string;
+  inspectorProfessionalTitleSnapshot?: string;
+  inspectorEducationSnapshot?: string;
+  inspectorExperienceSnapshot?: string;
+  inspectorCompanyNameSnapshot?: string;
+  inspectorSignatureUrlSnapshot?: string;
+  inspectorStampUrlSnapshot?: string;
+  inspectorPhoneSnapshot?: string;
+  inspectorEmailSnapshot?: string;
+  // Organization snapshots (migration 029)
+  organizationNameSnapshot?: string;
+  organizationLogoUrlSnapshot?: string;
+  organizationLegalNameSnapshot?: string;
+  organizationTaxIdSnapshot?: string;
+  organizationAddressSnapshot?: string;
+  organizationPhoneSnapshot?: string;
+  organizationEmailSnapshot?: string;
+  organizationLegalDisclaimerSnapshot?: string;
+  // Property snapshots (migration 033)
+  propertyProjectName?: string;
+  propertyProjectAddress?: string;
+  propertyBuildingName?: string;
+  propertyApartmentNumber?: string;
+  // BOQ rate snapshots (migration 037)
+  orgBoqBatzamRateSnapshot?: number;
+  orgBoqSupervisionRateSnapshot?: number;
+  orgBoqVatRateSnapshot?: number;
 }
 
 export interface ChecklistResult extends TenantEntity {

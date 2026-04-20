@@ -1,5 +1,11 @@
 export type { BaseEntity, TenantEntity } from './common.types';
-export type { User, UserRole, UserProfession, AuthState } from './auth.types';
+export type {
+  User,
+  UserRole,
+  UserProfession,
+  UserPreferences,
+  AuthState,
+} from './auth.types';
 export type { Organization, OrganizationSettings } from './organization.types';
 export type {
   Project,

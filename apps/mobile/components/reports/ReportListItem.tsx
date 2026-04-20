@@ -69,17 +69,6 @@ export function ReportRow({
           animStyle,
         ]}
       >
-        {/* Status dot */}
-        <View
-          style={{
-            width: 7,
-            height: 7,
-            borderRadius: 3.5,
-            backgroundColor: st.dot,
-            marginEnd: 6,
-          }}
-        />
-
         {/* Content */}
         <View style={{ flex: 1 }}>
           <Text
@@ -175,7 +164,7 @@ export function ReportRow({
             <Text
               style={{
                 fontSize: 10,
-                fontFamily: 'Inter',
+                fontFamily: 'Inter-Regular',
                 fontWeight: '500',
                 color: COLORS.neutral[500],
               }}
@@ -224,7 +213,7 @@ export function GroupHeader({ name, count }: { name: string; count: number }) {
       <Text
         style={{
           fontSize: 10,
-          fontFamily: 'Inter',
+          fontFamily: 'Inter-Regular',
           fontWeight: '500',
           color: COLORS.neutral[400],
         }}

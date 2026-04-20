@@ -5,13 +5,14 @@ import {
   TextInput,
   ScrollView,
   Pressable,
-  Alert,
+  Modal,
   Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
+import { createProjectSchema } from '@infield/shared/src/validation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui';
@@ -51,6 +52,10 @@ export function NewProjectSheet({ onClose, onCreated }: NewProjectSheetProps) {
   const [aptCounts, setAptCounts] = useState<Record<number, number>>({ 0: 1 });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [alertMessage, setAlertMessage] = useState<{
+    title: string;
+    message: string;
+  } | null>(null);
 
   // --- Navigation ---
 
@@ -144,6 +149,21 @@ export function NewProjectSheet({ onClose, onCreated }: NewProjectSheetProps) {
     setIsSaving(true);
     let projectId: string | null = null;
     try {
+      // Zod validation before Supabase insert (security M1)
+      const validation = createProjectSchema.safeParse({
+        name: name.trim(),
+        address: address.trim() || undefined,
+        city: city.trim() || undefined,
+      });
+
+      if (!validation.success) {
+        const firstError =
+          validation.error.errors[0]?.message ?? 'שגיאה בנתונים';
+        setAlertMessage({ title: 'שגיאה', message: firstError });
+        setIsSaving(false);
+        return;
+      }
+
       // 1. Create project
       const { data: newProject, error: projErr } = await supabase
         .from('projects')
@@ -213,7 +233,7 @@ export function NewProjectSheet({ onClose, onCreated }: NewProjectSheetProps) {
         await supabase.from('projects').delete().eq('id', projectId);
       }
       const message = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('שגיאה ביצירת פרויקט', message);
+      setAlertMessage({ title: 'שגיאה ביצירת פרויקט', message });
     } finally {
       setIsSaving(false);
     }
@@ -236,7 +256,12 @@ export function NewProjectSheet({ onClose, onCreated }: NewProjectSheetProps) {
   const isLastStep = step === 'apartments';
 
   return (
-    <View style={{ padding: 20, paddingBottom: 32 }}>
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ padding: 20, paddingBottom: 32 }}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
       {/* Header */}
       <View
         style={{
@@ -362,7 +387,80 @@ export function NewProjectSheet({ onClose, onCreated }: NewProjectSheetProps) {
           size="lg"
         />
       </View>
-    </View>
+
+      {/* Info/error alert modal (replaces Alert.alert for cross-platform) */}
+      <Modal
+        visible={!!alertMessage}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAlertMessage(null)}
+      >
+        <Pressable
+          onPress={() => setAlertMessage(null)}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 32,
+          }}
+        >
+          <Pressable
+            onPress={() => {}}
+            style={{
+              width: '100%',
+              maxWidth: 320,
+              backgroundColor: COLORS.cream[50],
+              borderRadius: 14,
+              padding: 20,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: 'Rubik-SemiBold',
+                color: COLORS.neutral[800],
+                textAlign: 'right',
+                marginBottom: 8,
+              }}
+            >
+              {alertMessage?.title}
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.neutral[600],
+                textAlign: 'right',
+                marginBottom: 20,
+              }}
+            >
+              {alertMessage?.message}
+            </Text>
+            <Pressable
+              onPress={() => setAlertMessage(null)}
+              style={{
+                height: 40,
+                borderRadius: 10,
+                backgroundColor: COLORS.primary[500],
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontFamily: 'Rubik-SemiBold',
+                  color: COLORS.white,
+                }}
+              >
+                הבנתי
+              </Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </ScrollView>
   );
 }
 
@@ -482,10 +580,7 @@ function StepBuildingsContent({
 
       <Text style={[labelStyle, { marginBottom: 8 }]}>שמות הבניינים</Text>
 
-      <ScrollView
-        style={{ maxHeight: 220 }}
-        showsVerticalScrollIndicator={false}
-      >
+      <View>
         {buildings.map((b, i) => (
           <View
             key={i}
@@ -525,7 +620,7 @@ function StepBuildingsContent({
             />
           </View>
         ))}
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -549,10 +644,7 @@ function StepApartmentsContent({
     <View>
       <Text style={labelStyle}>כמה דירות בכל בניין?</Text>
 
-      <ScrollView
-        style={{ maxHeight: 280, marginTop: 8 }}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={{ marginTop: 8 }}>
         {buildings.map((b, i) => {
           const count = aptCounts[i] ?? 1;
           return (
@@ -663,7 +755,7 @@ function StepApartmentsContent({
             </View>
           );
         })}
-      </ScrollView>
+      </View>
 
       {/* Summary */}
       <View

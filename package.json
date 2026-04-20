@@ -45,5 +45,9 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "packageManager": "npm@10.8.0"
+  "packageManager": "npm@10.8.0",
+  "dependencies": {
+    "@expo-google-fonts/inter": "0.4.2",
+    "react-native-draggable-flatlist": "4.0.3"
+  }
 }

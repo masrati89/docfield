@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Modal, Pressable } from 'react-native';
+import { Modal, Pressable, View, Text } from 'react-native';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -7,7 +7,7 @@ import Animated, {
   SlideOutDown,
 } from 'react-native-reanimated';
 
-import { COLORS } from '@infield/ui';
+import { COLORS, SHADOWS } from '@infield/ui';
 import { useWizardState } from './useWizardState';
 import { WizardShell } from './WizardShell';
 
@@ -28,8 +28,9 @@ export function NewInspectionWizard({
     isLastStep,
     canGoNext,
     isStepPrefilled,
-    handleSkipProject,
     handleSubmit,
+    submitError,
+    clearSubmitError,
   } = useWizardState(prefill, onClose, visible);
 
   const handleClose = useCallback(() => {
@@ -65,7 +66,7 @@ export function NewInspectionWizard({
             backgroundColor: COLORS.cream[50],
             borderTopLeftRadius: 16,
             borderTopRightRadius: 16,
-            maxHeight: '85%',
+            maxHeight: '94%',
             minHeight: 400,
             shadowColor: 'rgb(60,54,42)',
             shadowOffset: { width: 0, height: -4 },
@@ -101,12 +102,88 @@ export function NewInspectionWizard({
             isLastStep={isLastStep}
             canGoNext={canGoNext}
             isStepPrefilled={isStepPrefilled}
-            onSkipProject={handleSkipProject}
             onSubmit={handleSubmit}
             onClose={handleClose}
           />
         </Animated.View>
       </Animated.View>
+
+      {/* Submit error modal (cross-platform replacement for Alert.alert) */}
+      <Modal
+        visible={!!submitError}
+        transparent
+        animationType="fade"
+        onRequestClose={clearSubmitError}
+      >
+        <Pressable
+          onPress={clearSubmitError}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 32,
+          }}
+        >
+          <Pressable
+            onPress={() => {}}
+            style={{
+              width: '100%',
+              maxWidth: 320,
+              backgroundColor: COLORS.cream[50],
+              borderRadius: 14,
+              padding: 20,
+              ...SHADOWS.lg,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: 'Rubik-SemiBold',
+                color: COLORS.neutral[800],
+                textAlign: 'right',
+                marginBottom: 8,
+              }}
+            >
+              שגיאה ביצירת הדוח
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.neutral[600],
+                textAlign: 'right',
+                marginBottom: 20,
+              }}
+            >
+              {submitError}
+            </Text>
+            <View style={{ flexDirection: 'row-reverse' }}>
+              <Pressable
+                onPress={clearSubmitError}
+                style={{
+                  flex: 1,
+                  height: 40,
+                  borderRadius: 10,
+                  backgroundColor: COLORS.primary[500],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontFamily: 'Rubik-SemiBold',
+                    color: COLORS.white,
+                  }}
+                >
+                  הבנתי
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Modal>
   );
 }

@@ -23,6 +23,11 @@ export function StepClientDetails({ state, dispatch, readOnly }: StepProps) {
     [dispatch]
   );
 
+  const handleIdChange = useCallback(
+    (text: string) => dispatch({ type: 'SET_CLIENT_ID_NUMBER', payload: text }),
+    [dispatch]
+  );
+
   return (
     <View style={{ paddingHorizontal: 20, paddingTop: 8 }}>
       <Text
@@ -38,18 +43,18 @@ export function StepClientDetails({ state, dispatch, readOnly }: StepProps) {
         פרטי המזמין
       </Text>
 
-      {/* Name (required) */}
+      {/* Name */}
       <View style={{ marginBottom: 16 }}>
         <Text
           style={{
             fontSize: 13,
             fontFamily: 'Rubik-Medium',
-            color: COLORS.neutral[700],
+            color: COLORS.neutral[500],
             textAlign: 'right',
             marginBottom: 6,
           }}
         >
-          שם מלא *
+          שם מלא
         </Text>
         <TextInput
           value={state.tenantName}
@@ -63,10 +68,9 @@ export function StepClientDetails({ state, dispatch, readOnly }: StepProps) {
             height: 46,
             borderRadius: 12,
             borderWidth: 1.5,
-            borderColor:
-              state.tenantName.trim().length >= 2
-                ? COLORS.primary[500]
-                : COLORS.cream[200],
+            borderColor: state.tenantName.trim()
+              ? COLORS.primary[500]
+              : COLORS.cream[200],
             backgroundColor: COLORS.cream[50],
             paddingHorizontal: 14,
             fontSize: 16,
@@ -77,7 +81,47 @@ export function StepClientDetails({ state, dispatch, readOnly }: StepProps) {
         />
       </View>
 
-      {/* Phone (optional) */}
+      {/* ID number */}
+      <View style={{ marginBottom: 16 }}>
+        <Text
+          style={{
+            fontSize: 13,
+            fontFamily: 'Rubik-Medium',
+            color: COLORS.neutral[500],
+            textAlign: 'right',
+            marginBottom: 6,
+          }}
+        >
+          ת.ז.
+        </Text>
+        <TextInput
+          value={state.clientIdNumber}
+          onChangeText={handleIdChange}
+          editable={!readOnly}
+          placeholder="מספר תעודת זהות"
+          placeholderTextColor={COLORS.neutral[300]}
+          keyboardType="number-pad"
+          autoComplete="off"
+          spellCheck={false}
+          style={{
+            height: 46,
+            borderRadius: 12,
+            borderWidth: 1.5,
+            borderColor: state.clientIdNumber.trim()
+              ? COLORS.primary[500]
+              : COLORS.cream[200],
+            backgroundColor: COLORS.cream[50],
+            paddingHorizontal: 14,
+            fontSize: 16,
+            fontFamily: 'Rubik-Regular',
+            color: COLORS.neutral[800],
+            textAlign: 'left',
+            direction: 'ltr',
+          }}
+        />
+      </View>
+
+      {/* Phone */}
       <View style={{ marginBottom: 16 }}>
         <Text
           style={{
@@ -117,7 +161,7 @@ export function StepClientDetails({ state, dispatch, readOnly }: StepProps) {
         />
       </View>
 
-      {/* Email (optional) */}
+      {/* Email */}
       <View style={{ marginBottom: 16 }}>
         <Text
           style={{

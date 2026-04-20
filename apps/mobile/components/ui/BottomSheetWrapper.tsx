@@ -71,7 +71,7 @@ export const BottomSheetWrapper = forwardRef<
       <BottomSheetView style={{ flex: 1 }}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           {children}
         </KeyboardAvoidingView>

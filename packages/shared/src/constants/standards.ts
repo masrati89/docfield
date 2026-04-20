@@ -1,5 +1,7 @@
 // Israeli construction standards reference data
-// Used in the add-defect screen for standard selection
+// Used in the add-defect screen for standard selection (ComboField suggestions).
+// This is NOT the full registry — the DB table israeli_standards has ~105 entries.
+// Inspectors can always type a standard not in this list (allowCustom).
 
 export interface StandardSection {
   code: string;
@@ -16,7 +18,7 @@ export interface IsraeliStandard {
 export const ISRAELI_STANDARDS: IsraeliStandard[] = [
   {
     id: '1205.1',
-    name: 'ת"י 1205.1 — צנרת מים',
+    name: 'ת"י 1205.1 — מתקני תברואה: מערכות אספקת מים',
     sections: [
       {
         code: '3.1',
@@ -37,7 +39,7 @@ export const ISRAELI_STANDARDS: IsraeliStandard[] = [
   },
   {
     id: '1555',
-    name: 'ת"י 1555 — ריצוף וחיפוי',
+    name: 'ת"י 1555 — אריחי קרמיקה לריצוף ולחיפוי בבניינים',
     sections: [
       {
         code: '2.3.1',
@@ -53,7 +55,23 @@ export const ISRAELI_STANDARDS: IsraeliStandard[] = [
   },
   {
     id: '23',
-    name: 'ת"י 23 — חלונות ודלתות',
+    name: 'ת"י 23 — מכללי דלתות עץ',
+    sections: [
+      {
+        code: '5.1',
+        title: 'פעולת דלת',
+        desc: 'דלת תיפתח ותיסגר בחופשיות ללא חיכוך או תקיעה',
+      },
+      {
+        code: '6.1',
+        title: 'מלבני דלת',
+        desc: 'מלבני הדלת יהיו ישרים ומיושרים, ללא עיוותים',
+      },
+    ],
+  },
+  {
+    id: '1068',
+    name: 'ת"י 1068 — חלונות',
     sections: [
       {
         code: '5.4',
@@ -62,8 +80,8 @@ export const ISRAELI_STANDARDS: IsraeliStandard[] = [
       },
       {
         code: '6.2',
-        title: 'תריסים — תפעול',
-        desc: 'תריסים חשמליים ו/או ידניים יפעלו בצורה חלקה ללא תקיעה',
+        title: 'אטימות לרוח ומים',
+        desc: 'חלונות יעמדו בדרישות האטימות לחדירת רוח ומים',
       },
     ],
   },
@@ -79,8 +97,8 @@ export const ISRAELI_STANDARDS: IsraeliStandard[] = [
     ],
   },
   {
-    id: '158',
-    name: 'ת"י 158 — איטום',
+    id: '2752',
+    name: 'ת"י 2752 — איטום מבנים מפני חדירת מים ולחות',
     sections: [
       {
         code: '4.2',
@@ -90,18 +108,106 @@ export const ISRAELI_STANDARDS: IsraeliStandard[] = [
     ],
   },
   {
-    id: '61',
-    name: 'ת"י 61 — חשמל',
+    id: '1142',
+    name: 'ת"י 1142 — מעקים ומסעדים',
+    sections: [
+      {
+        code: '3.1',
+        title: 'גובה מעקה',
+        desc: 'גובה מעקה מינימלי 105 ס"מ ממפלס הרצפה המוגמרת',
+      },
+      {
+        code: '3.3',
+        title: 'מרווחי מעקה',
+        desc: 'המרווח בין פסיגי המעקה לא יעלה על 10 ס"מ',
+      },
+    ],
+  },
+  {
+    id: '789',
+    name: 'ת"י 789 — סטיות מותרות בעבודות בנייה',
+    sections: [
+      {
+        code: '3.1',
+        title: 'סטיית מפלס',
+        desc: 'סטייה מותרת במפלס רצפה — עד 5 מ"מ ל-2 מטר',
+      },
+    ],
+  },
+  {
+    id: '1509',
+    name: 'ת"י 1509 — תריסים',
+    sections: [
+      {
+        code: '4.1',
+        title: 'תפעול תריסים',
+        desc: 'תריסים חשמליים ו/או ידניים יפעלו בצורה חלקה ללא תקיעה',
+      },
+    ],
+  },
+  {
+    id: '1922',
+    name: 'ת"י 1922 — מערכות צבע בבניינים',
+    sections: [
+      {
+        code: '3.1',
+        title: 'איכות צביעה',
+        desc: 'צביעה תהיה אחידה ללא כתמים, טפטופים או הבדלי גוון',
+      },
+    ],
+  },
+  {
+    id: '1045',
+    name: 'ת"י 1045 — בידוד תרמי של בניינים',
     sections: [
       {
         code: '2.1',
-        title: 'שקעים ומפסקים',
-        desc: 'כל שקע ומפסק יותקנו באופן תקין, במפלס ישר ובחיבור מאובטח',
+        title: 'רציפות בידוד',
+        desc: 'שכבת הבידוד התרמי תהיה רציפה ללא גשרי קור',
       },
+    ],
+  },
+  {
+    id: '1004',
+    name: 'ת"י 1004 — אקוסטיקה בבנייני מגורים',
+    sections: [
+      {
+        code: '2.1',
+        title: 'בידוד קול בין דירות',
+        desc: 'בידוד אקוסטי של קירות ותקרות בין דירות יעמוד בדרישות התקן',
+      },
+    ],
+  },
+  {
+    id: '158',
+    name: 'ת"י 158 — מערכות גפ"מ',
+    sections: [
       {
         code: '3.1',
-        title: 'הארקה',
-        desc: 'כל מערכת החשמל תהיה מוארקת בהתאם לתקן',
+        title: 'התקנת צנרת גז',
+        desc: 'צנרת גז תותקן בהתאם לדרישות התקן ותעבור בדיקת אטימות',
+      },
+    ],
+  },
+  {
+    id: '1918',
+    name: 'ת"י 1918 — נגישות הסביבה הבנויה',
+    sections: [
+      {
+        code: '3.1',
+        title: 'נגישות כניסה',
+        desc: 'הכניסה לבניין תהיה נגישה לאנשים עם מוגבלות',
+      },
+    ],
+  },
+  {
+    id: '938',
+    name: 'ת"י 938 — לוחות זכוכית שטוחה לשימוש בבניינים',
+    sections: [
+      {
+        code: '4.1',
+        title: 'זכוכית בטיחות',
+        desc: 'במקומות שנדרשת זכוכית בטיחות — תותקן בהתאם לתקן',
       },
     ],
   },

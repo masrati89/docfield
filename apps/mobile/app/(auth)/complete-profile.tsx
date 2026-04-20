@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import * as Crypto from 'expo-crypto';
 import {
   View,
   Text,
@@ -137,7 +138,7 @@ export default function CompleteProfileScreen() {
 
     try {
       // Step 1: Create organization
-      const newOrgId = crypto.randomUUID();
+      const newOrgId = Crypto.randomUUID();
       const { error: orgError } = await supabase
         .from('organizations')
         .insert({ id: newOrgId, name: orgName.trim() });

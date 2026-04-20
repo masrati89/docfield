@@ -1,6 +1,8 @@
 export { FormField } from './FormField';
 export { ComboField } from './ComboField';
 export { CategoryPicker } from './CategoryPicker';
+export { CategoryChips } from './CategoryChips';
 export { CostSection } from './CostSection';
 export { PhotoGrid } from './PhotoGrid';
 export { DefectLibraryCard } from './DefectLibraryCard';
+export { AppendixSection } from './AppendixSection';

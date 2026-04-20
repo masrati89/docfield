@@ -17,6 +17,8 @@ export interface ReportInfo {
   apartmentNumber: string;
   address: string | null;
   floor: number | null;
+  checklistTemplateId: string | null;
+  noChecklist: boolean;
 }
 
 export type DefectSource = 'checklist' | 'manual' | 'library' | 'inherited';
@@ -37,6 +39,7 @@ export interface DefectItem {
   photoCount: number;
   source: DefectSource;
   reviewStatus: ReviewStatus | null;
+  cost: number | null;
 }
 
 export interface ReportDetail {
@@ -58,6 +61,7 @@ async function fetchReport(id: string): Promise<ReportDetail> {
     .from('delivery_reports')
     .select(
       `id, report_type, status, tenant_name, report_date, notes, property_floor,
+       checklist_template_id, no_checklist,
        apartments(number, buildings(name, projects(name, address)))`
     )
     .eq('id', id)
@@ -85,13 +89,16 @@ async function fetchReport(id: string): Promise<ReportDetail> {
     apartmentNumber: apt?.number ?? '',
     address: apt?.buildings?.projects?.address ?? null,
     floor: (reportData.property_floor as number | null) ?? null,
+    checklistTemplateId:
+      (reportData.checklist_template_id as string | null) ?? null,
+    noChecklist: (reportData.no_checklist as boolean) ?? false,
   };
 
   // Fetch defects with photo count
   const { data: defectsData, error: defectsError } = await supabase
     .from('defects')
     .select(
-      'id, description, room, category, severity, status, standard_ref, source, review_status, defect_photos(id, caption)'
+      'id, description, room, category, severity, status, standard_ref, source, review_status, cost, defect_photos(id, caption)'
     )
     .eq('delivery_report_id', id)
     .order('sort_order')
@@ -115,6 +122,7 @@ async function fetchReport(id: string): Promise<ReportDetail> {
         photoCount: photos.length,
         source: ((d.source as DefectSource) ?? 'manual') as DefectSource,
         reviewStatus: (d.review_status as ReviewStatus | null) ?? null,
+        cost: (d.cost as number | null) ?? null,
       };
     }
   );

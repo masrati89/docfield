@@ -7,8 +7,15 @@ export interface Organization extends BaseEntity {
   settings: OrganizationSettings;
 }
 
+export interface BoqRates {
+  batzam: number;
+  supervision: number;
+  vat: number;
+}
+
 export interface OrganizationSettings {
   defaultReportType: ReportType;
   defaultLanguage: 'he' | 'en';
   pdfBrandingEnabled: boolean;
+  boqRates?: BoqRates;
 }

@@ -1,46 +1,83 @@
-import { useCallback } from 'react';
-import { Alert } from 'react-native';
+import { useCallback, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
 import type { ProjectItem } from '@/hooks/useProjects';
 
-export function useDeleteProject(projects: ProjectItem[], refetch: () => void) {
+// --- Types ---
+
+interface PendingAction {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  destructive?: boolean;
+  onConfirm: () => void;
+}
+
+interface UseDeleteProjectReturn {
+  handleDeleteProject: (projectId: string) => void;
+  pendingAction: PendingAction | null;
+  dismissAction: () => void;
+  errorMessage: string | null;
+  clearError: () => void;
+}
+
+// --- Hook ---
+
+export function useDeleteProject(
+  projects: ProjectItem[],
+  refetch: () => void
+): UseDeleteProjectReturn {
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(
+    null
+  );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const dismissAction = useCallback(() => setPendingAction(null), []);
+  const clearError = useCallback(() => setErrorMessage(null), []);
+
   const handleDeleteProject = useCallback(
     (projectId: string) => {
       const project = projects.find((p) => p.id === projectId);
       if (!project) return;
 
       // First confirmation
-      Alert.alert(
-        'מחיקת פרויקט',
-        `למחוק את הפרויקט "${project.name}"?\nכל הבניינים, הדירות והדוחות שמשויכים לפרויקט זה יימחקו לצמיתות.`,
-        [
-          { text: 'ביטול', style: 'cancel' },
-          {
-            text: 'מחק',
-            style: 'destructive',
-            onPress: () => {
-              // Second confirmation
-              Alert.alert('אישור סופי', 'פעולה זו בלתי הפיכה. האם אתה בטוח?', [
-                { text: 'ביטול', style: 'cancel' },
-                {
-                  text: 'מחק לצמיתות',
-                  style: 'destructive',
-                  onPress: () => deleteProject(projectId, refetch),
-                },
-              ]);
+      setPendingAction({
+        title: 'מחיקת פרויקט',
+        message: `למחוק את הפרויקט "${project.name}"?\nכל הבניינים, הדירות והדוחות שמשויכים לפרויקט זה יימחקו לצמיתות.`,
+        confirmLabel: 'מחק',
+        destructive: true,
+        onConfirm: () => {
+          // Second confirmation
+          setPendingAction({
+            title: 'אישור סופי',
+            message: 'פעולה זו בלתי הפיכה. האם אתה בטוח?',
+            confirmLabel: 'מחק לצמיתות',
+            destructive: true,
+            onConfirm: async () => {
+              setPendingAction(null);
+              await deleteProject(projectId, refetch, setErrorMessage);
             },
-          },
-        ]
-      );
+          });
+        },
+      });
     },
     [projects, refetch]
   );
 
-  return handleDeleteProject;
+  return {
+    handleDeleteProject,
+    pendingAction,
+    dismissAction,
+    errorMessage,
+    clearError,
+  };
 }
 
-async function deleteProject(projectId: string, refetch: () => void) {
+async function deleteProject(
+  projectId: string,
+  refetch: () => void,
+  setErrorMessage: (msg: string | null) => void
+) {
   try {
     // 1. Get all buildings for this project
     const { data: buildings } = await supabase
@@ -152,6 +189,6 @@ async function deleteProject(projectId: string, refetch: () => void) {
 
     refetch();
   } catch {
-    Alert.alert('שגיאה', 'לא הצלחנו למחוק את הפרויקט. נסה שוב.');
+    setErrorMessage('לא הצלחנו למחוק את הפרויקט. נסה שוב.');
   }
 }

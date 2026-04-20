@@ -13,6 +13,12 @@ export type UserProfession =
   | 'building_technician'
   | 'site_manager';
 
+export interface UserPreferences {
+  defaultTemplateDelivery?: string;
+  defaultTemplateBedekBait?: string;
+  notificationsEnabled?: boolean;
+}
+
 export interface User extends TenantEntity {
   email: string;
   fullName: string;
@@ -25,6 +31,7 @@ export interface User extends TenantEntity {
   avatarUrl?: string;
   provider: AuthProvider;
   isActive: boolean;
+  preferences?: UserPreferences;
 }
 
 export interface AuthState {

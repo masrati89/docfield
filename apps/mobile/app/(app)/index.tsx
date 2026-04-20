@@ -7,14 +7,20 @@ import { COLORS } from '@infield/ui';
 import { useAuth } from '@/contexts/AuthContext';
 import { useReports } from '@/hooks/useReports';
 import { useProjects } from '@/hooks/useProjects';
+import { useSideMenu } from '@/hooks/useSideMenu';
 import { NewInspectionWizard } from '@/components/wizard';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { NotificationsPanel } from '@/components/ui/NotificationsPanel';
+import { SideMenu } from '@/components/ui/SideMenu';
 
 import {
   HomeHeader,
+  ActionCard,
+  ProgressCard,
   StatsStrip,
   ReportsSection,
   ProjectsSection,
+  ToolGrid,
 } from '@/components/home';
 
 // --- Types ---
@@ -61,6 +67,8 @@ export default function HomeScreen() {
   const { profile } = useAuth();
   const router = useRouter();
   const [showNewInspection, setShowNewInspection] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const { isOpen: menuOpen, open: openMenu, close: closeMenu } = useSideMenu();
 
   const {
     reports: allReports,
@@ -93,12 +101,27 @@ export default function HomeScreen() {
     [allReports]
   );
 
-  const completedCount = useMemo(
-    () =>
-      allReports.filter((r) => r.status === 'completed' || r.status === 'sent')
-        .length,
-    [allReports]
-  );
+  const completedThisMonth = useMemo(() => {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    return allReports.filter(
+      (r) =>
+        (r.status === 'completed' || r.status === 'sent') &&
+        new Date(r.updatedAt) >= monthStart
+    ).length;
+  }, [allReports]);
+
+  // Overall progress across all active projects
+  const { doneUnits, totalUnits } = useMemo(() => {
+    const activeProjects = allProjects.filter((p) => p.status === 'active');
+    return {
+      doneUnits: activeProjects.reduce((sum, p) => sum + p.completedApts, 0),
+      totalUnits: activeProjects.reduce(
+        (sum, p) => sum + (p.totalApts || 0),
+        0
+      ),
+    };
+  }, [allProjects]);
 
   const reports: ReportRow[] = useMemo(
     () =>
@@ -138,11 +161,11 @@ export default function HomeScreen() {
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: COLORS.cream[50] }}>
-      <StatusBar style="dark" />
+    <View style={{ flex: 1, backgroundColor: COLORS.cream[100] }}>
+      <StatusBar style="light" />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={bothFailed ? { flex: 1 } : { paddingBottom: 20 }}
+        contentContainerStyle={bothFailed ? { flex: 1 } : { paddingBottom: 88 }}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -152,7 +175,12 @@ export default function HomeScreen() {
           />
         }
       >
-        <HomeHeader userName={userName} onNewInspection={handleNewInspection} />
+        {/* Gradient header */}
+        <HomeHeader
+          userName={userName}
+          onBell={() => setNotificationsOpen(true)}
+          onMenu={openMenu}
+        />
 
         {bothFailed ? (
           <EmptyState
@@ -164,24 +192,30 @@ export default function HomeScreen() {
           />
         ) : (
           <>
-            {/* Separator */}
+            {/* Action card + stats */}
             <View
-              style={{
-                height: 1,
-                backgroundColor: COLORS.cream[200],
-                marginHorizontal: 16,
-                marginTop: 12,
-              }}
-            />
+              style={{ padding: 14, paddingHorizontal: 16, paddingBottom: 0 }}
+            >
+              <ActionCard onPress={handleNewInspection} />
+              <StatsStrip
+                draftsCount={draftsCount}
+                completedThisMonth={completedThisMonth}
+                isLoading={isLoading}
+              />
+            </View>
 
-            <StatsStrip
-              draftsCount={draftsCount}
-              completedCount={completedCount}
-              isLoading={isLoading}
-            />
+            {/* Progress card */}
+            <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+              <ProgressCard
+                doneUnits={doneUnits}
+                totalUnits={totalUnits}
+                isLoading={isLoading}
+              />
+            </View>
 
-            {reportsError && !reportsLoading ? (
-              <View style={{ marginHorizontal: 16, marginTop: 16 }}>
+            {/* Reports section */}
+            <View style={{ marginHorizontal: 16, marginTop: 14 }}>
+              {reportsError && !reportsLoading ? (
                 <EmptyState
                   icon="alert-circle"
                   title="שגיאה בטעינת דוחות"
@@ -189,18 +223,19 @@ export default function HomeScreen() {
                   ctaLabel="נסה שוב"
                   onCta={refetchReports}
                 />
-              </View>
-            ) : (
-              <ReportsSection
-                reports={reports}
-                isLoading={isLoading}
-                onViewAll={() => router.push('/(app)/reports')}
-                onReportPress={(id) => router.push(`/(app)/reports/${id}`)}
-              />
-            )}
+              ) : (
+                <ReportsSection
+                  reports={reports}
+                  isLoading={isLoading}
+                  onViewAll={() => router.push('/(app)/reports')}
+                  onReportPress={(id) => router.push(`/(app)/reports/${id}`)}
+                />
+              )}
+            </View>
 
-            {projectsError && !projectsLoading ? (
-              <View style={{ marginHorizontal: 16, marginTop: 16 }}>
+            {/* Projects section */}
+            <View style={{ marginHorizontal: 16, marginTop: 12 }}>
+              {projectsError && !projectsLoading ? (
                 <EmptyState
                   icon="alert-circle"
                   title="שגיאה בטעינת פרויקטים"
@@ -208,22 +243,29 @@ export default function HomeScreen() {
                   ctaLabel="נסה שוב"
                   onCta={refetchProjects}
                 />
-              </View>
-            ) : (
-              <ProjectsSection
-                projects={projects}
-                isLoading={isLoading}
-                onViewAll={() => router.push('/(app)/projects')}
-                onProjectPress={(id) => {
-                  const project = projects.find((p) => p.id === id);
-                  if (project && project.buildingsCount <= 1) {
-                    router.push(`/(app)/projects/${id}/apartments`);
-                  } else {
-                    router.push(`/(app)/projects/${id}/buildings`);
-                  }
-                }}
-              />
-            )}
+              ) : (
+                <ProjectsSection
+                  projects={projects}
+                  isLoading={isLoading}
+                  onViewAll={() => router.push('/(app)/projects')}
+                  onProjectPress={(id) => {
+                    const project = projects.find((p) => p.id === id);
+                    if (project && project.buildingsCount <= 1) {
+                      router.push(`/(app)/projects/${id}/apartments`);
+                    } else {
+                      router.push(`/(app)/projects/${id}/buildings`);
+                    }
+                  }}
+                />
+              )}
+            </View>
+
+            {/* Tools grid */}
+            <View style={{ marginHorizontal: 16 }}>
+              <ToolGrid />
+            </View>
+
+            <View style={{ height: 20 }} />
           </>
         )}
       </ScrollView>
@@ -231,6 +273,12 @@ export default function HomeScreen() {
       <NewInspectionWizard
         visible={showNewInspection}
         onClose={() => setShowNewInspection(false)}
+      />
+
+      <SideMenu visible={menuOpen} onClose={closeMenu} />
+      <NotificationsPanel
+        visible={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
       />
     </View>
   );

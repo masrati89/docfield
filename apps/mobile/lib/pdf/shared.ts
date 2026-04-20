@@ -16,26 +16,60 @@ export const PDF = {
   amber: '#92600a',
 } as const;
 
+export function formatDate(isoOrRaw: string): string {
+  if (!isoOrRaw) return '';
+  const d = new Date(isoOrRaw);
+  if (isNaN(d.getTime())) return isoOrRaw;
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
 export function baseStyles(): string {
   return `
     @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap');
+    @page {
+      size: A4;
+      margin: 0;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Rubik', 'Heebo', 'Assistant', system-ui, sans-serif;
       direction: rtl;
       color: ${PDF.md};
-      font-size: 9px;
+      font-size: 12px;
       line-height: 1.5;
       background: white;
     }
     .page {
-      width: 100%;
-      min-height: 100vh;
-      padding: 20px 24px;
+      width: 210mm;
+      min-height: 297mm;
+      padding: 15mm 18mm;
       page-break-after: always;
       position: relative;
+      overflow: hidden;
     }
     .page:last-child { page-break-after: auto; }
+    @media screen {
+      body { background: #c8c8c8; padding: 20px 0; }
+      .page {
+        background: white;
+        margin: 20px auto;
+        box-shadow: 0 3px 16px rgba(0,0,0,0.2);
+        border-radius: 2px;
+      }
+    }
+    @media print {
+      body { background: white; }
+      .page {
+        width: 100%;
+        min-height: 297mm;
+        margin: 0;
+        box-shadow: none;
+        border-radius: 0;
+      }
+    }
   `;
 }
 
@@ -60,9 +94,9 @@ export function watermarkStyle(isDraft: boolean): string {
 
 export function logoHtml(logoUrl?: string): string {
   if (logoUrl) {
-    return `<img src="${logoUrl}" style="width:40px;height:16px;object-fit:contain;border-radius:2px;" />`;
+    return `<img src="${escapeAttr(logoUrl)}" style="width:40px;height:16px;object-fit:contain;border-radius:2px;" />`;
   }
-  return `<div style="width:40px;height:16px;border:1px solid ${PDF.bdrLt};border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:6px;color:${PDF.vlt};">LOGO</div>`;
+  return '';
 }
 
 export function footerHtml(
@@ -72,7 +106,7 @@ export function footerHtml(
   logoUrl?: string
 ): string {
   return `
-    <div style="margin-top:auto;padding-top:6px;border-top:1px solid ${PDF.bdr};display:flex;justify-content:space-between;align-items:center;font-size:7px;color:${PDF.vlt};">
+    <div style="margin-top:auto;padding-top:8px;border-top:1px solid ${PDF.bdr};display:flex;justify-content:space-between;align-items:center;font-size:10px;color:${PDF.vlt};">
       ${logoHtml(logoUrl)}
       <span>\u05E2\u05DE\u05D5\u05D3 ${pageNum}</span>
       <span>${title} \u2014 ${date}</span>
@@ -81,17 +115,17 @@ export function footerHtml(
 }
 
 export function sectionTitle(text: string): string {
-  return `<div style="font-size:10px;font-weight:700;color:${PDF.dk};padding:4px 0 2px;border-bottom:1px solid ${PDF.bdr};margin-top:8px;margin-bottom:4px;">${text}</div>`;
+  return `<div style="font-size:13px;font-weight:700;color:${PDF.dk};padding:4px 0 2px;border-bottom:1px solid ${PDF.bdr};margin-top:8px;margin-bottom:4px;">${text}</div>`;
 }
 
 export function subSectionTitle(text: string): string {
-  return `<div style="font-size:10px;font-weight:700;color:${PDF.accent};padding:4px 8px 3px;margin:6px 0 3px;background:${PDF.accentLt};border-right:3px solid ${PDF.accent};border-radius:0 2px 2px 0;">${text}</div>`;
+  return `<div style="font-size:13px;font-weight:700;color:${PDF.accent};padding:4px 8px 3px;margin:6px 0 5px;background:${PDF.accentLt};border-right:3px solid ${PDF.accent};border-radius:0 2px 2px 0;">${text}</div>`;
 }
 
 export function miniHeader(text: string, logoUrl?: string): string {
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <div style="font-size:8px;font-weight:600;color:${PDF.dk};">${text}</div>
+      <div style="font-size:10px;font-weight:600;color:${PDF.dk};">${text}</div>
       ${logoHtml(logoUrl)}
     </div>
   `;
@@ -102,7 +136,7 @@ export function detailRow(label: string, value: string): string {
 }
 
 export function detailBox(rows: string): string {
-  return `<div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:8px;line-height:1.8;">${rows}</div>`;
+  return `<div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:10px;line-height:1.8;">${rows}</div>`;
 }
 
 /**
@@ -112,7 +146,7 @@ export function detailBox(rows: string): string {
  */
 export function photoHtml(url?: string): string {
   if (url) {
-    return `<img src="${url}" style="width:56px;height:42px;border-radius:2px;object-fit:cover;border:1px solid ${PDF.bdrLt};" />`;
+    return `<img src="${escapeAttr(url)}" style="width:56px;height:42px;border-radius:2px;object-fit:cover;border:1px solid ${PDF.bdrLt};" />`;
   }
   return `<div style="width:56px;height:42px;border-radius:2px;background:${PDF.bdrLt};display:flex;align-items:center;justify-content:center;border:1px solid ${PDF.bdrLt};flex-shrink:0;">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${PDF.bdr}" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
@@ -126,15 +160,15 @@ export function signatureBoxHtml(
   imageUrl?: string
 ): string {
   const sigContent = imageUrl
-    ? `<img src="${imageUrl}" style="max-height:28px;max-width:100%;object-fit:contain;" />`
-    : `<span style="font-size:7px;color:${PDF.vlt};font-style:italic;">\u05D7\u05EA\u05D9\u05DE\u05D4</span>`;
+    ? `<img src="${escapeAttr(imageUrl)}" style="max-height:36px;max-width:100%;object-fit:contain;" />`
+    : `<span style="font-size:9px;color:${PDF.vlt};font-style:italic;">\u05D7\u05EA\u05D9\u05DE\u05D4</span>`;
 
   return `
     <div style="flex:1;text-align:center;">
-      <div style="font-size:7.5px;color:${PDF.lt};margin-bottom:3px;">${label}</div>
-      <div style="height:34px;border:1px solid ${PDF.bdr};border-radius:2px;display:flex;align-items:center;justify-content:center;">${sigContent}</div>
-      <div style="font-size:8px;color:${PDF.dk};margin-top:3px;font-weight:600;">${name}</div>
-      <div style="font-size:7px;color:${PDF.lt};">\u05EA\u05D0\u05E8\u05D9\u05DA: ${date}</div>
+      <div style="font-size:10px;color:${PDF.lt};margin-bottom:3px;">${label}</div>
+      <div style="height:42px;border:1px solid ${PDF.bdr};border-radius:2px;display:flex;align-items:center;justify-content:center;">${sigContent}</div>
+      <div style="font-size:10px;color:${PDF.dk};margin-top:3px;font-weight:600;">${name}</div>
+      <div style="font-size:9px;color:${PDF.lt};">\u05EA\u05D0\u05E8\u05D9\u05DA: ${date}</div>
     </div>
   `;
 }
@@ -144,7 +178,21 @@ export function escapeHtml(str: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+/**
+ * Escape a string for safe interpolation inside an HTML attribute value.
+ * Prevents XSS via crafted URLs (e.g. logo_url, photo URLs, signature URLs).
+ */
+export function escapeAttr(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 export function formatCurrency(amount: number): string {
@@ -153,15 +201,15 @@ export function formatCurrency(amount: number): string {
 
 export function declarationHtml(text: string): string {
   return `
-    <div style="padding:8px 10px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:8px;line-height:1.8;white-space:pre-wrap;">${escapeHtml(text)}</div>
+    <div style="padding:8px 10px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:10px;line-height:1.8;white-space:pre-wrap;">${escapeHtml(text)}</div>
   `;
 }
 
 export function photoWithCaptionHtml(url: string, caption?: string): string {
   return `
     <div style="text-align:center;flex-shrink:0;">
-      <img src="${url}" style="width:56px;height:42px;border-radius:2px;object-fit:cover;border:1px solid ${PDF.bdrLt};" />
-      ${caption ? `<div style="font-size:6px;color:${PDF.lt};margin-top:1px;max-width:56px;line-height:1.3;word-break:break-word;">${escapeHtml(caption)}</div>` : ''}
+      <img src="${escapeAttr(url)}" style="width:56px;height:42px;border-radius:2px;object-fit:cover;border:1px solid ${PDF.bdrLt};" />
+      ${caption ? `<div style="font-size:8px;color:${PDF.lt};margin-top:1px;max-width:56px;line-height:1.3;word-break:break-word;">${escapeHtml(caption)}</div>` : ''}
     </div>
   `;
 }
@@ -213,10 +261,10 @@ export function annexPageHtml(
             .map(
               (p) => `
             <div style="border:1px solid ${PDF.bdrLt};border-radius:3px;overflow:hidden;">
-              <img src="${p.url}" style="width:100%;height:160px;object-fit:cover;" />
+              <img src="${escapeAttr(p.url)}" style="width:100%;height:160px;object-fit:cover;" />
               <div style="padding:4px 6px;background:${PDF.bg};">
-                <div style="font-size:7px;font-weight:600;color:${PDF.dk};">\u05DE\u05DE\u05E6\u05D0 ${p.defectNum}: ${escapeHtml(p.defectTitle)}</div>
-                ${p.caption ? `<div style="font-size:6.5px;color:${PDF.lt};margin-top:1px;">${escapeHtml(p.caption)}</div>` : ''}
+                <div style="font-size:9px;font-weight:600;color:${PDF.dk};">\u05DE\u05DE\u05E6\u05D0 ${p.defectNum}: ${escapeHtml(p.defectTitle)}</div>
+                ${p.caption ? `<div style="font-size:8px;color:${PDF.lt};margin-top:1px;">${escapeHtml(p.caption)}</div>` : ''}
               </div>
             </div>
           `
@@ -228,6 +276,68 @@ export function annexPageHtml(
   }
 
   return pages;
+}
+
+// --- Severity color system (from mockup v3 lines 11-16) ---
+
+export const SEV_COLORS = {
+  critical: {
+    bg: '#FDECEC',
+    fg: '#B42318',
+    bdr: '#F4C1C1',
+    label: '\u05E7\u05E8\u05D9\u05D8\u05D9',
+  },
+  high: {
+    bg: '#FFF4E5',
+    fg: '#B54708',
+    bdr: '#F5D0A9',
+    label: '\u05D2\u05D1\u05D5\u05D4',
+  },
+  medium: {
+    bg: '#FEF7E0',
+    fg: '#8A6D1C',
+    bdr: '#EEE0B0',
+    label: '\u05D1\u05D9\u05E0\u05D5\u05E0\u05D9',
+  },
+  low: {
+    bg: '#ECF6EF',
+    fg: '#2B6B3F',
+    bdr: '#CDE5D4',
+    label: '\u05E0\u05DE\u05D5\u05DA',
+  },
+} as const;
+
+export type SeverityLevel = keyof typeof SEV_COLORS;
+
+export function sevBadgeHtml(level: string): string {
+  const c = SEV_COLORS[level as SeverityLevel] ?? SEV_COLORS.medium;
+  return `<span style="font-size:8px;font-weight:700;color:${c.fg};background:${c.bg};border:1px solid ${c.bdr};padding:2px 6px;border-radius:8px;">${c.label}</span>`;
+}
+
+export function breadcrumbHeaderHtml(crumb: string, logoUrl?: string): string {
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:6px;margin-bottom:8px;border-bottom:1px solid ${PDF.bdrLt};">
+      <div style="font-size:10px;color:${PDF.lt};display:flex;gap:3px;align-items:center;">
+        <span style="color:${PDF.accent};font-weight:600;">\u05D3\u05D5\u05D7 \u05D1\u05D3\u05E7 \u05D1\u05D9\u05EA</span>
+        <span style="color:${PDF.vlt};">\u203A</span>
+        <span>${crumb}</span>
+      </div>
+      ${logoHtml(logoUrl)}
+    </div>
+  `;
+}
+
+// --- Photo helpers (v3 — upgraded to 100×75px) ---
+
+export function photoHtmlV3(url?: string, _hasAnnotation?: boolean): string {
+  if (url) {
+    return `<div style="position:relative;width:100px;height:75px;border-radius:2px;overflow:hidden;border:1px solid ${PDF.bdrLt};flex-shrink:0;">
+      <img src="${escapeAttr(url)}" style="width:100%;height:100%;object-fit:cover;" />
+    </div>`;
+  }
+  return `<div style="position:relative;width:100px;height:75px;border-radius:2px;background:${PDF.bdrLt};display:flex;align-items:center;justify-content:center;border:1px solid ${PDF.bdrLt};overflow:hidden;flex-shrink:0;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${PDF.bdr}" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+  </div>`;
 }
 
 import type { PdfDefect, DefectGroup } from './types';

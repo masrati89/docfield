@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { Alert } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 
@@ -7,11 +6,27 @@ import { supabase } from '@/lib/supabase';
 
 type ReportStatus = 'draft' | 'in_progress' | 'completed' | 'sent';
 
+interface FinalizeParams {
+  reportId: string;
+  userId: string;
+  organizationId: string;
+}
+
+interface PendingAction {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  destructive?: boolean;
+  onConfirm: () => void;
+}
+
 interface UseReportStatusResult {
   isUpdating: boolean;
   markCompleted: (reportId: string, apartmentId?: string) => void;
   reopenForEditing: (reportId: string) => void;
-  transitionToDraft: (reportId: string) => Promise<void>;
+  finalizeFromDraft: (params: FinalizeParams) => void;
+  pendingAction: PendingAction | null;
+  dismissAction: () => void;
 }
 
 // --- Hook ---
@@ -22,6 +37,11 @@ export function useReportStatus(
   onStatusChanged?: () => void
 ): UseReportStatusResult {
   const [isUpdating, setIsUpdating] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(
+    null
+  );
+
+  const dismissAction = useCallback(() => setPendingAction(null), []);
 
   const updateStatus = useCallback(
     async (
@@ -64,27 +84,23 @@ export function useReportStatus(
   // in_progress → completed (single confirmation)
   const markCompleted = useCallback(
     (reportId: string, apartmentId?: string) => {
-      Alert.alert(
-        'סימון כהושלם',
-        'לסמן את הדוח כהושלם? לא ניתן יהיה לערוך ללא אישור נוסף.',
-        [
-          { text: 'ביטול', style: 'cancel' },
-          {
-            text: 'סמן כהושלם',
-            onPress: async () => {
-              try {
-                await updateStatus(reportId, 'completed', {
-                  apartmentId,
-                  completedAt: new Date().toISOString(),
-                });
-                onSuccess?.('הדוח סומן כהושלם');
-              } catch {
-                onError?.('שגיאה בסימון הדוח כהושלם');
-              }
-            },
-          },
-        ]
-      );
+      setPendingAction({
+        title: 'סימון כהושלם',
+        message: 'לסמן את הדוח כהושלם? לא ניתן יהיה לערוך ללא אישור נוסף.',
+        confirmLabel: 'סמן כהושלם',
+        onConfirm: async () => {
+          setPendingAction(null);
+          try {
+            await updateStatus(reportId, 'completed', {
+              apartmentId,
+              completedAt: new Date().toISOString(),
+            });
+            onSuccess?.('הדוח סומן כהושלם');
+          } catch {
+            onError?.('שגיאה בסימון הדוח כהושלם');
+          }
+        },
+      });
     },
     [updateStatus, onSuccess, onError]
   );
@@ -93,50 +109,71 @@ export function useReportStatus(
   const reopenForEditing = useCallback(
     (reportId: string) => {
       // Step 1
-      Alert.alert('חזרה לעריכה', 'הדוח הושלם. לחזור למצב עריכה?', [
-        { text: 'ביטול', style: 'cancel' },
-        {
-          text: 'אישור',
-          onPress: () => {
-            // Step 2 — second confirmation
-            Alert.alert(
-              'אישור נוסף',
-              'שים לב: חזרה לעריכה תאפשר שינויים בדוח המשפטי. להמשיך?',
-              [
-                { text: 'ביטול', style: 'cancel' },
-                {
-                  text: 'כן, המשך',
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      await updateStatus(reportId, 'in_progress');
-                      onSuccess?.('הדוח חזר למצב עריכה');
-                    } catch {
-                      onError?.('שגיאה בפתיחת הדוח לעריכה');
-                    }
-                  },
-                },
-              ]
-            );
-          },
+      setPendingAction({
+        title: 'חזרה לעריכה',
+        message: 'הדוח הושלם. לחזור למצב עריכה?',
+        confirmLabel: 'אישור',
+        onConfirm: () => {
+          // Step 2 — second confirmation
+          setPendingAction({
+            title: 'אישור נוסף',
+            message: 'שים לב: חזרה לעריכה תאפשר שינויים בדוח המשפטי. להמשיך?',
+            confirmLabel: 'כן, המשך',
+            destructive: true,
+            onConfirm: async () => {
+              setPendingAction(null);
+              try {
+                await updateStatus(reportId, 'in_progress');
+                onSuccess?.('הדוח חזר למצב עריכה');
+              } catch {
+                onError?.('שגיאה בפתיחת הדוח לעריכה');
+              }
+            },
+          });
         },
-      ]);
+      });
     },
     [updateStatus, onSuccess, onError]
   );
 
-  // draft → in_progress (free transition for testing)
-  const transitionToDraft = useCallback(
-    async (reportId: string) => {
-      try {
-        await updateStatus(reportId, 'in_progress');
-        onSuccess?.('הדוח עבר למצב בביצוע');
-      } catch {
-        onError?.('שגיאה בעדכון סטטוס');
-      }
+  // draft → in_progress (with confirmation — billing moment, one-way)
+  const finalizeFromDraft = useCallback(
+    (params: FinalizeParams) => {
+      setPendingAction({
+        title: 'הפיכת טיוטה לדוח רגיל',
+        message: 'הדוח ייספר כדוח בתשלום. פעולה זו אינה הפיכה.',
+        confirmLabel: 'אישור',
+        destructive: true,
+        onConfirm: async () => {
+          setPendingAction(null);
+          try {
+            await updateStatus(params.reportId, 'in_progress');
+
+            // Write billing event to report_log (append-only)
+            await supabase.from('report_log').insert({
+              delivery_report_id: params.reportId,
+              organization_id: params.organizationId,
+              user_id: params.userId,
+              action: 'report_finalized',
+              details: { finalized_at: new Date().toISOString() },
+            });
+
+            onSuccess?.('הדוח הופעל — החיוב נרשם');
+          } catch {
+            onError?.('שגיאה בהפעלת הדוח');
+          }
+        },
+      });
     },
     [updateStatus, onSuccess, onError]
   );
 
-  return { isUpdating, markCompleted, reopenForEditing, transitionToDraft };
+  return {
+    isUpdating,
+    markCompleted,
+    reopenForEditing,
+    finalizeFromDraft,
+    pendingAction,
+    dismissAction,
+  };
 }

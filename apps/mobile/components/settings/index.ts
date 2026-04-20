@@ -1,8 +1,19 @@
+// Tab components
+export { SettingsTabBar } from './SettingsTabBar';
+export type { SettingsTab } from './SettingsTabBar';
+export { GeneralTab } from './GeneralTab';
+export { InspectorTab } from './InspectorTab';
+export { ReportTab } from './ReportTab';
+
+// Shared components
+export { CompletionIndicator } from './CompletionIndicator';
+export { TextFieldPreview } from './TextFieldPreview';
+export { ChangePasswordSheet } from './ChangePasswordSheet';
+export { BOQRatesSection } from './BOQRatesSection';
+export { TemplatesSection } from './TemplatesSection';
+
+// Existing components (still used by tabs)
 export { ProfileSection } from './ProfileSection';
-export { ChangePasswordSection } from './ChangePasswordSection';
 export { PreferencesSection } from './PreferencesSection';
-export { InfoSection } from './InfoSection';
 export { SignatureStampSection } from './SignatureStampSection';
-export { InspectorProfileSection } from './InspectorProfileSection';
-export { StatisticsSection } from './StatisticsSection';
 export { SignOutButton } from './SignOutButton';

@@ -18,6 +18,7 @@ import { Button } from '@/components/ui';
 import { ComboField } from '@/components/defect/ComboField';
 
 import { CHECKLIST_ROOMS } from './constants';
+import type { ChecklistRoom } from './types';
 
 // --- Types ---
 
@@ -29,6 +30,9 @@ interface AddDefectSheetProps {
     location: string;
     description: string;
   }) => void | Promise<void>;
+  rooms?: ChecklistRoom[];
+  /** Report type — controls which fields are shown */
+  reportType?: 'bedek_bait' | 'delivery' | string;
 }
 
 // --- Component ---
@@ -37,7 +41,10 @@ export function AddDefectSheet({
   visible,
   onClose,
   onSave,
+  rooms,
+  reportType = 'bedek_bait',
 }: AddDefectSheetProps) {
+  const _isDelivery = reportType === 'delivery';
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [category, setCategory] = useState('');
   const [location, setLocation] = useState('');
@@ -45,7 +52,7 @@ export function AddDefectSheet({
   const [isSaving, setIsSaving] = useState(false);
 
   const categoryLabels = DEFECT_CATEGORIES.map((c) => c.label);
-  const locationLabels = CHECKLIST_ROOMS.map((r) => r.name);
+  const locationLabels = (rooms ?? CHECKLIST_ROOMS).map((r) => r.name);
 
   const canSave = !!category && !!description.trim();
 
