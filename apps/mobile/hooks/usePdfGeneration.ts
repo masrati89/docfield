@@ -37,6 +37,18 @@ interface UsePdfGenerationResult {
   sharePdf: (reportId: string, existingPdfUri?: string) => Promise<void>;
 }
 
+function deriveRoundStatus(
+  d: Record<string, unknown>
+): 'fixed' | 'open' | 'new' | undefined {
+  const sourceId = d.source_defect_id as string | null;
+  const reviewStatus = d.review_status as string | null;
+  if (!sourceId && !reviewStatus) return undefined;
+  if (sourceId) {
+    return reviewStatus === 'fixed' ? 'fixed' : 'open';
+  }
+  return 'new';
+}
+
 // --- Fetcher ---
 
 async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
@@ -78,7 +90,7 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
     .select(
       `id, description, room, category, severity, status, sort_order,
        standard_ref, standard_section, recommendation, notes, cost, cost_unit,
-       unit_price, quantity, unit_label,
+       unit_price, quantity, unit_label, review_status, source_defect_id,
        defect_photos(image_url, sort_order, annotations_json, caption)`
     )
     .eq('delivery_report_id', reportId)
@@ -180,6 +192,7 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
         note: d.notes as string | undefined,
         photoUrls,
         photos: photosWithCaptions,
+        roundStatus: deriveRoundStatus(d),
       };
     })
   );

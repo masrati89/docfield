@@ -48,6 +48,7 @@ export interface PdfDefect {
   photos?: { url: string; caption?: string }[];
   annotationsJson?: Record<string, unknown>[]; // annotation layers per photo
   annexText?: string;
+  roundStatus?: 'fixed' | 'open' | 'new';
 }
 
 export interface PdfChecklistItem {
@@ -96,6 +97,7 @@ export interface PdfReportData {
   boqRates?: { batzam: number; supervision: number; vat: number };
   generalNotes?: string;
   roundNumber?: number;
+  previousDeliveryDate?: string;
   /** All standards resolved from DB (explicit picks + parsed from free text) */
   resolvedStandards?: Record<string, string>;
 
