@@ -32,6 +32,7 @@ export interface TemplateDetail {
   report_type: string;
   is_global: boolean;
   is_active: boolean;
+  showSeverityDefault: boolean;
 }
 
 // --- Mapper: DB rows → ChecklistRoom[] ---
@@ -92,6 +93,7 @@ export function useChecklistTemplate(templateId: string | null | undefined) {
           report_type: data.report_type as string,
           is_global: data.is_global as boolean,
           is_active: data.is_active as boolean,
+          showSeverityDefault: (data.show_severity_default as boolean) ?? true,
         } as TemplateDetail,
         categories,
         rooms: mapToChecklistRooms(categories),
@@ -324,6 +326,18 @@ export function useChecklistTemplate(templateId: string | null | undefined) {
     [moveItemToCategoryMutation]
   );
 
+  const updateShowSeverityDefault = useCallback(
+    async (value: boolean) => {
+      if (!templateId) return;
+      await supabase
+        .from('checklist_templates')
+        .update({ show_severity_default: value })
+        .eq('id', templateId);
+      invalidate();
+    },
+    [templateId, invalidate]
+  );
+
   return {
     template: query.data?.template ?? null,
     categories: query.data?.categories ?? [],
@@ -338,5 +352,6 @@ export function useChecklistTemplate(templateId: string | null | undefined) {
     updateItem,
     batchReorderItems,
     moveItemToCategory,
+    updateShowSeverityDefault,
   };
 }

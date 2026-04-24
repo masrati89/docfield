@@ -79,6 +79,8 @@ interface SnapshotInsertData {
   checklist_template_id: string | null;
   // No-checklist flag (migration 041)
   no_checklist: boolean;
+  // Severity display toggle (migration 047)
+  show_severity: boolean;
 }
 
 interface CreateReportParams {
@@ -106,6 +108,7 @@ interface CreateReportParams {
   propertyAddress?: string | null;
   checklistTemplateId?: string | null;
   noChecklist?: boolean;
+  showSeverity?: boolean;
 }
 
 // --- Property snapshot resolver ---
@@ -217,6 +220,19 @@ export async function createReportWithSnapshot(
     params.apartmentLabelFreetext ?? null,
     params.propertyAddress ?? null
   );
+
+  // Resolve show_severity from template default if not explicitly set
+  let resolvedShowSeverity = params.showSeverity ?? true;
+  if (params.showSeverity === undefined && params.checklistTemplateId) {
+    const { data: tpl } = await supabase
+      .from('checklist_templates')
+      .select('show_severity_default')
+      .eq('id', params.checklistTemplateId)
+      .single();
+    if (tpl) {
+      resolvedShowSeverity = (tpl.show_severity_default as boolean) ?? true;
+    }
+  }
 
   // Build INSERT data with snapshot fields
   const insertData: SnapshotInsertData = {
@@ -339,6 +355,8 @@ export async function createReportWithSnapshot(
     checklist_template_id: params.checklistTemplateId ?? null,
     // No-checklist flag (migration 041)
     no_checklist: params.noChecklist ?? false,
+    // Severity display toggle (migration 047)
+    show_severity: resolvedShowSeverity,
   };
 
   const { data, error } = await supabase

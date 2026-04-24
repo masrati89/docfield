@@ -29,7 +29,7 @@ export interface PdfClient {
 }
 
 export interface PdfDefect {
-  number: number;
+  number: string;
   title: string;
   location: string;
   category: string;
@@ -128,6 +128,7 @@ export interface PdfReportData {
   showInspectorDeclaration?: boolean;
   showTenantAcknowledgment?: boolean;
   showProtocolTerms?: boolean;
+  showSeverity?: boolean;
 }
 
 // --- Grouped defects by category ---

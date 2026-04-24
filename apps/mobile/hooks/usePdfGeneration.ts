@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import * as Print from 'expo-print';
 import { Platform, Share } from 'react-native';
 
@@ -75,7 +75,7 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
        organization_email_snapshot, organization_legal_disclaimer_snapshot,
        org_boq_batzam_rate_snapshot, org_boq_supervision_rate_snapshot,
        org_boq_vat_rate_snapshot, round_number, checklist_state,
-       checklist_template_id`
+       checklist_template_id, show_severity`
     )
     .eq('id', reportId)
     .single();
@@ -133,7 +133,7 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
   }
 
   const defects: PdfDefect[] = await Promise.all(
-    (defectsData ?? []).map(async (d: Record<string, unknown>, idx: number) => {
+    (defectsData ?? []).map(async (d: Record<string, unknown>) => {
       const photos =
         (d.defect_photos as Array<{
           image_url: string;
@@ -175,7 +175,7 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
 
       const stdRef = d.standard_ref as string | undefined;
       return {
-        number: idx + 1,
+        number: '',
         title: d.description as string,
         location: (d.room as string) ?? '',
         category: (d.category as string) ?? 'כללי',
@@ -196,6 +196,21 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
       };
     })
   );
+
+  // Assign hierarchical numbers by category (1.01, 1.02, 2.01...)
+  const categoryOrder: string[] = [];
+  for (const d of defects) {
+    if (!categoryOrder.includes(d.category)) {
+      categoryOrder.push(d.category);
+    }
+  }
+  const categoryCounters = new Map<string, number>();
+  for (const d of defects) {
+    const catIdx = categoryOrder.indexOf(d.category) + 1;
+    const counter = (categoryCounters.get(d.category) ?? 0) + 1;
+    categoryCounters.set(d.category, counter);
+    d.number = `${catIdx}.${String(counter).padStart(2, '0')}`;
+  }
 
   // Fetch signatures
   const { data: sigData } = await supabase
@@ -431,6 +446,7 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
       | boolean
       | undefined,
     showProtocolTerms: reportContent.show_protocol_terms as boolean | undefined,
+    showSeverity: (reportRecord.show_severity as boolean) ?? true,
 
     logoUrl:
       (reportRecord.organization_logo_url_snapshot as string) ?? undefined,
@@ -445,6 +461,23 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
   };
 }
 
+function buildPdfFilename(data: PdfReportData): string {
+  const d = new Date(data.reportDate);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  const dateStr = `${dd}.${mm}.${yyyy}`;
+
+  const title =
+    data.reportType === 'bedek_bait' ? 'דוח בדק הנדסי' : 'פרוטוקול מסירה';
+
+  const clientName = data.client.name?.trim();
+  if (clientName) {
+    return `${title} - ${dateStr} - ${clientName}`;
+  }
+  return `${title} - ${dateStr}`;
+}
+
 // --- Hook ---
 
 export function usePdfGeneration(
@@ -453,12 +486,14 @@ export function usePdfGeneration(
 ): UsePdfGenerationResult {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const lastFilenameRef = useRef('');
 
   const generatePdf = useCallback(
     async (reportId: string): Promise<string | null> => {
       setIsGenerating(true);
       try {
         const data = await fetchFullReportData(reportId);
+        lastFilenameRef.current = buildPdfFilename(data);
 
         // Generate HTML based on report type
         const html =
@@ -573,8 +608,8 @@ export function usePdfGeneration(
                   share: (data: ShareData) => Promise<void>;
                 }
               ).share({
-                title: 'דוח inField',
-                text: 'דוח inField',
+                title: lastFilenameRef.current || 'דוח inField',
+                text: lastFilenameRef.current || 'דוח inField',
                 url: uri,
               });
               return;
@@ -590,7 +625,7 @@ export function usePdfGeneration(
           if (typeof document !== 'undefined') {
             const link = document.createElement('a');
             link.href = uri;
-            link.download = `infield-report-${reportId.slice(0, 8)}.html`;
+            link.download = `${lastFilenameRef.current || 'infield-report'}.html`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -605,7 +640,7 @@ export function usePdfGeneration(
         // --- Native path ---
         await Share.share({
           url: uri,
-          title: 'דוח inField',
+          title: lastFilenameRef.current || 'דוח inField',
         });
       } catch (err) {
         // User cancelled share — not an error, but log other failures

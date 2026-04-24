@@ -52,7 +52,7 @@ function buildPreviewData(
       name: report.tenantName ?? '',
     },
     defects: defects.map((d, idx) => ({
-      number: idx + 1,
+      number: String(idx + 1),
       title: d.description,
       location: d.room ?? '',
       category: d.category ?? '\u05DB\u05DC\u05DC\u05D9',

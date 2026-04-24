@@ -224,7 +224,7 @@ export function annexPageHtml(
   const photosWithDefects: {
     url: string;
     caption?: string;
-    defectNum: number;
+    defectNum: string;
     defectTitle: string;
   }[] = [];
 

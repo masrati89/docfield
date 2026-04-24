@@ -30,6 +30,7 @@ interface ReportSettingsSheetProps {
   notes: string | null;
   roundNumber: number;
   noChecklist: boolean;
+  showSeverity: boolean;
   onSaved: () => void;
   onClose?: () => void;
 }
@@ -224,6 +225,7 @@ export function ReportSettingsSheet({
   notes: initialNotes,
   roundNumber,
   noChecklist: initialNoChecklist,
+  showSeverity: initialShowSeverity,
   onSaved,
   onClose,
 }: ReportSettingsSheetProps) {
@@ -231,6 +233,7 @@ export function ReportSettingsSheet({
   const [phone, setPhone] = useState(initialPhone ?? '');
   const [notes, setNotes] = useState(initialNotes ?? '');
   const [noChecklist, setNoChecklist] = useState(initialNoChecklist);
+  const [showSeverity, setShowSeverity] = useState(initialShowSeverity);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showNoChecklistConfirm, setShowNoChecklistConfirm] = useState(false);
@@ -244,16 +247,19 @@ export function ReportSettingsSheet({
       name !== (initialName ?? '') ||
       phone !== (initialPhone ?? '') ||
       notes !== (initialNotes ?? '') ||
-      noChecklist !== initialNoChecklist,
+      noChecklist !== initialNoChecklist ||
+      showSeverity !== initialShowSeverity,
     [
       name,
       phone,
       notes,
       noChecklist,
+      showSeverity,
       initialName,
       initialPhone,
       initialNotes,
       initialNoChecklist,
+      initialShowSeverity,
     ]
   );
 
@@ -303,6 +309,7 @@ export function ReportSettingsSheet({
           tenant_phone: phone.trim().replace(/[-\s]/g, '') || null,
           notes: notes.trim() || null,
           no_checklist: noChecklist,
+          show_severity: showSeverity,
         })
         .eq('id', reportId);
 
@@ -317,7 +324,7 @@ export function ReportSettingsSheet({
     } finally {
       setIsSaving(false);
     }
-  }, [reportId, name, phone, notes, noChecklist, onSaved]);
+  }, [reportId, name, phone, notes, noChecklist, showSeverity, onSaved]);
 
   return (
     <>
@@ -524,6 +531,70 @@ export function ReportSettingsSheet({
             }}
             thumbColor={
               !noChecklist ? COLORS.primary[500] : COLORS.neutral[300]
+            }
+          />
+        </View>
+
+        {/* Severity toggle */}
+        <View
+          style={{
+            flexDirection: 'row-reverse',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginTop: 12,
+            paddingVertical: 12,
+            paddingHorizontal: 14,
+            backgroundColor: COLORS.cream[100],
+            borderWidth: 1,
+            borderColor: COLORS.cream[200],
+            borderRadius: BORDER_RADIUS.md,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: 'row-reverse',
+              alignItems: 'center',
+              gap: 8,
+              flex: 1,
+            }}
+          >
+            <Feather
+              name="alert-triangle"
+              size={18}
+              color={showSeverity ? COLORS.warning[500] : COLORS.neutral[400]}
+            />
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontFamily: 'Rubik-Medium',
+                  color: COLORS.neutral[700],
+                  textAlign: 'right',
+                }}
+              >
+                רמת דחיפות
+              </Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontFamily: 'Rubik-Regular',
+                  color: COLORS.neutral[400],
+                  textAlign: 'right',
+                }}
+              >
+                {showSeverity ? 'מוצג בדוח ובהוספת ממצא' : 'לא מוצג בדוח'}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={showSeverity}
+            onValueChange={setShowSeverity}
+            trackColor={{
+              false: COLORS.cream[200],
+              true: COLORS.warning[200],
+            }}
+            thumbColor={
+              showSeverity ? COLORS.warning[500] : COLORS.neutral[300]
             }
           />
         </View>

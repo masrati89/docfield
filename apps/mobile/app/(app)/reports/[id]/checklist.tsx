@@ -999,6 +999,7 @@ export default function ChecklistScreen() {
             notes={notes}
             roundNumber={roundNumber}
             noChecklist={report?.noChecklist ?? false}
+            showSeverity={report?.showSeverity ?? true}
             onSaved={handleSettingsSaved}
             onClose={() => setShowSettings(false)}
           />

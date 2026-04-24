@@ -7,6 +7,7 @@ import {
   Platform,
   Modal,
   FlatList,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -948,6 +949,7 @@ export default function EditTemplateScreen() {
     updateItem,
     batchReorderItems,
     moveItemToCategory,
+    updateShowSeverityDefault,
   } = useChecklistTemplate(id);
 
   const readOnly = template?.is_global ?? false;
@@ -1328,6 +1330,84 @@ export default function EditTemplateScreen() {
           >
             תבנית מערכת — לא ניתן לערוך. שכפל כדי להתאים אישית.
           </Text>
+        </View>
+      )}
+
+      {/* Severity toggle */}
+      {!isLoading && !readOnly && (
+        <View
+          style={{
+            marginHorizontal: 16,
+            marginTop: 12,
+            flexDirection: 'row-reverse',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingVertical: 12,
+            paddingHorizontal: 14,
+            backgroundColor: COLORS.cream[100],
+            borderWidth: 1,
+            borderColor: COLORS.cream[200],
+            borderRadius: 10,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: 'row-reverse',
+              alignItems: 'center',
+              gap: 8,
+              flex: 1,
+            }}
+          >
+            <Feather
+              name="alert-triangle"
+              size={18}
+              color={
+                template?.showSeverityDefault
+                  ? COLORS.warning[500]
+                  : COLORS.neutral[400]
+              }
+            />
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontFamily: 'Rubik-Medium',
+                  color: COLORS.neutral[700],
+                  textAlign: 'right',
+                }}
+              >
+                רמת דחיפות
+              </Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontFamily: 'Rubik-Regular',
+                  color: COLORS.neutral[400],
+                  textAlign: 'right',
+                }}
+              >
+                ברירת מחדל לדוחות חדשים
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={template?.showSeverityDefault ?? true}
+            onValueChange={(val) => {
+              if (Platform.OS !== 'web') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              updateShowSeverityDefault(val);
+            }}
+            trackColor={{
+              false: COLORS.cream[200],
+              true: COLORS.warning[200],
+            }}
+            thumbColor={
+              template?.showSeverityDefault
+                ? COLORS.warning[500]
+                : COLORS.neutral[300]
+            }
+          />
         </View>
       )}
 

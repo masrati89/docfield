@@ -147,7 +147,7 @@ function checklistHtml(items: PdfChecklistItem[], isRound2: boolean): string {
 
 function defectRowHtml(
   defect: {
-    number: number;
+    number: string;
     title: string;
     location: string;
     recommendation?: string;

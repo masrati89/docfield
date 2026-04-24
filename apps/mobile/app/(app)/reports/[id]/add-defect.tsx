@@ -24,6 +24,7 @@ import {
   ROOM_TYPES,
   DEFECT_CATEGORIES,
   ISRAELI_STANDARDS,
+  DEFECT_SEVERITIES,
 } from '@infield/shared';
 import { createDefectSchema } from '@infield/shared/src/validation';
 import { supabase } from '@/lib/supabase';
@@ -75,6 +76,7 @@ export default function AddDefectScreen() {
   const { report: reportInfo } = useReport(reportId);
   const reportType = reportInfo?.reportType ?? 'bedek_bait';
   const isDelivery = reportType === 'delivery';
+  const showSeverity = reportInfo?.showSeverity ?? true;
 
   // Apartment/room context for breadcrumb
   const apartmentNumber = reportInfo?.apartmentNumber ?? '';
@@ -85,7 +87,7 @@ export default function AddDefectScreen() {
   const [categorySearch, setCategorySearch] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
-  const [severity] = useState<string>('medium');
+  const [severity, setSeverity] = useState<string>('medium');
   const [standardRef, setStandardRef] = useState('');
   const [standardSection, _setStandardSection] = useState('');
   const [standardDisplay, setStandardDisplay] = useState('');
@@ -1054,6 +1056,68 @@ export default function AddDefectScreen() {
                 allowCustom
               />
             </FormField>
+
+            {/* 3.5 Severity picker */}
+            {showSeverity && (
+              <FormField
+                label="רמת דחיפות"
+                filled={!!severity}
+                icon="alert-triangle"
+              >
+                <View
+                  style={{
+                    flexDirection: 'row-reverse',
+                    gap: 8,
+                    paddingVertical: 4,
+                  }}
+                >
+                  {DEFECT_SEVERITIES.map((sev) => {
+                    const isSelected = severity === sev.value;
+                    return (
+                      <Pressable
+                        key={sev.value}
+                        onPress={() => {
+                          setSeverity(sev.value);
+                          if (Platform.OS !== 'web') {
+                            Haptics.impactAsync(
+                              Haptics.ImpactFeedbackStyle.Light
+                            );
+                          }
+                        }}
+                        style={{
+                          flex: 1,
+                          paddingVertical: 8,
+                          borderRadius: BORDER_RADIUS.md,
+                          borderWidth: isSelected ? 2 : 1,
+                          borderColor: isSelected
+                            ? sev.color
+                            : COLORS.cream[200],
+                          backgroundColor: isSelected
+                            ? sev.backgroundColor
+                            : COLORS.cream[50],
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            fontFamily: isSelected
+                              ? 'Rubik-SemiBold'
+                              : 'Rubik-Regular',
+                            color: isSelected
+                              ? sev.textColor
+                              : COLORS.neutral[500],
+                          }}
+                        >
+                          {sev.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </FormField>
+            )}
 
             {/* 4. Israeli Standard — bedek_bait only */}
             {!isDelivery && (

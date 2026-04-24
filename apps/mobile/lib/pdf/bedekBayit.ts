@@ -10,7 +10,6 @@ import {
   PDF,
   baseStyles,
   watermarkStyle,
-  logoHtml,
   footerHtml,
   sectionTitle,
   subSectionTitle,
@@ -82,7 +81,8 @@ interface TocEntry {
 function tocLegendPageHtml(
   tocEntries: TocEntry[],
   defects: PdfDefect[],
-  logoUrl?: string
+  logoUrl?: string,
+  showSeverity = true
 ): string {
   const tocRows = tocEntries
     .map(
@@ -123,14 +123,18 @@ function tocLegendPageHtml(
     </div>
     ${sectionTitle('\u05DE\u05E7\u05E8\u05D0')}
     <div style="display:flex;flex-direction:column;gap:4px;font-size:10px;color:${PDF.md};line-height:1.5;">
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      ${
+        showSeverity
+          ? `<div style="display:flex;gap:6px;flex-wrap:wrap;">
         ${(['critical', 'high', 'medium', 'low'] as const)
           .map(
             (lev) =>
               `<div style="display:flex;gap:3px;align-items:center;">${sevBadgeHtml(lev)}<span style="font-size:9px;color:${PDF.lt};">${sevDescriptions[lev]}</span></div>`
           )
           .join('')}
-      </div>
+      </div>`
+          : ''
+      }
       <div style="display:flex;gap:8px;font-size:9px;color:${PDF.lt};">
         <span style="display:flex;align-items:center;gap:3px;">
           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="${PDF.lt}" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
@@ -169,20 +173,24 @@ function execSummaryPageHtml(
     if (sev in sevCounts) sevCounts[sev]++;
   }
 
-  const sevCards = (['critical', 'high', 'medium', 'low'] as const)
-    .map((lev) => {
-      const c = SEV_COLORS[lev];
-      return `<div style="text-align:center;padding:5px 3px;background:${c.bg};border-radius:3px;border:1px solid ${c.bdr};">
+  const hideSev = data.showSeverity === false;
+
+  const sevCards = hideSev
+    ? ''
+    : (['critical', 'high', 'medium', 'low'] as const)
+        .map((lev) => {
+          const c = SEV_COLORS[lev];
+          return `<div style="text-align:center;padding:5px 3px;background:${c.bg};border-radius:3px;border:1px solid ${c.bdr};">
         <div style="font-size:18px;font-weight:700;color:${c.fg};">${sevCounts[lev]}</div>
         <div style="font-size:8px;color:${c.fg};font-weight:600;">${c.label}</div>
       </div>`;
-    })
-    .join('');
+        })
+        .join('');
 
   // Defect index rows
   let defectPageOffset = defectStartPage;
   let defectsOnPage = 0;
-  const defectPageMap = new Map<number, number>();
+  const defectPageMap = new Map<string, number>();
   for (const g of groups) {
     for (const d of g.defects) {
       defectPageMap.set(d.number, defectPageOffset);
@@ -194,14 +202,18 @@ function execSummaryPageHtml(
     }
   }
 
+  const idxCols = hideSev
+    ? '36px 1fr 70px 50px 32px'
+    : '36px 1fr 70px 50px 50px 32px';
+
   const indexRows = data.defects
     .map(
       (d) => `
-    <div style="display:grid;grid-template-columns:28px 1fr 70px 50px 50px 32px;padding:4px 6px;border-bottom:1px solid ${PDF.bdrLt};align-items:center;">
-      <span style="font-weight:700;color:${PDF.dk};">${d.number}</span>
+    <div style="display:grid;grid-template-columns:${idxCols};padding:4px 6px;border-bottom:1px solid ${PDF.bdrLt};align-items:center;">
+      <span style="font-weight:700;color:${PDF.dk};font-size:9px;">${d.number}</span>
       <span style="color:${PDF.md};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(d.title)}</span>
       <span style="color:${PDF.accent};font-weight:500;font-size:9px;">${escapeHtml(d.category)}</span>
-      <span>${sevBadgeHtml(d.severity ?? 'medium')}</span>
+      ${hideSev ? '' : `<span>${sevBadgeHtml(d.severity ?? 'medium')}</span>`}
       <span style="text-align:left;font-weight:600;font-size:9px;">${d.cost ? formatCurrency(d.cost) : '\u2014'}</span>
       <span style="text-align:left;color:${PDF.lt};">${defectPageMap.get(d.number) ?? ''}</span>
     </div>`
@@ -211,13 +223,11 @@ function execSummaryPageHtml(
   return `
     ${breadcrumbHeaderHtml('\u05EA\u05E7\u05E6\u05D9\u05E8 \u05DE\u05E0\u05D4\u05DC\u05D9\u05DD', logoUrl)}
     <div style="font-size:16px;font-weight:700;color:${PDF.dk};margin-bottom:6px;">\u05EA\u05E7\u05E6\u05D9\u05E8 \u05DE\u05E0\u05D4\u05DC\u05D9\u05DD</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin:0 0 6px;">
-      ${sevCards}
-    </div>
+    ${hideSev ? '' : `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin:0 0 6px;">${sevCards}</div>`}
     ${sectionTitle('\u05DE\u05E4\u05EA\u05D7 \u05DC\u05D9\u05E7\u05D5\u05D9\u05D9\u05DD')}
     <div style="border:1px solid ${PDF.bdr};border-radius:2px;overflow:hidden;font-size:10px;">
-      <div style="display:grid;grid-template-columns:28px 1fr 70px 50px 50px 32px;background:${PDF.dk};color:#fff;padding:4px 6px;font-weight:600;font-size:9px;">
-        <span>#</span><span>\u05EA\u05D9\u05D0\u05D5\u05E8</span><span>\u05E7\u05D8\u05D2\u05D5\u05E8\u05D9\u05D4</span><span>\u05D7\u05D5\u05DE\u05E8\u05D4</span><span style="text-align:left;">\u05E2\u05DC\u05D5\u05EA</span><span style="text-align:left;">\u05E2\u05DE'</span>
+      <div style="display:grid;grid-template-columns:${idxCols};background:${PDF.dk};color:#fff;padding:4px 6px;font-weight:600;font-size:9px;">
+        <span>#</span><span>\u05EA\u05D9\u05D0\u05D5\u05E8</span><span>\u05E7\u05D8\u05D2\u05D5\u05E8\u05D9\u05D4</span>${hideSev ? '' : '<span>\u05D7\u05D5\u05DE\u05E8\u05D4</span>'}<span style="text-align:left;">\u05E2\u05DC\u05D5\u05EA</span><span style="text-align:left;">\u05E2\u05DE'</span>
       </div>
       ${indexRows}
     </div>
@@ -444,7 +454,7 @@ function detailsPageHtml(data: PdfReportData, logoUrl?: string): string {
 // PAGES 8-N: DEFECT PAGES — with severity + price×qty + 100×75 photos
 // ═══════════════════════════════════════════════════════════
 
-function defectFullHtml(d: PdfDefect): string {
+function defectFullHtml(d: PdfDefect, showSeverity = true): string {
   const photos =
     d.photos ?? d.photoUrls?.map((url) => ({ url, caption: undefined })) ?? [];
   const total = d.unitPrice && d.quantity ? d.unitPrice * d.quantity : null;
@@ -461,9 +471,9 @@ function defectFullHtml(d: PdfDefect): string {
   let html = `
     <div style="padding:8px 0;border:1px solid ${PDF.bdr};border-radius:3px;margin-bottom:6px;overflow:hidden;">
       <div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:${PDF.bg};border-bottom:1px solid ${PDF.bdr};">
-        <div style="font-size:11px;font-weight:700;color:white;background:${PDF.dk};width:24px;height:24px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${d.number}</div>
-        <div style="flex:1;font-size:12px;font-weight:700;color:${PDF.dk};">ממצא ${d.number}</div>
-        ${d.severity ? sevBadgeHtml(d.severity) : ''}
+        <div style="font-size:9px;font-weight:700;color:white;background:${PDF.dk};min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0 5px;">${d.number}</div>
+        <div style="flex:1;"></div>
+        ${showSeverity && d.severity ? sevBadgeHtml(d.severity) : ''}
         ${costDisplay ? `<div style="font-size:10px;font-weight:700;color:${PDF.accent};background:${PDF.accentLt};padding:2px 8px;border-radius:10px;">${costDisplay}</div>` : ''}
       </div>
       <div style="padding:4px 10px;">
@@ -537,7 +547,8 @@ function defectFullHtml(d: PdfDefect): string {
 function defectPagesContent(
   defects: PdfDefect[],
   groups: DefectGroup[],
-  logoUrl?: string
+  logoUrl?: string,
+  showSeverity = true
 ): string[] {
   const pages: string[] = [];
   const maxDefectsPerPage = DEFECTS_PER_PAGE;
@@ -554,11 +565,14 @@ function defectPagesContent(
       isFirstPage = false;
     }
 
-    const categoryHeader = subSectionTitle(escapeHtml(group.category));
+    const catNum = gi + 1;
+    const categoryHeader = subSectionTitle(
+      `${catNum}. ${escapeHtml(group.category)}`
+    );
     currentContent += categoryHeader;
 
     for (let di = 0; di < group.defects.length; di++) {
-      currentContent += defectFullHtml(group.defects[di]);
+      currentContent += defectFullHtml(group.defects[di], showSeverity);
       defectsOnPage++;
 
       if (defectsOnPage >= maxDefectsPerPage && di < group.defects.length - 1) {
@@ -570,7 +584,7 @@ function defectPagesContent(
         defectsOnPage = 0;
 
         currentContent += subSectionTitle(
-          `${escapeHtml(group.category)} (המשך)`
+          `${catNum}. ${escapeHtml(group.category)} (המשך)`
         );
       }
     }
@@ -617,8 +631,8 @@ function boqPageHtml(
       categoryTotal += lineTotal;
 
       rows += `
-        <div style="display:grid;grid-template-columns:28px 1fr 56px 42px 64px;padding:3px 6px;border-bottom:1px solid ${PDF.bdrLt};">
-          <span style="font-weight:600;">${d.number}</span>
+        <div style="display:grid;grid-template-columns:36px 1fr 56px 42px 64px;padding:3px 6px;border-bottom:1px solid ${PDF.bdrLt};">
+          <span style="font-weight:600;font-size:9px;">${d.number}</span>
           <span>${escapeHtml(d.recommendation ?? d.title)}</span>
           <span style="text-align:left;">${formatCurrency(unitPrice)}</span>
           <span style="text-align:left;">${qty}</span>
@@ -630,7 +644,7 @@ function boqPageHtml(
 
     // Category subtotal
     rows += `
-      <div style="display:grid;grid-template-columns:28px 1fr 60px;padding:3px 6px;background:${PDF.bg};border-bottom:1px solid ${PDF.bdr};font-weight:600;font-size:10px;">
+      <div style="display:grid;grid-template-columns:36px 1fr 60px;padding:3px 6px;background:${PDF.bg};border-bottom:1px solid ${PDF.bdr};font-weight:600;font-size:10px;">
         <span></span><span style="color:${PDF.lt};">\u05E1\u05D4"\u05DB ${escapeHtml(g.category)}</span><span style="text-align:left;">${formatCurrency(categoryTotal)}</span>
       </div>`;
   }
@@ -645,26 +659,26 @@ function boqPageHtml(
     ${breadcrumbHeaderHtml('\u05DB\u05EA\u05D1 \u05DB\u05DE\u05D5\u05D9\u05D5\u05EA', logoUrl)}
     <div style="font-size:16px;font-weight:700;color:${PDF.dk};margin-bottom:6px;">\u05DB\u05EA\u05D1 \u05DB\u05DE\u05D5\u05D9\u05D5\u05EA \u2014 \u05D0\u05D5\u05DE\u05D3\u05DF \u05E2\u05DC\u05D5\u05D9\u05D5\u05EA</div>
     <div style="border:1px solid ${PDF.bdr};border-radius:2px;overflow:hidden;font-size:10px;">
-      <div style="display:grid;grid-template-columns:28px 1fr 56px 42px 64px;background:${PDF.dk};color:#fff;padding:4px 6px;font-weight:600;font-size:9px;">
+      <div style="display:grid;grid-template-columns:36px 1fr 56px 42px 64px;background:${PDF.dk};color:#fff;padding:4px 6px;font-weight:600;font-size:9px;">
         <span>#</span><span>\u05EA\u05D9\u05D0\u05D5\u05E8</span><span style="text-align:left;">\u05DE\u05D7\u05D9\u05E8/\u05D9\u05D7'</span><span style="text-align:left;">\u05DB\u05DE\u05D5\u05EA</span><span style="text-align:left;">\u05E1\u05D4"\u05DB (\u20AA)</span>
       </div>
       ${rows}
-      <div style="display:grid;grid-template-columns:28px 1fr 60px;padding:4px 6px;background:${PDF.bg};font-weight:700;border-top:2px solid ${PDF.bdr};">
+      <div style="display:grid;grid-template-columns:36px 1fr 60px;padding:4px 6px;background:${PDF.bg};font-weight:700;border-top:2px solid ${PDF.bdr};">
         <span></span><span style="color:${PDF.dk};">\u05E1\u05D4"\u05DB \u05D1\u05D9\u05E0\u05D9\u05D9\u05DD</span><span style="text-align:left;">${formatCurrency(grandTotal)}</span>
       </div>
-      <div style="display:grid;grid-template-columns:28px 1fr 60px;padding:3px 6px;background:${PDF.bg};">
+      <div style="display:grid;grid-template-columns:36px 1fr 60px;padding:3px 6px;background:${PDF.bg};">
         <span></span><span style="color:${PDF.md};">\u05D1\u05E6"\u05DE (${Math.round(rates.batzam * 100)}%)</span><span style="text-align:left;">${formatCurrency(Math.round(batzam))}</span>
       </div>
-      <div style="display:grid;grid-template-columns:28px 1fr 60px;padding:3px 6px;background:${PDF.bg};">
+      <div style="display:grid;grid-template-columns:36px 1fr 60px;padding:3px 6px;background:${PDF.bg};">
         <span></span><span style="color:${PDF.md};">\u05E4\u05D9\u05E7\u05D5\u05D7 \u05D4\u05E0\u05D3\u05E1\u05D9 (${Math.round(rates.supervision * 100)}%)</span><span style="text-align:left;">${formatCurrency(Math.round(supervision))}</span>
       </div>
-      <div style="display:grid;grid-template-columns:28px 1fr 60px;padding:4px 6px;background:${PDF.bg};font-weight:700;border-top:1px solid ${PDF.bdr};">
+      <div style="display:grid;grid-template-columns:36px 1fr 60px;padding:4px 6px;background:${PDF.bg};font-weight:700;border-top:1px solid ${PDF.bdr};">
         <span></span><span style="color:${PDF.dk};">\u05E1\u05D4"\u05DB \u05DC\u05E4\u05E0\u05D9 \u05DE\u05E2"\u05DE</span><span style="text-align:left;">${formatCurrency(Math.round(preVat))}</span>
       </div>
-      <div style="display:grid;grid-template-columns:28px 1fr 60px;padding:3px 6px;background:${PDF.bg};">
+      <div style="display:grid;grid-template-columns:36px 1fr 60px;padding:3px 6px;background:${PDF.bg};">
         <span></span><span style="color:${PDF.md};">\u05DE\u05E2"\u05DE (${Math.round(rates.vat * 100)}%)</span><span style="text-align:left;">${formatCurrency(Math.round(vat))}</span>
       </div>
-      <div style="display:grid;grid-template-columns:28px 1fr 60px;padding:5px 6px;background:${PDF.dk};color:#fff;font-weight:700;">
+      <div style="display:grid;grid-template-columns:36px 1fr 60px;padding:5px 6px;background:${PDF.dk};color:#fff;font-weight:700;">
         <span></span><span>\u05E1\u05D4"\u05DB \u05DB\u05D5\u05DC\u05DC \u05DE\u05E2"\u05DE</span><span style="text-align:left;">${formatCurrency(Math.round(total))}</span>
       </div>
     </div>
@@ -801,20 +815,6 @@ function signaturesPageHtml(data: PdfReportData, logoUrl?: string): string {
 // PAGE N+5: BACK COVER — contact + disclaimer
 // ═══════════════════════════════════════════════════════════
 
-function backCoverPageHtml(data: PdfReportData, logoUrl?: string): string {
-  return `
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
-      ${logoHtml(logoUrl)}
-      <div style="font-size:14px;font-weight:700;color:${PDF.dk};margin-top:12px;">דוח בדק בית</div>
-      <div style="font-size:10px;color:${PDF.lt};margin-top:4px;">${escapeHtml(data.property.projectName)} — דירה ${escapeHtml(data.property.apartmentNumber)}</div>
-      <div style="font-size:10px;color:${PDF.lt};margin-top:2px;">${escapeHtml(data.inspector.companyName ?? data.inspector.name)}</div>
-      <div style="width:120px;height:1px;background:${PDF.bdr};margin:12px auto;"></div>
-      <div style="font-size:9px;color:${PDF.vlt};">הופק באמצעות inField · www.infield.co.il</div>
-      <div style="font-size:8px;color:${PDF.vlt};margin-top:6px;">© ${new Date(data.reportDate).getFullYear() || new Date().getFullYear()} ${escapeHtml(data.inspector.companyName ?? data.inspector.name)}. כל הזכויות שמורות.</div>
-    </div>
-  `;
-}
-
 // ═══════════════════════════════════════════════════════════
 // ANNEX PAGES — photo gallery (reuses shared.ts annexPageHtml)
 // adapted to use breadcrumb headers
@@ -824,7 +824,7 @@ function annexPagesContent(defects: PdfDefect[], logoUrl?: string): string[] {
   const photosWithDefects: {
     url: string;
     caption?: string;
-    defectNum: number;
+    defectNum: string;
     defectTitle: string;
   }[] = [];
 
@@ -860,7 +860,7 @@ function annexPagesContent(defects: PdfDefect[], logoUrl?: string): string[] {
           <div style="border:1px solid ${PDF.bdrLt};border-radius:3px;overflow:hidden;">
             <img src="${escapeAttr(p.url)}" style="width:100%;height:160px;object-fit:cover;" />
             <div style="padding:4px 6px;background:${PDF.bg};">
-              <div style="font-size:9px;font-weight:600;color:${PDF.dk};">\u05DE\u05DE\u05E6\u05D0 ${p.defectNum}: ${escapeHtml(p.defectTitle)}</div>
+              <div style="font-size:9px;font-weight:600;color:${PDF.dk};">${p.defectNum}: ${escapeHtml(p.defectTitle)}</div>
               ${p.caption ? `<div style="font-size:8px;color:${PDF.lt};margin-top:1px;">${escapeHtml(p.caption)}</div>` : ''}
             </div>
           </div>`
@@ -1013,7 +1013,8 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
   const defectPageContents = defectPagesContent(
     data.defects,
     groups,
-    data.logoUrl
+    data.logoUrl,
+    data.showSeverity !== false
   );
   for (let i = 0; i < defectPageContents.length; i++) {
     pages.push({
@@ -1051,9 +1052,6 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
     }
   }
 
-  // Back Cover (simplified — no inspector details, just branding)
-  pages.push({ content: backCoverPageHtml(data, data.logoUrl), title: '' });
-
   // --- Pass 2: Fill TOC + Executive Summary with real page numbers ---
   const totalPages = pages.length;
 
@@ -1082,7 +1080,8 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
   pages[tocIndex].content = tocLegendPageHtml(
     tocEntries,
     data.defects,
-    data.logoUrl
+    data.logoUrl,
+    data.showSeverity !== false
   );
 
   pages[execIndex].content = execSummaryPageHtml(
