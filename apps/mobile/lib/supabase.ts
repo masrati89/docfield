@@ -28,6 +28,16 @@ const WebStorageAdapter = {
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
+const FETCH_TIMEOUT_MS = 10_000;
+
+const fetchWithTimeout: typeof fetch = (input, init) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  return fetch(input, { ...init, signal: controller.signal }).finally(() =>
+    clearTimeout(timeoutId)
+  );
+};
+
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn(
     'Missing Supabase env vars — create .env.local from .env.example'
@@ -41,4 +51,5 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: true,
   },
+  global: { fetch: fetchWithTimeout },
 });

@@ -498,8 +498,8 @@ export function usePdfGeneration(
         // Generate HTML based on report type
         const html =
           data.reportType === 'bedek_bait'
-            ? generateBedekBayitHtml(data)
-            : generateProtocolHtml(data);
+            ? await generateBedekBayitHtml(data)
+            : await generateProtocolHtml(data);
 
         // --- Web path: open preview in new tab with print-to-PDF ---
         // html2pdf.js rasterizes content (loses RTL, fonts, quality).

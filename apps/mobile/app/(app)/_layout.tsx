@@ -11,7 +11,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useSideMenu } from '@/hooks/useSideMenu';
-import { SharedTabHeader, NotificationsPanel } from '@/components/ui';
+import {
+  SharedTabHeader,
+  NotificationsPanel,
+  NetworkBanner,
+} from '@/components/ui';
 import { SideMenu } from '@/components/ui/SideMenu';
 
 const TAB_ICON_SIZE = 22;
@@ -117,6 +121,8 @@ export default function AppLayout() {
 
   return (
     <View style={{ flex: 1 }} onTouchStart={resetTimer}>
+      <NetworkBanner />
+
       {/* Persistent header — hidden on Home tab, inside reports, and inside project detail */}
       {!isNestedScreen && !isHomeTab && (
         <SharedTabHeader

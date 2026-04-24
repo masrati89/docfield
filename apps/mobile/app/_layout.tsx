@@ -18,6 +18,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { COLORS } from '@infield/ui';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ErrorBoundary } from '@/components/ui';
 
 import '../global.css';
 
@@ -174,12 +175,14 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <View style={{ flex: 1 }}>
-            <Slot />
-            {!splashDone && <AnimatedSplash onFinish={handleSplashFinish} />}
-          </View>
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <View style={{ flex: 1 }}>
+              <Slot />
+              {!splashDone && <AnimatedSplash onFinish={handleSplashFinish} />}
+            </View>
+          </AuthProvider>
+        </ErrorBoundary>
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

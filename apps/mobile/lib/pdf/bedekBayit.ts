@@ -947,7 +947,9 @@ function computeTotalCostWithVat(
   return preVat + preVat * rates.vat;
 }
 
-export function generateBedekBayitHtml(data: PdfReportData): string {
+export async function generateBedekBayitHtml(
+  data: PdfReportData
+): Promise<string> {
   const isDraft = data.status === 'draft';
   const title = 'דוח בדק בית';
   const formattedDate = formatDate(data.reportDate);
@@ -1112,7 +1114,7 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>${baseStyles()}${watermarkStyle(isDraft)}</style>
+  <style>${await baseStyles()}${watermarkStyle(isDraft)}</style>
 </head>
 <body>
   ${assembledPages}

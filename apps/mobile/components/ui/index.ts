@@ -7,3 +7,5 @@ export { EmptyState } from './EmptyState';
 export { SignaturePad } from './SignaturePad';
 export { SharedTabHeader } from './SharedTabHeader';
 export { NotificationsPanel } from './NotificationsPanel';
+export { ErrorBoundary } from './ErrorBoundary';
+export { NetworkBanner } from './NetworkBanner';

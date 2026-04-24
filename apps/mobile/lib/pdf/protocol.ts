@@ -621,7 +621,9 @@ function signaturesHtml(data: PdfReportData, date: string): string {
 
 // --- Main Export ---
 
-export function generateProtocolHtml(data: PdfReportData): string {
+export async function generateProtocolHtml(
+  data: PdfReportData
+): Promise<string> {
   const isDraft = data.status === 'draft';
   const round = data.roundNumber ?? 1;
   const isRound2 = round >= 2;
@@ -666,7 +668,7 @@ export function generateProtocolHtml(data: PdfReportData): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>${baseStyles()}${watermarkStyle(isDraft)}</style>
+  <style>${await baseStyles()}${watermarkStyle(isDraft)}</style>
 </head>
 <body>
   ${isDraft ? '<div class="watermark">טיוטה</div>' : ''}

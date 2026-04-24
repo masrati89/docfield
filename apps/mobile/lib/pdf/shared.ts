@@ -1,5 +1,7 @@
 // --- Shared PDF Utilities & Styles ---
 
+import { loadFontFaceCss } from './fonts';
+
 // Design system colors aligned with @infield/ui
 export const PDF = {
   dk: '#1a1a1a',
@@ -26,9 +28,10 @@ export function formatDate(isoOrRaw: string): string {
   return `${dd}/${mm}/${yyyy}`;
 }
 
-export function baseStyles(): string {
+export async function baseStyles(): Promise<string> {
+  const fontCss = await loadFontFaceCss();
   return `
-    @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap');
+    ${fontCss}
     @page {
       size: A4;
       margin: 0;
