@@ -91,7 +91,9 @@ export default function AppLayout() {
     !segments.includes('reports' as never) &&
     !segments.includes('projects' as never) &&
     !segments.includes('settings' as never) &&
-    !segments.includes('library' as never);
+    !segments.includes('library' as never) &&
+    !segments.includes('statistics' as never) &&
+    !segments.includes('help' as never);
 
   // SharedTabHeader only shows on top-level tab pages (not nested screens with own headers)
   const isNestedScreen = isInsideReport || isInsideProject;
@@ -211,9 +213,21 @@ export default function AppLayout() {
             ),
           }}
         />
-        {/* Hidden from tab bar — accessible via side menu */}
+        {/* Hidden from tab bar — accessible via ToolGrid / side menu */}
         <Tabs.Screen
           name="library"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="statistics"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="help"
           options={{
             href: null,
           }}

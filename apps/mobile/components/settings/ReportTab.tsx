@@ -1,13 +1,15 @@
 import { View, Text } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
 import { COLORS } from '@infield/ui';
+import { PressableScale } from '@/components/ui';
 
 import { useReportDefaults } from '@/hooks/useReportDefaults';
 import { TextFieldPreview } from './TextFieldPreview';
 import { BOQRatesSection } from './BOQRatesSection';
-import { TemplatesSection } from './TemplatesSection';
 
 // --- Field definitions ---
 
@@ -167,9 +169,61 @@ export function ReportTab({ onSuccess, onError }: ReportTabProps) {
         <BOQRatesSection onSuccess={onSuccess} onError={onError} />
       </Animated.View>
 
-      {/* Templates */}
+      {/* Templates — navigate to standalone screen */}
       <Animated.View entering={FadeInUp.delay(300).duration(300)}>
-        <TemplatesSection onSuccess={onSuccess} onError={onError} />
+        <PressableScale
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push('/settings/templates');
+          }}
+          style={{
+            flexDirection: 'row-reverse',
+            alignItems: 'center',
+            backgroundColor: '#fff',
+            borderWidth: 1,
+            borderColor: COLORS.cream[200],
+            borderRadius: 12,
+            padding: 16,
+            gap: 12,
+          }}
+        >
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              backgroundColor: COLORS.gold[100],
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Feather name="clipboard" size={20} color={COLORS.gold[600]} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                fontSize: 15,
+                fontFamily: 'Rubik-SemiBold',
+                color: COLORS.neutral[700],
+                textAlign: 'right',
+              }}
+            >
+              ניהול תבניות
+            </Text>
+            <Text
+              style={{
+                fontSize: 12,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.neutral[500],
+                textAlign: 'right',
+                marginTop: 2,
+              }}
+            >
+              צ׳קליסטים למסירה ובדק בית
+            </Text>
+          </View>
+          <Feather name="chevron-left" size={20} color={COLORS.neutral[400]} />
+        </PressableScale>
       </Animated.View>
     </View>
   );

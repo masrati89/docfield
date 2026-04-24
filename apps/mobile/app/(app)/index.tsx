@@ -160,6 +160,26 @@ export default function HomeScreen() {
     setShowNewInspection(true);
   }, []);
 
+  const handleToolPress = useCallback(
+    (label: string) => {
+      switch (label) {
+        case 'מאגר ממצאים':
+          router.push('/(app)/library');
+          break;
+        case 'סטטיסטיקות':
+          router.push('/(app)/statistics');
+          break;
+        case 'תבניות':
+          router.push('/(app)/settings/templates');
+          break;
+        case 'עזרה':
+          router.push('/(app)/help');
+          break;
+      }
+    },
+    [router]
+  );
+
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.cream[100] }}>
       <StatusBar style="light" />
@@ -262,7 +282,7 @@ export default function HomeScreen() {
 
             {/* Tools grid */}
             <View style={{ marginHorizontal: 16 }}>
-              <ToolGrid />
+              <ToolGrid onToolPress={handleToolPress} />
             </View>
 
             <View style={{ height: 20 }} />

@@ -22,8 +22,8 @@ const TOOLS: ToolItem[] = [
     bg: COLORS.primary[50],
   },
   {
-    label: 'חיפוש',
-    icon: 'search',
+    label: 'סטטיסטיקות',
+    icon: 'bar-chart-2',
     iconColor: COLORS.primary[600],
     bg: COLORS.primary[50],
   },
