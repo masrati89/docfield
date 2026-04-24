@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Switch,
   Platform,
   Modal,
+  ScrollView,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -33,7 +34,7 @@ interface ReportSettingsSheetProps {
   onClose?: () => void;
 }
 
-// --- Error Toast (replaces Alert.alert) ---
+// --- Error Banner ---
 
 function ErrorBanner({ message }: { message: string | null }) {
   if (!message) return null;
@@ -76,6 +77,7 @@ function ConfirmModal({
   confirmLabel,
   onConfirm,
   onCancel,
+  destructive,
 }: {
   visible: boolean;
   title: string;
@@ -83,6 +85,7 @@ function ConfirmModal({
   confirmLabel: string;
   onConfirm: () => void;
   onCancel: () => void;
+  destructive?: boolean;
 }) {
   const btnScale = useSharedValue(1);
   const btnAnim = useAnimatedStyle(() => ({
@@ -162,7 +165,9 @@ function ConfirmModal({
                 style={{
                   height: 40,
                   borderRadius: 10,
-                  backgroundColor: COLORS.primary[500],
+                  backgroundColor: destructive
+                    ? COLORS.danger[500]
+                    : COLORS.primary[500],
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
@@ -210,6 +215,8 @@ function ConfirmModal({
 
 // --- Component ---
 
+const NOTES_MAX_LENGTH = 500;
+
 export function ReportSettingsSheet({
   reportId,
   tenantName: initialName,
@@ -227,17 +234,50 @@ export function ReportSettingsSheet({
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showNoChecklistConfirm, setShowNoChecklistConfirm] = useState(false);
+  const [showDirtyConfirm, setShowDirtyConfirm] = useState(false);
 
   const roundLabel =
     roundNumber === 1 ? 'מסירה ראשונית' : `מסירה ${roundNumber}`;
 
-  const handleToggleNoChecklist = useCallback(
-    (newValue: boolean) => {
-      if (newValue && !noChecklist) {
-        // Switching to no-checklist: confirm first
+  const isDirty = useMemo(
+    () =>
+      name !== (initialName ?? '') ||
+      phone !== (initialPhone ?? '') ||
+      notes !== (initialNotes ?? '') ||
+      noChecklist !== initialNoChecklist,
+    [
+      name,
+      phone,
+      notes,
+      noChecklist,
+      initialName,
+      initialPhone,
+      initialNotes,
+      initialNoChecklist,
+    ]
+  );
+
+  const handleClose = useCallback(() => {
+    if (isDirty) {
+      setShowDirtyConfirm(true);
+    } else {
+      onClose?.();
+    }
+  }, [isDirty, onClose]);
+
+  const handleConfirmClose = useCallback(() => {
+    setShowDirtyConfirm(false);
+    onClose?.();
+  }, [onClose]);
+
+  // Switch ON = checklist active, OFF = disabled
+  const handleToggleChecklist = useCallback(
+    (switchValue: boolean) => {
+      const newNoChecklist = !switchValue;
+      if (newNoChecklist && !noChecklist) {
         setShowNoChecklistConfirm(true);
       } else {
-        setNoChecklist(newValue);
+        setNoChecklist(newNoChecklist);
       }
     },
     [noChecklist]
@@ -280,8 +320,8 @@ export function ReportSettingsSheet({
   }, [reportId, name, phone, notes, noChecklist, onSaved]);
 
   return (
-    <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 }}>
-      {/* No-checklist confirmation modal */}
+    <>
+      {/* No-checklist confirmation */}
       <ConfirmModal
         visible={showNoChecklistConfirm}
         title="ביטול צ׳קליסט"
@@ -291,179 +331,214 @@ export function ReportSettingsSheet({
         onCancel={() => setShowNoChecklistConfirm(false)}
       />
 
-      {/* Header */}
-      <View
-        style={{
-          flexDirection: 'row-reverse',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 4,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 17,
-            fontWeight: '700',
-            fontFamily: 'Rubik-Bold',
-            color: COLORS.neutral[800],
-            textAlign: 'right',
-          }}
-        >
-          הגדרות הדוח
-        </Text>
-        {onClose && (
-          <Pressable
-            onPress={onClose}
-            hitSlop={8}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: COLORS.cream[100],
-              borderWidth: 1,
-              borderColor: COLORS.cream[200],
-            }}
-          >
-            <Feather name="x" size={18} color={COLORS.neutral[600]} />
-          </Pressable>
-        )}
-      </View>
-
-      {/* Round badge */}
-      <View
-        style={{
-          alignSelf: 'flex-end',
-          backgroundColor: COLORS.primary[50],
-          paddingHorizontal: 10,
-          paddingVertical: 4,
-          borderRadius: 6,
-          marginBottom: 16,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 12,
-            fontFamily: 'Rubik-Medium',
-            color: COLORS.primary[700],
-          }}
-        >
-          {roundLabel}
-        </Text>
-      </View>
-
-      {/* Error banner */}
-      <ErrorBanner message={errorMsg} />
-
-      {/* Tenant name */}
-      <Text style={labelStyle}>שם הדייר</Text>
-      <TextInput
-        value={name}
-        onChangeText={setName}
-        placeholder="הכנס שם דייר"
-        placeholderTextColor={COLORS.neutral[400]}
-        style={inputStyle}
+      {/* Unsaved changes confirmation */}
+      <ConfirmModal
+        visible={showDirtyConfirm}
+        title="שינויים לא נשמרו"
+        message="יש שינויים שלא נשמרו. לסגור בלי לשמור?"
+        confirmLabel="סגור בלי לשמור"
+        onConfirm={handleConfirmClose}
+        onCancel={() => setShowDirtyConfirm(false)}
+        destructive
       />
 
-      {/* Tenant phone */}
-      <Text style={labelStyle}>טלפון דייר</Text>
-      <TextInput
-        value={phone}
-        onChangeText={setPhone}
-        placeholder="050-0000000"
-        placeholderTextColor={COLORS.neutral[400]}
-        keyboardType="phone-pad"
-        style={inputStyle}
-      />
-
-      {/* Notes */}
-      <Text style={labelStyle}>הערות לתחילת הדוח</Text>
-      <TextInput
-        value={notes}
-        onChangeText={setNotes}
-        placeholder="הערות כלליות..."
-        placeholderTextColor={COLORS.neutral[400]}
-        multiline
-        numberOfLines={3}
-        maxLength={500}
-        style={[inputStyle, { minHeight: 80, textAlignVertical: 'top' }]}
-      />
-
-      {/* No-checklist toggle */}
-      <View
-        style={{
-          flexDirection: 'row-reverse',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginTop: 16,
-          paddingVertical: 12,
-          paddingHorizontal: 14,
-          backgroundColor: COLORS.cream[100],
-          borderWidth: 1,
-          borderColor: COLORS.cream[200],
-          borderRadius: BORDER_RADIUS.md,
-        }}
+      <ScrollView
+        style={{ paddingHorizontal: 20, paddingTop: 8 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        bounces={false}
       >
+        {/* Header */}
         <View
           style={{
             flexDirection: 'row-reverse',
             alignItems: 'center',
-            gap: 8,
-            flex: 1,
+            justifyContent: 'space-between',
+            marginBottom: 4,
           }}
         >
-          <Feather
-            name={noChecklist ? 'x-circle' : 'check-circle'}
-            size={18}
-            color={noChecklist ? COLORS.neutral[400] : COLORS.primary[500]}
-          />
-          <View style={{ flex: 1 }}>
-            <Text
+          <Text
+            style={{
+              fontSize: 17,
+              fontWeight: '700',
+              fontFamily: 'Rubik-Bold',
+              color: COLORS.neutral[800],
+              textAlign: 'right',
+            }}
+          >
+            הגדרות הדוח
+          </Text>
+          {onClose && (
+            <Pressable
+              onPress={handleClose}
+              hitSlop={8}
               style={{
-                fontSize: 14,
-                fontFamily: 'Rubik-Medium',
-                color: COLORS.neutral[700],
-                textAlign: 'right',
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: COLORS.cream[100],
+                borderWidth: 1,
+                borderColor: COLORS.cream[200],
               }}
             >
-              {noChecklist ? 'ללא צ׳קליסט' : 'צ׳קליסט פעיל'}
-            </Text>
-            <Text
-              style={{
-                fontSize: 12,
-                fontFamily: 'Rubik-Regular',
-                color: COLORS.neutral[400],
-                textAlign: 'right',
-              }}
-            >
-              {noChecklist
-                ? 'הוספת ממצאים ידנית בלבד'
-                : 'צ׳קליסט חדרים מוצג בדוח'}
-            </Text>
-          </View>
+              <Feather name="x" size={18} color={COLORS.neutral[600]} />
+            </Pressable>
+          )}
         </View>
-        <Switch
-          value={noChecklist}
-          onValueChange={handleToggleNoChecklist}
-          trackColor={{
-            false: COLORS.cream[200],
-            true: COLORS.primary[200],
-          }}
-          thumbColor={noChecklist ? COLORS.primary[500] : COLORS.neutral[300]}
-        />
-      </View>
 
-      {/* Save button */}
-      <View style={{ marginTop: 16 }}>
-        <Button
-          label={isSaving ? 'שומר...' : 'שמור הגדרות'}
-          onPress={handleSave}
-          disabled={isSaving}
-          size="lg"
+        {/* Round badge */}
+        <View
+          style={{
+            alignSelf: 'flex-end',
+            backgroundColor: COLORS.primary[50],
+            paddingHorizontal: 10,
+            paddingVertical: 4,
+            borderRadius: 6,
+            marginBottom: 16,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              fontFamily: 'Rubik-Medium',
+              color: COLORS.primary[700],
+            }}
+          >
+            {roundLabel}
+          </Text>
+        </View>
+
+        {/* Error banner */}
+        <ErrorBanner message={errorMsg} />
+
+        {/* Tenant name */}
+        <Text style={labelStyle}>שם הדייר</Text>
+        <TextInput
+          value={name}
+          onChangeText={setName}
+          placeholder="הכנס שם דייר"
+          placeholderTextColor={COLORS.neutral[400]}
+          style={inputStyle}
         />
-      </View>
-    </View>
+
+        {/* Tenant phone */}
+        <Text style={labelStyle}>טלפון דייר</Text>
+        <TextInput
+          value={phone}
+          onChangeText={setPhone}
+          placeholder="050-0000000"
+          placeholderTextColor={COLORS.neutral[400]}
+          keyboardType="phone-pad"
+          style={inputStyle}
+        />
+
+        {/* Notes with character counter */}
+        <Text style={labelStyle}>הערות לתחילת הדוח</Text>
+        <TextInput
+          value={notes}
+          onChangeText={setNotes}
+          placeholder="הערות כלליות..."
+          placeholderTextColor={COLORS.neutral[400]}
+          multiline
+          numberOfLines={3}
+          maxLength={NOTES_MAX_LENGTH}
+          style={[inputStyle, { minHeight: 80, textAlignVertical: 'top' }]}
+        />
+        <Text
+          style={{
+            fontSize: 11,
+            fontFamily: 'Rubik-Regular',
+            color:
+              notes.length > NOTES_MAX_LENGTH * 0.9
+                ? COLORS.warning[500]
+                : COLORS.neutral[400],
+            textAlign: 'left',
+            marginTop: 4,
+          }}
+        >
+          {notes.length}/{NOTES_MAX_LENGTH}
+        </Text>
+
+        {/* Checklist toggle — Switch ON = active */}
+        <View
+          style={{
+            flexDirection: 'row-reverse',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginTop: 16,
+            paddingVertical: 12,
+            paddingHorizontal: 14,
+            backgroundColor: COLORS.cream[100],
+            borderWidth: 1,
+            borderColor: COLORS.cream[200],
+            borderRadius: BORDER_RADIUS.md,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: 'row-reverse',
+              alignItems: 'center',
+              gap: 8,
+              flex: 1,
+            }}
+          >
+            <Feather
+              name={noChecklist ? 'x-circle' : 'check-circle'}
+              size={18}
+              color={noChecklist ? COLORS.neutral[400] : COLORS.primary[500]}
+            />
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontFamily: 'Rubik-Medium',
+                  color: COLORS.neutral[700],
+                  textAlign: 'right',
+                }}
+              >
+                {noChecklist ? 'ללא צ׳קליסט' : 'צ׳קליסט פעיל'}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontFamily: 'Rubik-Regular',
+                  color: COLORS.neutral[400],
+                  textAlign: 'right',
+                }}
+              >
+                {noChecklist
+                  ? 'הוספת ממצאים ידנית בלבד'
+                  : 'צ׳קליסט חדרים מוצג בדוח'}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={!noChecklist}
+            onValueChange={handleToggleChecklist}
+            trackColor={{
+              false: COLORS.cream[200],
+              true: COLORS.primary[200],
+            }}
+            thumbColor={
+              !noChecklist ? COLORS.primary[500] : COLORS.neutral[300]
+            }
+          />
+        </View>
+
+        {/* Save button */}
+        <View style={{ marginTop: 16 }}>
+          <Button
+            label={isSaving ? 'שומר...' : 'שמור הגדרות'}
+            onPress={handleSave}
+            disabled={isSaving}
+            size="lg"
+          />
+        </View>
+      </ScrollView>
+    </>
   );
 }
 

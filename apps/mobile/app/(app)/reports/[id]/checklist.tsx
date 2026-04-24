@@ -240,26 +240,27 @@ export default function ChecklistScreen() {
   const [tenantPhone, setTenantPhone] = useState<string | null>(null);
   const [notes, setNotes] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchExtended() {
-      if (!reportId) return;
-      try {
-        const { data } = await supabase
-          .from('delivery_reports')
-          .select('round_number, tenant_phone, notes')
-          .eq('id', reportId)
-          .single();
-        if (data) {
-          setRoundNumber((data.round_number as number) ?? 1);
-          setTenantPhone(data.tenant_phone as string | null);
-          setNotes(data.notes as string | null);
-        }
-      } catch {
-        // Silent fail
+  const fetchExtended = useCallback(async () => {
+    if (!reportId) return;
+    try {
+      const { data } = await supabase
+        .from('delivery_reports')
+        .select('round_number, tenant_phone, notes')
+        .eq('id', reportId)
+        .single();
+      if (data) {
+        setRoundNumber((data.round_number as number) ?? 1);
+        setTenantPhone(data.tenant_phone as string | null);
+        setNotes(data.notes as string | null);
       }
+    } catch {
+      // Silent fail
     }
-    fetchExtended();
   }, [reportId]);
+
+  useEffect(() => {
+    fetchExtended();
+  }, [fetchExtended]);
 
   // Derived info
   const reportTitle = report
@@ -336,8 +337,9 @@ export default function ChecklistScreen() {
     (settingsSheetRef.current as any)?.close?.();
     setShowSettings(false);
     refetch();
+    fetchExtended();
     showToast('ההגדרות נשמרו', 'success');
-  }, [refetch, showToast]);
+  }, [refetch, fetchExtended, showToast]);
 
   const pct =
     stats.total > 0 ? Math.round((stats.checked / stats.total) * 100) : 0;
@@ -1050,23 +1052,22 @@ export default function ChecklistScreen() {
                 icon: 'grid' as const,
                 label: 'ניהול חדרים',
                 handler: undefined,
+                comingSoon: true,
               },
               {
                 icon: 'share-2' as const,
                 label: 'שיתוף פרוטוקול',
                 handler: handleShare,
               },
-              {
-                icon: 'file-text' as const,
-                label: 'שמור טיוטה',
-                handler: undefined,
-                isAccent: true,
-              },
             ].map((item, idx) => (
               <Pressable
                 key={`${item.icon}-${idx}`}
                 onPress={() => {
                   setMenuVisible(false);
+                  if (item.comingSoon) {
+                    showToast('בקרוב...', 'info');
+                    return;
+                  }
                   item.handler?.();
                 }}
                 style={{
@@ -1077,31 +1078,37 @@ export default function ChecklistScreen() {
                   paddingHorizontal: 14,
                   borderTopWidth: idx === 0 ? 0 : 1,
                   borderTopColor: COLORS.cream[100],
+                  opacity: item.comingSoon ? 0.45 : 1,
                 }}
               >
                 <Feather
-                  name={item.icon}
+                  name={item.comingSoon ? 'lock' : item.icon}
                   size={16}
-                  color={
-                    item.isAccent ? COLORS.primary[700] : COLORS.neutral[500]
-                  }
+                  color={COLORS.neutral[500]}
                 />
                 <Text
                   style={{
                     fontSize: 13,
-                    fontWeight: item.isAccent ? '600' : '500',
-                    fontFamily: item.isAccent
-                      ? 'Rubik-SemiBold'
-                      : 'Rubik-Medium',
-                    color: item.isAccent
-                      ? COLORS.primary[700]
-                      : COLORS.neutral[700],
+                    fontWeight: '500',
+                    fontFamily: 'Rubik-Medium',
+                    color: COLORS.neutral[700],
                     textAlign: 'right',
                     flex: 1,
                   }}
                 >
                   {item.label}
                 </Text>
+                {item.comingSoon && (
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontFamily: 'Rubik-Regular',
+                      color: COLORS.neutral[400],
+                    }}
+                  >
+                    בקרוב
+                  </Text>
+                )}
               </Pressable>
             ))}
           </Pressable>
