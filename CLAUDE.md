@@ -80,28 +80,45 @@ A repo audit on 2026-04-10 (`docs/audits/AUDIT_2026-04-10.md`) identified critic
 - 1.3 New screens — statistics, help/FAQ, standalone templates management
 - 1.4 Protocol settings UX — toggle flip, dirty check, scroll, char counter, menu cleanup
 
+**Phase 1.5 — Pre-Beta Hardening** (completed 2026-04-24):
+
+- 1.5.1 RLS privilege escalation fix — migration 048 (restrict users UPDATE: role + organization_id immutable for self-update)
+- 1.5.2 Global Error Boundary — `ErrorBoundary.tsx` wrapping AuthProvider in root layout
+- 1.5.3 Supabase client timeout — 10s AbortController fetch wrapper
+- 1.5.4 Network status banner — `NetworkBanner.tsx` with NetInfo, animated entrance/exit
+- 1.5.5 Console log cleanup — `__DEV__` guard on AuthContext warn logs
+- 1.5.6 PDF offline fonts — `fonts.ts` embeds Rubik TTF as base64 @font-face (no CDN dependency)
+- 1.5.7 App icons — icon.png, adaptive-icon.png, splash-icon.png, favicon.png + app.json config
+- 1.5.8 Legal docs — privacy-policy.html (HE+EN), terms-of-service.html, app-store-prep.md
+
 Next: Phase 2 — Web Admin Console + Checklist Templates (data-driven)
 
 **Feature status — post audit:**
 
-| Feature                     | Status                                                    |
-| --------------------------- | --------------------------------------------------------- |
-| Digital signatures          | ✅ built                                                  |
-| Camera + annotations        | ✅ built                                                  |
-| Pre-PDF summary             | ✅ built                                                  |
-| OAuth (Google/Apple)        | ✅ built                                                  |
-| Iron Rule inspector/org     | ✅ built (22 snapshot columns)                            |
-| Notifications               | ✅ built — DB + hook + badge + NotificationsPanel UI      |
-| Search overlay              | ✅ built — SearchOverlay component + wired to trigger     |
-| Round 2 inherited defects   | ✅ built — copyInheritedDefects + ReviewStatusPill + hook |
-| Iron Rule property fields   | ✅ built (migration 033 — 4 snapshot columns)             |
-| Statistics screen           | ✅ built — report counts, defects, project progress       |
-| Help/FAQ screen             | ✅ built — FAQ accordion with search + onboarding modal   |
-| Templates management        | ✅ built — standalone screen (moved from settings tab)    |
-| WhatsApp send (Green API)   | 🔴 not built                                              |
-| Offline sync (WatermelonDB) | 🔴 deferred post-MVP                                      |
-| Speech recognition          | 🔴 post-MVP                                               |
-| Admin settings              | 🔴 not built — category/template/location management      |
+| Feature                     | Status                                                     |
+| --------------------------- | ---------------------------------------------------------- |
+| Digital signatures          | ✅ built                                                   |
+| Camera + annotations        | ✅ built                                                   |
+| Pre-PDF summary             | ✅ built                                                   |
+| OAuth (Google/Apple)        | ✅ built                                                   |
+| Iron Rule inspector/org     | ✅ built (22 snapshot columns)                             |
+| Notifications               | ✅ built — DB + hook + badge + NotificationsPanel UI       |
+| Search overlay              | ✅ built — SearchOverlay component + wired to trigger      |
+| Round 2 inherited defects   | ✅ built — copyInheritedDefects + ReviewStatusPill + hook  |
+| Iron Rule property fields   | ✅ built (migration 033 — 4 snapshot columns)              |
+| Statistics screen           | ✅ built — report counts, defects, project progress        |
+| Help/FAQ screen             | ✅ built — FAQ accordion with search + onboarding modal    |
+| Templates management        | ✅ built — standalone screen (moved from settings tab)     |
+| Error Boundary              | ✅ built — global catch with Hebrew retry screen           |
+| Network Banner              | ✅ built — offline detection via NetInfo + animated banner |
+| PDF offline fonts           | ✅ built — base64 embedded Rubik, no CDN dependency        |
+| Supabase fetch timeout      | ✅ built — 10s AbortController wrapper                     |
+| App icons + splash          | ✅ built — iOS icon, Android adaptive, splash, favicon     |
+| Legal docs                  | ✅ built — privacy policy (HE+EN), terms, store prep guide |
+| WhatsApp send (Green API)   | 🔴 not built                                               |
+| Offline sync (WatermelonDB) | 🔴 deferred post-MVP                                       |
+| Speech recognition          | 🔴 post-MVP                                                |
+| Admin settings              | 🔴 not built — category/template/location management       |
 
 ## Stack
 
@@ -171,9 +188,9 @@ apps/mobile/
 ├── constants/theme.ts                 ✅ Design tokens
 ├── lib/
 │   ├── supabase.ts                    ✅ Client config
-│   ├── createReportWithSnapshot.ts    ✅ Iron Rule — freezes 18 snapshot fields on INSERT
+│   ├── createReportWithSnapshot.ts    ✅ Iron Rule — freezes 22 snapshot fields on INSERT
 │   ├── annotations/                   ✅ Photo annotation rendering
-│   └── pdf/                           ✅ PDF generation (bedekBayit, protocol, previewHtml, shared, types)
+│   └── pdf/                           ✅ PDF generation (bedekBayit, protocol, previewHtml, shared, types, fonts)
 └── assets/fonts/                      ✅ Rubik (Regular/Medium/SemiBold/Bold)
 ```
 
@@ -201,7 +218,8 @@ components/
 │                  SignOutButton, InspectorProfileSection, SignatureStampSection,
 │                  StatisticsSection
 ├── ui/            Button, Toast, BottomSheetWrapper(.web), SkeletonBlock, EmptyState,
-│                  SideMenu, NewInspectionSheet, SharedTabHeader, SignaturePad(.web)
+│                  SideMenu, NewInspectionSheet, SharedTabHeader, SignaturePad(.web),
+│                  PressableScale, NotificationsPanel, ErrorBoundary, NetworkBanner
 └── wizard/        NewInspectionWizard, WizardShell, StepReportType, StepProject, StepBuildings,
                    StepApartmentCounts, StepApartment, StepClientDetails, StepProtocol,
                    useWizardState, NewInspectionWizard.types
@@ -273,7 +291,7 @@ packages/ui/       (@infield/ui)
 
 ## Database (supabase/migrations/)
 
-34 migrations through 034. See `supabase/migrations/` for the full list. Key milestones:
+48 migrations through 048. See `supabase/migrations/` for the full list. Key milestones:
 
 - **001–011** — core schema: organizations, users, projects, checklist_templates, delivery_reports, checklist_results, defects, defect_library, signatures, clients, storage_buckets
 - **012–015** — early extensions: round 2 fields + freetext (012), report_log audit trail (013), notifications (014), nullable apartment_id (015)
@@ -282,6 +300,11 @@ packages/ui/       (@infield/ui)
 - **029 + 032 + 033** — Iron Rule: 22 snapshot columns (10 inspector + 8 organization + 4 property) on delivery_reports; no backfill (test reports recreated via wizard)
 - **031** — global defect library seed: 338 canonical entries
 - **034** — defect_photos UPDATE RLS policy (same-org admin/PM or report owner)
+- **035–037** — defect schema extensions (unit_price, quantity, 4-level severity), israeli_standards registry (105 entries), BOQ rate snapshots (Iron Rule)
+- **038–042** — report_log billing events, default checklist template seed (14 rooms, 83 items), user preferences JSONB, no_checklist flag, trade metadata
+- **043–045** — security hardening: registration policies, israeli_standards RLS, users SELECT restriction, checklist_templates RLS recursion fix
+- **046–047** — default status in_progress, show_severity column on delivery_reports
+- **048** — restrict users UPDATE policy (prevent role/organization_id self-escalation)
 
 All tables: RLS enforced, organization_id tenant isolation.
 Signatures + report_log: no UPDATE/DELETE policies (immutable).
