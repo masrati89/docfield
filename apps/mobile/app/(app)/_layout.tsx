@@ -125,6 +125,7 @@ export default function AppLayout() {
       )}
 
       <Tabs
+        backBehavior="history"
         screenOptions={{
           headerShown: false,
           animation: 'fade',

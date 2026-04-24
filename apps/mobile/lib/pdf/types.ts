@@ -2,6 +2,7 @@
 
 export interface PdfInspector {
   name: string;
+  professionalTitle?: string;
   licenseNumber?: string;
   education?: string;
   experience?: string;

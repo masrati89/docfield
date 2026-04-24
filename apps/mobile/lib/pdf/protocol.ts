@@ -67,17 +67,6 @@ function statusBadge(status: 'fixed' | 'open' | 'new'): string {
   </span>`;
 }
 
-function detailsBox(title: string, rows: [string, string][]): string {
-  const rowsHtml = rows
-    .map(
-      ([k, v]) =>
-        `<div style="display:flex;gap:4px;"><span style="color:${PDF.lt};font-weight:500;min-width:54px;">${escapeHtml(k)}</span><span style="color:${PDF.dk};font-weight:500;">${escapeHtml(v)}</span></div>`
-    )
-    .join('');
-  return `${sectionTitle(escapeHtml(title))}
-    <div style="padding:5px 10px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:10px;line-height:1.8;">${rowsHtml}</div>`;
-}
-
 function miniHeader(text: string, logoUrl?: string): string {
   return `<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:4px;border-bottom:1px solid ${PDF.bdr};margin-bottom:4px;">
     <div style="font-size:11px;font-weight:600;color:${PDF.dk};">${escapeHtml(text)}</div>
@@ -162,6 +151,7 @@ function defectRowHtml(
     title: string;
     location: string;
     recommendation?: string;
+    note?: string;
     photoUrls?: string[];
     roundStatus?: 'fixed' | 'open' | 'new';
   },
@@ -175,13 +165,17 @@ function defectRowHtml(
       <div style="font-size:11px;font-weight:600;color:${PDF.md};width:18px;text-align:center;flex-shrink:0;margin-top:1px;">${defect.number}.</div>
       <div style="flex:1;">
         <div style="display:flex;align-items:flex-start;gap:6px;justify-content:space-between;">
-          <div style="font-size:11px;font-weight:500;color:${PDF.dk};line-height:1.4;flex:1;${isFixed ? 'text-decoration:line-through;text-decoration-color:' + PDF.lt + ';' : ''}">${escapeHtml(defect.title)}</div>
+          <div style="font-size:11px;font-weight:500;color:${PDF.dk};line-height:1.4;flex:1;${isFixed ? 'text-decoration:line-through;text-decoration-color:' + PDF.lt + ';' : ''}"><span style="font-size:9px;color:${PDF.lt};font-weight:400;">תיאור ממצא: </span>${escapeHtml(defect.title)}</div>
           ${isRound2 && defect.roundStatus ? statusBadge(defect.roundStatus) : ''}
         </div>
-        <div style="font-size:9px;color:${PDF.lt};margin-top:1px;">מיקום: ${escapeHtml(defect.location)}</div>`;
+        <div style="font-size:9px;color:${PDF.lt};margin-top:1px;"><span style="font-weight:500;">מיקום: </span>${escapeHtml(defect.location)}</div>`;
 
   if (defect.recommendation) {
-    html += `<div style="font-size:9px;color:${PDF.accent};margin-top:2px;">המלצה: ${escapeHtml(defect.recommendation)}</div>`;
+    html += `<div style="font-size:9px;color:${PDF.accent};margin-top:2px;"><span style="font-weight:500;">המלצה: </span>${escapeHtml(defect.recommendation)}</div>`;
+  }
+
+  if (defect.note) {
+    html += `<div style="font-size:9px;color:${PDF.md};margin-top:2px;"><span style="color:${PDF.lt};font-weight:500;">הערה: </span>${escapeHtml(defect.note)}</div>`;
   }
 
   html += `</div></div>`;
@@ -292,25 +286,37 @@ function detailsPageHtml(
 
   const hasChecklist = (data.checklistItems ?? []).length > 0;
 
-  const aptRows: [string, string][] = [
-    ['פרויקט:', data.property.projectName],
-    ['כתובת:', data.property.address ?? ''],
-    [
-      'דירה:',
-      `דירה ${data.property.apartmentNumber}${data.property.floor !== null && data.property.floor !== undefined ? `, קומה ${data.property.floor}` : ''}`,
-    ],
-  ];
-  if (data.property.area) aptRows.push(['שטח:', `${data.property.area} מ"ר`]);
+  // Build compact detail pairs (mockup style: single box, flex-wrap)
+  const detailPairs: [string, string][] = [];
+  detailPairs.push(['פרויקט:', data.property.projectName]);
+  if (data.property.address)
+    detailPairs.push(['כתובת:', data.property.address]);
+  const aptParts = [`דירה ${data.property.apartmentNumber}`];
+  if (data.property.floor !== null && data.property.floor !== undefined)
+    aptParts.push(`קומה ${data.property.floor}`);
+  detailPairs.push(['דירה:', aptParts.join(', ')]);
+  if (data.property.area)
+    detailPairs.push(['שטח:', `${data.property.area} מ"ר`]);
 
-  const tenantRows: [string, string][] = [['שם מלא:', data.client.name]];
-  if (data.client.idNumber) tenantRows.push(['ת.ז.:', data.client.idNumber]);
-  if (data.client.phone) tenantRows.push(['טלפון:', data.client.phone]);
-  if (data.client.email) tenantRows.push(['אימייל:', data.client.email]);
+  const tenantParts = [data.client.name];
+  if (data.client.idNumber) tenantParts.push(`ת.ז. ${data.client.idNumber}`);
+  if (data.client.phone) tenantParts.push(data.client.phone);
+  if (data.client.email) tenantParts.push(data.client.email);
+  detailPairs.push(['דייר:', tenantParts.join(' | ')]);
 
-  const repRows: [string, string][] = [['שם:', data.inspector.name]];
+  const inspectorParts = [data.inspector.name];
+  if (data.inspector.professionalTitle)
+    inspectorParts.push(data.inspector.professionalTitle);
+  const inspectorValue = inspectorParts.join(', ');
+  const inspectorExtra: string[] = [];
   if (data.inspector.companyName)
-    repRows.push(['חברה:', data.inspector.companyName]);
-  if (data.inspector.phone) repRows.push(['טלפון:', data.inspector.phone]);
+    inspectorExtra.push(data.inspector.companyName);
+  if (data.inspector.phone) inspectorExtra.push(data.inspector.phone);
+  const fullInspector =
+    inspectorExtra.length > 0
+      ? `${inspectorValue} — ${inspectorExtra.join(' — ')}`
+      : inspectorValue;
+  detailPairs.push(['מבצע המסירה:', fullInspector]);
 
   // Running header
   const roundBadgeBg = isRound2 ? PDF.accent : PDF.dk;
@@ -329,12 +335,16 @@ function detailsPageHtml(
     </div>
   </div>`;
 
+  const detailsHtml = detailPairs
+    .filter(([, v]) => v)
+    .map(
+      ([k, v]) =>
+        `<div style="display:flex;gap:3px;"><span style="color:${PDF.lt};">${escapeHtml(k)}</span><span style="color:${PDF.dk};font-weight:500;">${escapeHtml(v)}</span></div>`
+    )
+    .join('');
+
   let content = `${header}
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      ${detailsBox('פרטי הנכס', aptRows)}
-      ${detailsBox('פרטי הדייר', tenantRows)}
-    </div>
-    ${detailsBox('מבצע המסירה', repRows)}`;
+    <div style="margin-top:4px;padding:4px 8px;border:1px solid ${PDF.bdr};border-radius:2px;font-size:9px;display:flex;flex-wrap:wrap;gap:2px 14px;background:${PDF.bg};">${detailsHtml}</div>`;
 
   if (hasChecklist) {
     content += checklistHtml(data.checklistItems!, isRound2);
@@ -444,7 +454,7 @@ function summaryRound1Html(
   const statusColor = isCompleted ? PDF.accent : PDF.red;
   const statusText = isCompleted
     ? 'המסירה הושלמה.'
-    : 'המסירה לא הושלמה — נדרשים תיקונים. לאחר ביצוע התיקונים תיקבע מסירה שנייה לקבלת הדירה.';
+    : 'הכנת הדירה תתבצע בהתאם לפרוטוקול המסירה וחוק המכר, לאחר ביצוע התיקונים תיקבע מסירה שנייה (סופית) לקבלת הדירה על ידי הדייר.';
 
   const termsText = (data.protocolTerms ?? REPORT_DEFAULTS.protocol_terms)
     .replace('הדייר מתבקש לשמור מסמך זה כאסמכתא.', '')

@@ -286,92 +286,78 @@ function tenantRightsPageHtml(data: PdfReportData, logoUrl?: string): string {
 
   const requiredDocs = data.requiredDocs ?? REPORT_DEFAULTS.required_docs;
 
-  return `
-    ${breadcrumbHeaderHtml('\u05D9\u05D3\u05E2 \u05DB\u05DC\u05DC\u05D9 \u05DC\u05D3\u05D9\u05D9\u05E8', logoUrl)}
-    <div style="font-size:16px;font-weight:700;color:${PDF.dk};margin-bottom:6px;">\u05D9\u05D3\u05E2 \u05DB\u05DC\u05DC\u05D9 \u05DC\u05D3\u05D9\u05D9\u05E8</div>
-    ${sectionTitle('\u05D0\u05D7\u05E8\u05D9\u05D5\u05EA \u05E7\u05D1\u05DC\u05DF \u2014 \u05D7\u05D5\u05E7 \u05D4\u05DE\u05DB\u05E8 (\u05D3\u05D9\u05E8\u05D5\u05EA)')}
-    <div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:10px;line-height:1.7;">
-      <div style="margin-bottom:4px;">\u05E7\u05D1\u05DC\u05DF \u05D4\u05DE\u05D5\u05DB\u05E8 \u05D3\u05D9\u05E8\u05D4 \u05E0\u05D5\u05E9\u05D0 \u05D1\u05D0\u05D7\u05E8\u05D9\u05D5\u05EA \u05DC\u05EA\u05D9\u05E7\u05D5\u05DF \u05DC\u05D9\u05E7\u05D5\u05D9\u05D9\u05DD \u05E9\u05E0\u05EA\u05D2\u05DC\u05D5 \u05D1\u05D3\u05D9\u05E8\u05D4 \u05D1\u05EA\u05E7\u05D5\u05E4\u05D4 \u05E9\u05DC\u05D0\u05D7\u05E8 \u05DE\u05E1\u05D9\u05E8\u05EA\u05D4 \u05DC\u05E7\u05D5\u05E0\u05D4. \u05D4\u05D0\u05D7\u05E8\u05D9\u05D5\u05EA \u05DE\u05EA\u05D7\u05DC\u05E7\u05EA \u05DC\u05E9\u05EA\u05D9 \u05EA\u05E7\u05D5\u05E4\u05D5\u05EA:</div>
-      <div style="font-weight:600;color:${PDF.dk};margin-top:4px;">1. \u05EA\u05E7\u05D5\u05E4\u05EA \u05D4\u05D1\u05D3\u05E7</div>
-      <div>\u05D7\u05D5\u05D1\u05D4 \u05E2\u05DC \u05D4\u05DE\u05D5\u05DB\u05E8 \u05DC\u05EA\u05E7\u05DF \u05D0\u05EA \u05D4\u05DC\u05D9\u05E7\u05D5\u05D9 \u05D0\u05DC\u05D0 \u05D0\u05DD \u05D4\u05D5\u05DB\u05D9\u05D7 \u05E9\u05E0\u05D2\u05E8\u05DD \u05D1\u05D0\u05E9\u05DE\u05EA \u05D1\u05E2\u05DC \u05D4\u05D3\u05D9\u05E8\u05D4. \u05D4\u05EA\u05E7\u05D5\u05E4\u05D4 \u05E0\u05DE\u05E9\u05DB\u05EA \u05D1\u05D9\u05DF \u05E9\u05E0\u05D4 \u05DC-7 \u05E9\u05E0\u05D9\u05DD \u05DC\u05E4\u05D9 \u05DE\u05D4\u05D5\u05EA \u05D4\u05DC\u05D9\u05E7\u05D5\u05D9.</div>
-      <div style="font-weight:600;color:${PDF.dk};margin-top:4px;">2. \u05EA\u05E7\u05D5\u05E4\u05EA \u05D4\u05D0\u05D7\u05E8\u05D9\u05D5\u05EA</div>
-      <div>\u05D7\u05D5\u05D1\u05EA \u05D4\u05D4\u05D5\u05DB\u05D7\u05D4 \u05E2\u05DC \u05D4\u05E8\u05D5\u05DB\u05E9 \u2014 \u05E2\u05DC\u05D9\u05D5 \u05DC\u05D4\u05D5\u05DB\u05D9\u05D7 \u05E9\u05D4\u05DC\u05D9\u05E7\u05D5\u05D9 \u05E0\u05D5\u05D1\u05E2 \u05DE\u05EA\u05DB\u05E0\u05D5\u05DF, \u05E2\u05D1\u05D5\u05D3\u05D4 \u05D0\u05D5 \u05D7\u05D5\u05DE\u05E8\u05D9\u05DD. \u05DE\u05EA\u05D7\u05D9\u05DC\u05D4 \u05E2\u05DD \u05E1\u05D9\u05D5\u05DD \u05EA\u05E7\u05D5\u05E4\u05EA \u05D4\u05D1\u05D3\u05E7, \u05E0\u05DE\u05E9\u05DB\u05EA 3 \u05E9\u05E0\u05D9\u05DD.</div>
-    </div>
-    ${sectionTitle('\u05EA\u05E7\u05D5\u05E4\u05D5\u05EA \u05D1\u05D3\u05E7 \u05DC\u05E4\u05D9 \u05D7\u05D5\u05E7 \u05DE\u05DB\u05E8')}
-    <div style="border:1px solid ${PDF.bdr};border-radius:2px;overflow:hidden;font-size:10px;">
-      <div style="display:grid;grid-template-columns:1fr 80px;background:${PDF.dk};color:#fff;padding:4px 6px;font-weight:600;">
-        <span>\u05E1\u05D5\u05D2 \u05D4\u05DC\u05D9\u05E7\u05D5\u05D9</span><span style="text-align:left;">\u05EA\u05E7\u05D5\u05E4\u05D4</span>
-      </div>
-      ${warrantyRowsHtml}
-    </div>
-    ${sectionTitle('\u05DE\u05E1\u05DE\u05DB\u05D9\u05DD \u05E0\u05D3\u05E8\u05E9\u05D9\u05DD \u05D1\u05D9\u05D5\u05DD \u05DE\u05E1\u05D9\u05E8\u05D4')}
-    <div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:10px;line-height:1.7;">
-      ${requiredDocs.map((t, i) => `<div style="display:flex;gap:4px;"><span style="color:${PDF.accent};font-weight:700;">${i + 1}.</span><span>${t}</span></div>`).join('')}
-    </div>
-  `;
-}
+  // General notes sections (merged from former separate page)
+  let generalNotesSections = '';
 
-// ═══════════════════════════════════════════════════════════
-// PAGE 6: GENERAL NOTES (conditional)
-// ═══════════════════════════════════════════════════════════
-
-function generalNotesPageHtml(data: PdfReportData, logoUrl?: string): string {
-  const sections: string[] = [];
-
-  // Method
   if (data.showWorkMethod !== false) {
     const workMethodText = data.workMethod ?? REPORT_DEFAULTS.work_method;
-    sections.push(`
-      ${sectionTitle('\u05E9\u05D9\u05D8\u05EA \u05E2\u05D1\u05D5\u05D3\u05D4')}
+    generalNotesSections += `
+      ${sectionTitle('שיטת עבודה')}
       <div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:10px;line-height:1.7;">
         ${escapeHtml(workMethodText)}
       </div>
-    `);
+    `;
   }
 
-  // General notes from data
   if (data.generalNotes?.trim()) {
     const lines = data.generalNotes
       .trim()
       .split('\n')
       .filter((l) => l.trim());
-    sections.push(`
-      ${sectionTitle('\u05D4\u05E2\u05E8\u05D5\u05EA \u05DB\u05DC\u05DC\u05D9\u05D5\u05EA')}
+    generalNotesSections += `
+      ${sectionTitle('הערות כלליות')}
       <div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:10px;line-height:1.7;">
-        ${lines.map((l) => `<div>\u2022 ${escapeHtml(l)}</div>`).join('')}
+        ${lines.map((l) => `<div>• ${escapeHtml(l)}</div>`).join('')}
       </div>
-    `);
+    `;
   }
 
-  // Limitations
   if (data.showLimitations !== false && data.limitations?.trim()) {
-    sections.push(`
-      ${sectionTitle('\u05DE\u05D2\u05D1\u05DC\u05D5\u05EA \u05D4\u05D1\u05D3\u05D9\u05E7\u05D4')}
+    generalNotesSections += `
+      ${sectionTitle('מגבלות הבדיקה')}
       <div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:10px;line-height:1.7;">
         ${data.limitations
           .trim()
           .split('\n')
           .filter((l) => l.trim())
-          .map((l) => `<div>\u2022 ${escapeHtml(l)}</div>`)
+          .map((l) => `<div>• ${escapeHtml(l)}</div>`)
           .join('')}
       </div>
-    `);
+    `;
   }
 
-  // Property description
   if (data.propertyDescription?.trim()) {
-    sections.push(`
-      ${sectionTitle('\u05EA\u05D9\u05D0\u05D5\u05E8 \u05D4\u05E0\u05DB\u05E1')}
+    generalNotesSections += `
+      ${sectionTitle('תיאור הנכס')}
       <div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:10px;line-height:1.8;">
         <div style="white-space:pre-wrap;">${escapeHtml(data.propertyDescription)}</div>
       </div>
-    `);
+    `;
   }
 
   return `
-    ${breadcrumbHeaderHtml('\u05D4\u05E2\u05E8\u05D5\u05EA \u05DB\u05DC\u05DC\u05D9\u05D5\u05EA', logoUrl)}
-    <div style="font-size:16px;font-weight:700;color:${PDF.dk};margin-bottom:6px;">\u05D4\u05E2\u05E8\u05D5\u05EA \u05DB\u05DC\u05DC\u05D9\u05D5\u05EA</div>
-    ${sections.join('')}
+    ${breadcrumbHeaderHtml('ידע כללי לדייר', logoUrl)}
+    <div style="font-size:16px;font-weight:700;color:${PDF.dk};margin-bottom:6px;">ידע כללי לדייר</div>
+    ${sectionTitle('אחריות קבלן — חוק המכר (דירות)')}
+    <div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:10px;line-height:1.7;">
+      <div style="margin-bottom:4px;">קבלן המוכר דירה נושא באחריות לתיקון ליקויים שנתגלו בדירה בתקופה שלאחר מסירתה לקונה. האחריות מתחלקת לשתי תקופות:</div>
+      <div style="font-weight:600;color:${PDF.dk};margin-top:4px;">1. תקופת הבדק</div>
+      <div>חובה על המוכר לתקן את הליקוי אלא אם הוכיח שנגרם באשמת בעל הדירה. התקופה נמשכת בין שנה ל-7 שנים לפי מהות הליקוי.</div>
+      <div style="font-weight:600;color:${PDF.dk};margin-top:4px;">2. תקופת האחריות</div>
+      <div>חובת ההוכחה על הרוכש — עליו להוכיח שהליקוי נובע מתכנון, עבודה או חומרים. מתחילה עם סיום תקופת הבדק, נמשכת 3 שנים.</div>
+    </div>
+    ${sectionTitle('תקופות בדק לפי חוק מכר')}
+    <div style="border:1px solid ${PDF.bdr};border-radius:2px;overflow:hidden;font-size:10px;">
+      <div style="display:grid;grid-template-columns:1fr 80px;background:${PDF.dk};color:#fff;padding:4px 6px;font-weight:600;">
+        <span>סוג הליקוי</span><span style="text-align:left;">תקופה</span>
+      </div>
+      ${warrantyRowsHtml}
+    </div>
+    ${sectionTitle('מסמכים נדרשים ביום מסירה')}
+    <div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:10px;line-height:1.7;">
+      ${requiredDocs.map((t, i) => `<div style="display:flex;gap:4px;"><span style="color:${PDF.accent};font-weight:700;">${i + 1}.</span><span>${t}</span></div>`).join('')}
+    </div>
+    ${generalNotesSections}
   `;
 }
 
@@ -468,51 +454,68 @@ function defectFullHtml(d: PdfDefect): string {
       ? formatCurrency(d.cost)
       : '';
 
-  let html = `
-    <div style="padding:6px 0;border-bottom:1px solid ${PDF.bdrLt};margin-bottom:2px;">
-      <div style="display:flex;align-items:flex-start;gap:6px;">
-        <div style="font-size:10px;font-weight:700;color:white;background:${PDF.dk};width:24px;height:24px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${d.number}</div>
-        <div style="flex:1;">
-          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-            <div style="font-size:12px;font-weight:600;color:${PDF.dk};line-height:1.4;">${escapeHtml(d.title)}</div>
-            ${d.severity ? sevBadgeHtml(d.severity) : ''}
-          </div>
-          <div style="font-size:10px;color:${PDF.lt};margin-top:1px;">\u05DE\u05D9\u05E7\u05D5\u05DD: ${escapeHtml(d.location)}</div>
-        </div>
-        ${costDisplay ? `<div style="font-size:10px;font-weight:700;color:${PDF.accent};flex-shrink:0;background:${PDF.accentLt};padding:2px 6px;border-radius:10px;">${costDisplay}</div>` : ''}
-      </div>`;
+  const labelStyle = `font-weight:600;color:${PDF.lt};font-size:10px;min-width:90px;flex-shrink:0;`;
+  const valueStyle = `font-size:10px;color:${PDF.dk};flex:1;`;
+  const rowStyle = `display:flex;gap:6px;padding:3px 0;border-bottom:1px solid ${PDF.bdrLt};`;
 
-  if (d.standardRef) {
+  let html = `
+    <div style="padding:8px 0;border:1px solid ${PDF.bdr};border-radius:3px;margin-bottom:6px;overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:${PDF.bg};border-bottom:1px solid ${PDF.bdr};">
+        <div style="font-size:11px;font-weight:700;color:white;background:${PDF.dk};width:24px;height:24px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${d.number}</div>
+        <div style="flex:1;font-size:12px;font-weight:700;color:${PDF.dk};">ממצא ${d.number}</div>
+        ${d.severity ? sevBadgeHtml(d.severity) : ''}
+        ${costDisplay ? `<div style="font-size:10px;font-weight:700;color:${PDF.accent};background:${PDF.accentLt};padding:2px 8px;border-radius:10px;">${costDisplay}</div>` : ''}
+      </div>
+      <div style="padding:4px 10px;">
+        <div style="${rowStyle}">
+          <span style="${labelStyle}">תיאור ממצא:</span>
+          <span style="${valueStyle}">${escapeHtml(d.title)}</span>
+        </div>`;
+
+  if (d.location) {
     html += `
-      <div style="margin:4px 0 3px;margin-right:26px;padding:3px 6px;background:${PDF.bg};border-right:2px solid ${PDF.accent};font-size:10px;color:${PDF.md};line-height:1.5;">
-        <span style="font-weight:600;color:${PDF.dk};">${escapeHtml(d.standardRef)}</span>${d.standardText ? ` \u2014 ${escapeHtml(d.standardText)}` : ''}
-      </div>`;
+        <div style="${rowStyle}">
+          <span style="${labelStyle}">מיקום:</span>
+          <span style="${valueStyle}">${escapeHtml(d.location)}</span>
+        </div>`;
+  }
+
+  if (d.standardRef && d.standardRef !== 'NULL' && d.standardRef !== 'null') {
+    html += `
+        <div style="${rowStyle}">
+          <span style="${labelStyle}">תקן:</span>
+          <span style="${valueStyle}">${escapeHtml(d.standardRef)}${d.standardText ? ` — ${escapeHtml(d.standardText)}` : ''}</span>
+        </div>`;
   }
 
   if (d.recommendation) {
     html += `
-      <div style="margin:3px 0 0;margin-right:26px;font-size:10px;color:${PDF.md};">
-        <span style="font-weight:600;color:${PDF.accent};">\u05D4\u05DE\u05DC\u05E6\u05D4: </span>${escapeHtml(d.recommendation)}
-      </div>`;
+        <div style="${rowStyle}">
+          <span style="${labelStyle}">המלצה לתיקון:</span>
+          <span style="${valueStyle}">${escapeHtml(d.recommendation)}</span>
+        </div>`;
   }
 
-  // Price × quantity breakdown
   if (total && d.unitPrice && d.quantity) {
     html += `
-      <div style="margin:2px 0 0;margin-right:26px;font-size:9px;color:${PDF.lt};">
-        \u05DE\u05D7\u05D9\u05E8: ${formatCurrency(d.unitPrice)} \u00D7 ${d.quantity} ${d.unitLabel ? escapeHtml(d.unitLabel) : ''} = ${formatCurrency(total)}
-      </div>`;
+        <div style="${rowStyle}">
+          <span style="${labelStyle}">עלות:</span>
+          <span style="${valueStyle}">${formatCurrency(d.unitPrice)} × ${d.quantity} ${d.unitLabel ? escapeHtml(d.unitLabel) : ''} = ${formatCurrency(total)}</span>
+        </div>`;
   }
 
   if (d.note) {
     html += `
-      <div style="margin:2px 0 0;margin-right:26px;font-size:9px;color:${PDF.lt};font-style:italic;">
-        \u05D4\u05E2\u05E8\u05D4: ${escapeHtml(d.note)}
-      </div>`;
+        <div style="${rowStyle}">
+          <span style="${labelStyle}">הערה:</span>
+          <span style="${valueStyle}font-style:italic;">${escapeHtml(d.note)}</span>
+        </div>`;
   }
 
+  html += `</div>`;
+
   if (photos.length > 0) {
-    html += `<div style="display:flex;gap:4px;margin-top:4px;margin-right:26px;flex-wrap:wrap;">`;
+    html += `<div style="display:flex;gap:4px;padding:4px 10px;flex-wrap:wrap;">`;
     for (const photo of photos.slice(0, 6)) {
       html += photoHtmlV3(photo.url);
     }
@@ -521,7 +524,7 @@ function defectFullHtml(d: PdfDefect): string {
 
   if (d.annexText) {
     html += `
-      <div style="margin:4px 0 2px;margin-right:26px;padding:3px 6px;background:${PDF.bg};border-radius:2px;font-size:9px;color:${PDF.lt};display:flex;align-items:center;gap:4px;">
+      <div style="padding:3px 10px;font-size:9px;color:${PDF.lt};display:flex;align-items:center;gap:4px;">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${PDF.lt}" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
         ${escapeHtml(d.annexText)}
       </div>`;
@@ -537,11 +540,20 @@ function defectPagesContent(
   logoUrl?: string
 ): string[] {
   const pages: string[] = [];
-  let currentContent = '';
-  let defectsOnPage = 0;
   const maxDefectsPerPage = DEFECTS_PER_PAGE;
+  let isFirstPage = true;
 
-  for (const group of groups) {
+  for (let gi = 0; gi < groups.length; gi++) {
+    const group = groups[gi];
+    let currentContent = '';
+    let defectsOnPage = 0;
+
+    // Add main "ממצאים" title on the very first defect page
+    if (isFirstPage) {
+      currentContent += `<div style="font-size:16px;font-weight:700;color:${PDF.dk};margin-bottom:8px;">ממצאים</div>`;
+      isFirstPage = false;
+    }
+
     const categoryHeader = subSectionTitle(escapeHtml(group.category));
     currentContent += categoryHeader;
 
@@ -549,30 +561,27 @@ function defectPagesContent(
       currentContent += defectFullHtml(group.defects[di]);
       defectsOnPage++;
 
-      if (defectsOnPage >= maxDefectsPerPage) {
+      if (defectsOnPage >= maxDefectsPerPage && di < group.defects.length - 1) {
         pages.push(`
-          ${breadcrumbHeaderHtml('\u05DE\u05DE\u05E6\u05D0\u05D9\u05DD', logoUrl)}
+          ${breadcrumbHeaderHtml('ממצאים', logoUrl)}
           ${currentContent}
         `);
         currentContent = '';
         defectsOnPage = 0;
 
-        // If more defects remain in this group, re-add category header
-        // with "(המשך)" suffix so the reader knows the context
-        if (di < group.defects.length - 1) {
-          currentContent += subSectionTitle(
-            `${escapeHtml(group.category)} (\u05D4\u05DE\u05E9\u05DA)`
-          );
-        }
+        currentContent += subSectionTitle(
+          `${escapeHtml(group.category)} (המשך)`
+        );
       }
     }
-  }
 
-  if (defectsOnPage > 0) {
-    pages.push(`
-      ${breadcrumbHeaderHtml('\u05DE\u05DE\u05E6\u05D0\u05D9\u05DD', logoUrl)}
-      ${currentContent}
-    `);
+    // Flush remaining content for this category as a page
+    if (defectsOnPage > 0) {
+      pages.push(`
+        ${breadcrumbHeaderHtml('ממצאים', logoUrl)}
+        ${currentContent}
+      `);
+    }
   }
 
   return pages;
@@ -611,9 +620,9 @@ function boqPageHtml(
         <div style="display:grid;grid-template-columns:28px 1fr 56px 42px 64px;padding:3px 6px;border-bottom:1px solid ${PDF.bdrLt};">
           <span style="font-weight:600;">${d.number}</span>
           <span>${escapeHtml(d.recommendation ?? d.title)}</span>
-          <span style="text-align:left;">${unitPrice.toLocaleString('he-IL')}</span>
+          <span style="text-align:left;">${formatCurrency(unitPrice)}</span>
           <span style="text-align:left;">${qty}</span>
-          <span style="text-align:left;font-weight:600;">${lineTotal.toLocaleString('he-IL')}</span>
+          <span style="text-align:left;font-weight:600;">${formatCurrency(lineTotal)}</span>
         </div>`;
     }
 
@@ -622,7 +631,7 @@ function boqPageHtml(
     // Category subtotal
     rows += `
       <div style="display:grid;grid-template-columns:28px 1fr 60px;padding:3px 6px;background:${PDF.bg};border-bottom:1px solid ${PDF.bdr};font-weight:600;font-size:10px;">
-        <span></span><span style="color:${PDF.lt};">\u05E1\u05D4"\u05DB ${escapeHtml(g.category)}</span><span style="text-align:left;">${categoryTotal.toLocaleString('he-IL')}</span>
+        <span></span><span style="color:${PDF.lt};">\u05E1\u05D4"\u05DB ${escapeHtml(g.category)}</span><span style="text-align:left;">${formatCurrency(categoryTotal)}</span>
       </div>`;
   }
 
@@ -641,22 +650,22 @@ function boqPageHtml(
       </div>
       ${rows}
       <div style="display:grid;grid-template-columns:28px 1fr 60px;padding:4px 6px;background:${PDF.bg};font-weight:700;border-top:2px solid ${PDF.bdr};">
-        <span></span><span style="color:${PDF.dk};">\u05E1\u05D4"\u05DB \u05D1\u05D9\u05E0\u05D9\u05D9\u05DD</span><span style="text-align:left;">${grandTotal.toLocaleString('he-IL')}</span>
+        <span></span><span style="color:${PDF.dk};">\u05E1\u05D4"\u05DB \u05D1\u05D9\u05E0\u05D9\u05D9\u05DD</span><span style="text-align:left;">${formatCurrency(grandTotal)}</span>
       </div>
       <div style="display:grid;grid-template-columns:28px 1fr 60px;padding:3px 6px;background:${PDF.bg};">
-        <span></span><span style="color:${PDF.md};">\u05D1\u05E6"\u05DE (${Math.round(rates.batzam * 100)}%)</span><span style="text-align:left;">${Math.round(batzam).toLocaleString('he-IL')}</span>
+        <span></span><span style="color:${PDF.md};">\u05D1\u05E6"\u05DE (${Math.round(rates.batzam * 100)}%)</span><span style="text-align:left;">${formatCurrency(Math.round(batzam))}</span>
       </div>
       <div style="display:grid;grid-template-columns:28px 1fr 60px;padding:3px 6px;background:${PDF.bg};">
-        <span></span><span style="color:${PDF.md};">\u05E4\u05D9\u05E7\u05D5\u05D7 \u05D4\u05E0\u05D3\u05E1\u05D9 (${Math.round(rates.supervision * 100)}%)</span><span style="text-align:left;">${Math.round(supervision).toLocaleString('he-IL')}</span>
+        <span></span><span style="color:${PDF.md};">\u05E4\u05D9\u05E7\u05D5\u05D7 \u05D4\u05E0\u05D3\u05E1\u05D9 (${Math.round(rates.supervision * 100)}%)</span><span style="text-align:left;">${formatCurrency(Math.round(supervision))}</span>
       </div>
       <div style="display:grid;grid-template-columns:28px 1fr 60px;padding:4px 6px;background:${PDF.bg};font-weight:700;border-top:1px solid ${PDF.bdr};">
-        <span></span><span style="color:${PDF.dk};">\u05E1\u05D4"\u05DB \u05DC\u05E4\u05E0\u05D9 \u05DE\u05E2"\u05DE</span><span style="text-align:left;">${Math.round(preVat).toLocaleString('he-IL')}</span>
+        <span></span><span style="color:${PDF.dk};">\u05E1\u05D4"\u05DB \u05DC\u05E4\u05E0\u05D9 \u05DE\u05E2"\u05DE</span><span style="text-align:left;">${formatCurrency(Math.round(preVat))}</span>
       </div>
       <div style="display:grid;grid-template-columns:28px 1fr 60px;padding:3px 6px;background:${PDF.bg};">
-        <span></span><span style="color:${PDF.md};">\u05DE\u05E2"\u05DE (${Math.round(rates.vat * 100)}%)</span><span style="text-align:left;">${Math.round(vat).toLocaleString('he-IL')}</span>
+        <span></span><span style="color:${PDF.md};">\u05DE\u05E2"\u05DE (${Math.round(rates.vat * 100)}%)</span><span style="text-align:left;">${formatCurrency(Math.round(vat))}</span>
       </div>
       <div style="display:grid;grid-template-columns:28px 1fr 60px;padding:5px 6px;background:${PDF.dk};color:#fff;font-weight:700;">
-        <span></span><span>\u05E1\u05D4"\u05DB \u05DB\u05D5\u05DC\u05DC \u05DE\u05E2"\u05DE</span><span style="text-align:left;">${Math.round(total).toLocaleString('he-IL')}</span>
+        <span></span><span>\u05E1\u05D4"\u05DB \u05DB\u05D5\u05DC\u05DC \u05DE\u05E2"\u05DE</span><span style="text-align:left;">${formatCurrency(Math.round(total))}</span>
       </div>
     </div>
   `;
@@ -723,12 +732,12 @@ function signaturesPageHtml(data: PdfReportData, logoUrl?: string): string {
   const tenantSig = data.signatures?.find((s) => s.signerType === 'tenant');
 
   return `
-    ${breadcrumbHeaderHtml('\u05D7\u05EA\u05D9\u05DE\u05D5\u05EA \u05D5\u05D0\u05D9\u05E9\u05D5\u05E8\u05D9\u05DD', logoUrl)}
-    <div style="font-size:16px;font-weight:700;color:${PDF.dk};margin-bottom:6px;">\u05D7\u05EA\u05D9\u05DE\u05D5\u05EA \u05D5\u05D0\u05D9\u05E9\u05D5\u05E8\u05D9\u05DD</div>
+    ${breadcrumbHeaderHtml('חתימות ואישורים', logoUrl)}
+    <div style="font-size:16px;font-weight:700;color:${PDF.dk};margin-bottom:6px;">חתימות ואישורים</div>
     ${
       data.showInspectorDeclaration !== false
         ? `
-    ${sectionTitle('\u05D4\u05E6\u05D4\u05E8\u05EA \u05D4\u05DE\u05E4\u05E7\u05D7')}
+    ${sectionTitle('הצהרת המפקח')}
     <div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:10px;line-height:1.7;color:${PDF.md};">
       ${escapeHtml((data.inspectorDeclaration ?? REPORT_DEFAULTS.inspector_declaration).replace('{name}', data.inspector.name).replace('{license}', data.inspector.licenseNumber ?? ''))}
     </div>`
@@ -737,7 +746,7 @@ function signaturesPageHtml(data: PdfReportData, logoUrl?: string): string {
     ${
       data.showTenantAcknowledgment !== false
         ? `
-    ${sectionTitle('\u05D0\u05D9\u05E9\u05D5\u05E8 \u05D4\u05DE\u05D6\u05DE\u05D9\u05DF')}
+    ${sectionTitle('אישור המזמין')}
     <div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:10px;line-height:1.7;color:${PDF.md};">
       ${escapeHtml(data.tenantAcknowledgment ?? REPORT_DEFAULTS.tenant_acknowledgment)}
     </div>`
@@ -745,17 +754,17 @@ function signaturesPageHtml(data: PdfReportData, logoUrl?: string): string {
     }
     <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
       <div style="text-align:center;">
-        <div style="font-size:10px;font-weight:600;color:${PDF.dk};margin-bottom:4px;">\u05D7\u05EA\u05D9\u05DE\u05EA \u05D4\u05DE\u05E4\u05E7\u05D7</div>
+        <div style="font-size:10px;font-weight:600;color:${PDF.dk};margin-bottom:4px;">חתימת המפקח</div>
         <div style="height:60px;border:1px solid ${PDF.bdr};border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:9px;color:${PDF.vlt};font-style:italic;background:${PDF.bg};">
-          ${inspectorSig?.imageUrl ? `<img src="${escapeAttr(inspectorSig.imageUrl)}" style="max-height:52px;max-width:100%;object-fit:contain;" />` : '[\u05D7\u05EA\u05D9\u05DE\u05D4 \u05D3\u05D9\u05D2\u05D9\u05D8\u05DC\u05D9\u05EA]'}
+          ${inspectorSig?.imageUrl ? `<img src="${escapeAttr(inspectorSig.imageUrl)}" style="max-height:52px;max-width:100%;object-fit:contain;" />` : '[חתימה דיגיטלית]'}
         </div>
         <div style="font-size:10px;color:${PDF.dk};margin-top:3px;font-weight:600;">${escapeHtml(data.inspector.name)}</div>
-        <div style="font-size:9px;color:${PDF.lt};">${data.inspector.licenseNumber ? `\u05DE.\u05E8. ${escapeHtml(data.inspector.licenseNumber)} \u00B7 ` : ''}${escapeHtml(formatDate(data.reportDate))}</div>
+        <div style="font-size:9px;color:${PDF.lt};">${escapeHtml(formatDate(data.reportDate))}</div>
       </div>
       <div style="text-align:center;">
-        <div style="font-size:10px;font-weight:600;color:${PDF.dk};margin-bottom:4px;">\u05D7\u05EA\u05D9\u05DE\u05EA \u05D4\u05DE\u05D6\u05DE\u05D9\u05DF</div>
+        <div style="font-size:10px;font-weight:600;color:${PDF.dk};margin-bottom:4px;">חתימת המזמין</div>
         <div style="height:60px;border:1px solid ${PDF.bdr};border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:9px;color:${PDF.vlt};font-style:italic;background:${PDF.bg};">
-          ${tenantSig?.imageUrl ? `<img src="${escapeAttr(tenantSig.imageUrl)}" style="max-height:52px;max-width:100%;object-fit:contain;" />` : '[\u05D7\u05EA\u05D9\u05DE\u05D4 \u05D3\u05D9\u05D2\u05D9\u05D8\u05DC\u05D9\u05EA]'}
+          ${tenantSig?.imageUrl ? `<img src="${escapeAttr(tenantSig.imageUrl)}" style="max-height:52px;max-width:100%;object-fit:contain;" />` : '[חתימה דיגיטלית]'}
         </div>
         <div style="font-size:10px;color:${PDF.dk};margin-top:3px;font-weight:600;">${escapeHtml(data.client.name)}</div>
         <div style="font-size:9px;color:${PDF.lt};">${escapeHtml(formatDate(data.reportDate))}</div>
@@ -769,11 +778,20 @@ function signaturesPageHtml(data: PdfReportData, logoUrl?: string): string {
           <img src="${escapeAttr(data.stampUrl)}" style="max-width:44px;max-height:44px;object-fit:contain;" />
         </div>
         <div style="font-size:10px;color:${PDF.lt};line-height:1.5;flex:1;">
-          <div style="font-weight:600;color:${PDF.dk};font-size:10px;">\u05D7\u05D5\u05EA\u05DE\u05EA \u05DE\u05E7\u05E6\u05D5\u05E2\u05D9\u05EA</div>
-          <div>${escapeHtml(data.inspector.name)}${data.inspector.licenseNumber ? ` \u00B7 \u05DE.\u05E8. ${escapeHtml(data.inspector.licenseNumber)}` : ''}</div>
+          <div style="font-weight:600;color:${PDF.dk};font-size:10px;">חותמת מקצועית</div>
+          <div>${escapeHtml(data.inspector.name)}</div>
         </div>
       </div>
     `
+        : ''
+    }
+    ${
+      data.showDisclaimer !== false
+        ? `
+    ${sectionTitle('כתב ויתור')}
+    <div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:9px;line-height:1.6;color:${PDF.lt};">
+      ${escapeHtml(data.disclaimerText ?? REPORT_DEFAULTS.disclaimer)}
+    </div>`
         : ''
     }
   `;
@@ -785,37 +803,14 @@ function signaturesPageHtml(data: PdfReportData, logoUrl?: string): string {
 
 function backCoverPageHtml(data: PdfReportData, logoUrl?: string): string {
   return `
-    ${breadcrumbHeaderHtml('\u05E4\u05E8\u05D8\u05D9 \u05E7\u05E9\u05E8 \u05D5\u05DB\u05EA\u05D1 \u05D5\u05D9\u05EA\u05D5\u05E8', logoUrl)}
-    <div style="font-size:16px;font-weight:700;color:${PDF.dk};margin-bottom:6px;">\u05E4\u05E8\u05D8\u05D9 \u05E7\u05E9\u05E8 \u05D5\u05DB\u05EA\u05D1 \u05D5\u05D9\u05EA\u05D5\u05E8</div>
-    ${
-      data.inspector.name ||
-      data.inspector.education ||
-      data.inspector.phone ||
-      data.inspector.email ||
-      data.inspector.licenseNumber
-        ? `
-    ${sectionTitle('\u05E4\u05E8\u05D8\u05D9 \u05D4\u05DE\u05E4\u05E7\u05D7')}
-    <div style="padding:6px 10px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:11px;line-height:1.9;">
-      ${data.inspector.name ? `<div style="font-size:13px;font-weight:700;color:${PDF.dk};margin-bottom:2px;">${escapeHtml(data.inspector.name)}</div>` : ''}
-      ${data.inspector.education ? `<div style="color:${PDF.lt};font-size:10px;">${escapeHtml(data.inspector.education)}${data.inspector.licenseNumber ? ` \u00B7 \u05DE.\u05E8. ${escapeHtml(data.inspector.licenseNumber)}` : ''}</div>` : ''}
-      ${data.inspector.phone ? `<div style="margin-top:4px;"><span style="color:${PDF.lt};">\u05D8\u05DC\u05E4\u05D5\u05DF: </span><span style="color:${PDF.dk};font-weight:500;">${escapeHtml(data.inspector.phone)}</span></div>` : ''}
-      ${data.inspector.email ? `<div><span style="color:${PDF.lt};">\u05D0\u05D9\u05DE\u05D9\u05D9\u05DC: </span><span style="color:${PDF.dk};font-weight:500;">${escapeHtml(data.inspector.email)}</span></div>` : ''}
-    </div>`
-        : ''
-    }
-    ${
-      data.showDisclaimer !== false
-        ? `
-    ${sectionTitle('\u05DB\u05EA\u05D1 \u05D5\u05D9\u05EA\u05D5\u05E8')}
-    <div style="padding:5px 8px;border:1px solid ${PDF.bdr};border-radius:2px;background:${PDF.bg};font-size:9px;line-height:1.6;color:${PDF.lt};">
-      ${escapeHtml(data.disclaimerText ?? REPORT_DEFAULTS.disclaimer)}
-    </div>`
-        : ''
-    }
-    <div style="flex:1;"></div>
-    <div style="text-align:center;padding-top:16px;">
-      ${logoHtml(data.logoUrl)}
-      <div style="font-size:9px;color:${PDF.vlt};margin-top:6px;">\u05D4\u05D5\u05E4\u05E7 \u05D1\u05D0\u05DE\u05E6\u05E2\u05D5\u05EA inField \u00B7 www.infield.co.il</div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
+      ${logoHtml(logoUrl)}
+      <div style="font-size:14px;font-weight:700;color:${PDF.dk};margin-top:12px;">דוח בדק בית</div>
+      <div style="font-size:10px;color:${PDF.lt};margin-top:4px;">${escapeHtml(data.property.projectName)} — דירה ${escapeHtml(data.property.apartmentNumber)}</div>
+      <div style="font-size:10px;color:${PDF.lt};margin-top:2px;">${escapeHtml(data.inspector.companyName ?? data.inspector.name)}</div>
+      <div style="width:120px;height:1px;background:${PDF.bdr};margin:12px auto;"></div>
+      <div style="font-size:9px;color:${PDF.vlt};">הופק באמצעות inField · www.infield.co.il</div>
+      <div style="font-size:8px;color:${PDF.vlt};margin-top:6px;">© ${new Date(data.reportDate).getFullYear() || new Date().getFullYear()} ${escapeHtml(data.inspector.companyName ?? data.inspector.name)}. כל הזכויות שמורות.</div>
     </div>
   `;
 }
@@ -954,7 +949,7 @@ function computeTotalCostWithVat(
 
 export function generateBedekBayitHtml(data: PdfReportData): string {
   const isDraft = data.status === 'draft';
-  const title = '\u05D3\u05D5\u05D7 \u05D1\u05D3\u05E7 \u05D1\u05D9\u05EA';
+  const title = 'דוח בדק בית';
   const formattedDate = formatDate(data.reportDate);
   const groups = groupDefectsByCategory(data.defects);
   const uniqueStandards = extractUniqueStandards(
@@ -962,20 +957,18 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
     data.resolvedStandards
   );
   const hasStandards = uniqueStandards.length > 0;
-  // General notes page always shown — contains boilerplate שיטת עבודה section
   const hasPhotos = data.defects.some(
     (d) => (d.photos?.length ?? 0) > 0 || (d.photoUrls?.length ?? 0) > 0
   );
   const totalCostWithVat = computeTotalCostWithVat(data.defects, data.boqRates);
 
   // --- Pass 1: Build all page content ---
-  // Each entry: { content: string, title: string, isCover?: boolean }
   const pages: { content: string; title: string; isCover?: boolean }[] = [];
 
   // Page 1: Cover
   pages.push({
     content: coverPageHtml(data),
-    title: '\u05E9\u05E2\u05E8',
+    title: 'שער',
     isCover: true,
   });
 
@@ -983,53 +976,40 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
   const tocIndex = pages.length;
   pages.push({
     content: '',
-    title:
-      '\u05EA\u05D5\u05DB\u05DF \u05E2\u05E0\u05D9\u05D9\u05E0\u05D9\u05DD',
+    title: 'תוכן עניינים',
   });
 
-  // Page 3: Executive Summary
-  // We need defect start page — it depends on conditional pages
-  // We'll calculate it after adding conditional pages
+  // Page 3: Details (moved here — right after TOC)
+  pages.push({
+    content: detailsPageHtml(data, data.logoUrl),
+    title: 'פרטי הבדיקה',
+  });
+
+  // Page 4: Executive Summary
   const execIndex = pages.length;
   pages.push({
     content: '',
-    title:
-      '\u05EA\u05E7\u05E6\u05D9\u05E8 \u05DE\u05E0\u05D4\u05DC\u05D9\u05DD',
+    title: 'תקציר מנהלים',
   });
 
-  // Page 4: Standards (conditional — also respects showStandards flag)
+  // Page 5: Standards (conditional)
   if (hasStandards && data.showStandards !== false) {
     pages.push({
       content: standardsPageHtml(data, uniqueStandards, data.logoUrl),
-      title:
-        '\u05EA\u05E7\u05E0\u05D9\u05DD \u05D5\u05DE\u05E1\u05DE\u05DB\u05D9 \u05D9\u05D9\u05D7\u05D5\u05E1',
+      title: 'תקנים ומסמכי ייחוס',
     });
   }
 
-  // Page 5: Tenant Rights (respects showTenantRights flag)
+  // Page 6: Tenant Rights + General Notes (merged)
   if (data.showTenantRights !== false) {
     pages.push({
       content: tenantRightsPageHtml(data, data.logoUrl),
-      title:
-        '\u05D9\u05D3\u05E2 \u05DB\u05DC\u05DC\u05D9 \u05DC\u05D3\u05D9\u05D9\u05E8',
+      title: 'ידע כללי לדייר',
     });
   }
 
-  // Page 6: General Notes (always — boilerplate שיטת עבודה + optional notes)
-  pages.push({
-    content: generalNotesPageHtml(data, data.logoUrl),
-    title:
-      '\u05D4\u05E2\u05E8\u05D5\u05EA \u05DB\u05DC\u05DC\u05D9\u05D5\u05EA',
-  });
-
-  // Page 7: Details
-  pages.push({
-    content: detailsPageHtml(data, data.logoUrl),
-    title: '\u05E4\u05E8\u05D8\u05D9 \u05D4\u05D1\u05D3\u05D9\u05E7\u05D4',
-  });
-
-  // Pages 8-N: Defects
-  const defectStartPage = pages.length + 1; // 1-indexed page number
+  // Pages N: Defects
+  const defectStartPage = pages.length + 1;
   const defectPageContents = defectPagesContent(
     data.defects,
     groups,
@@ -1038,63 +1018,55 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
   for (let i = 0; i < defectPageContents.length; i++) {
     pages.push({
       content: defectPageContents[i],
-      title: `\u05DE\u05DE\u05E6\u05D0\u05D9\u05DD ${i + 1}`,
+      title: `ממצאים ${i + 1}`,
     });
   }
 
-  // Page N+1: BOQ
+  // BOQ
   pages.push({
     content: boqPageHtml(groups, data.boqRates, data.logoUrl),
-    title: '\u05DB\u05EA\u05D1 \u05DB\u05DE\u05D5\u05D9\u05D5\u05EA',
+    title: 'כתב כמויות',
   });
 
-  // Page N+2: BOQ Notes
+  // BOQ Notes
   pages.push({
     content: boqNotesPageHtml(data, groups, totalCostWithVat, data.logoUrl),
-    title:
-      '\u05D4\u05E2\u05E8\u05D5\u05EA \u05DB\u05E1\u05E4\u05D9\u05D5\u05EA',
+    title: 'הערות כספיות',
   });
 
-  // Page N+3: Signatures
+  // Signatures (now includes disclaimer — option A)
   pages.push({
     content: signaturesPageHtml(data, data.logoUrl),
-    title:
-      '\u05D7\u05EA\u05D9\u05DE\u05D5\u05EA \u05D5\u05D0\u05D9\u05E9\u05D5\u05E8\u05D9\u05DD',
+    title: 'חתימות ואישורים',
   });
 
-  // Page N+4: Annex (conditional)
+  // Annex (conditional)
   if (hasPhotos) {
     const annexContents = annexPagesContent(data.defects, data.logoUrl);
     for (let i = 0; i < annexContents.length; i++) {
       pages.push({
         content: annexContents[i],
-        title: `\u05E0\u05E1\u05E4\u05D7${annexContents.length > 1 ? ` ${i + 1}` : ''}`,
+        title: `נספח${annexContents.length > 1 ? ` ${i + 1}` : ''}`,
       });
     }
   }
 
-  // Page N+5: Back Cover
+  // Back Cover (simplified — no inspector details, just branding)
   pages.push({ content: backCoverPageHtml(data, data.logoUrl), title: '' });
 
   // --- Pass 2: Fill TOC + Executive Summary with real page numbers ---
   const totalPages = pages.length;
 
-  // Build TOC entries
   let sectionNum = 1;
   const tocEntries: TocEntry[] = [];
   for (let i = 0; i < pages.length; i++) {
     const p = pages[i];
-    if (!p.title) continue; // Skip back cover
-    // Only include first defect page and first annex page in TOC
+    if (!p.title) continue;
+    if (p.title.startsWith('ממצאים') && p.title !== 'ממצאים 1') continue;
     if (
-      p.title.startsWith('\u05DE\u05DE\u05E6\u05D0\u05D9\u05DD') &&
-      p.title !== '\u05DE\u05DE\u05E6\u05D0\u05D9\u05DD 1'
-    )
-      continue;
-    if (
-      p.title.startsWith('\u05E0\u05E1\u05E4\u05D7') &&
-      p.title !== '\u05E0\u05E1\u05E4\u05D7' &&
-      p.title !== '\u05E0\u05E1\u05E4\u05D7 1'
+      p.title.startsWith('נספח') &&
+      p.title !== 'נספח' &&
+      p.title !== 'נספח 1'
     )
       continue;
 
@@ -1113,7 +1085,6 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
     data.logoUrl
   );
 
-  // Fill executive summary with correct defect start page
   pages[execIndex].content = execSummaryPageHtml(
     data,
     groups,
@@ -1149,3 +1120,4 @@ export function generateBedekBayitHtml(data: PdfReportData): string {
 </body>
 </html>`;
 }
+// ═══════════════════════════════════════════════════════════

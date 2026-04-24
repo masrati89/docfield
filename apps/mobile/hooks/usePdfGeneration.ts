@@ -330,6 +330,9 @@ async function fetchFullReportData(reportId: string): Promise<PdfReportData> {
     status: report.status as PdfReportData['status'],
     inspector: {
       name: (reportRecord.inspector_full_name_snapshot as string) ?? '',
+      professionalTitle:
+        (reportRecord.inspector_professional_title_snapshot as string) ??
+        undefined,
       licenseNumber:
         (reportRecord.inspector_license_number_snapshot as string) ?? undefined,
       education:
