@@ -5,8 +5,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "infield",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
+      "image": "./assets/splash-icon.png",
       "backgroundColor": "#FEFDFB",
       "resizeMode": "contain"
     },
@@ -26,7 +28,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#FEFDFB"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0F4F2E"
       },
       "package": "com.infield.app"
     },
