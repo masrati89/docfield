@@ -77,6 +77,8 @@ A repo audit on 2026-04-10 (`docs/audits/AUDIT_2026-04-10.md`) identified critic
 
 - 1.1 Iron Rule property fields — migration 033 (4 snapshot columns) + `fetchPropertySnapshot()` + PDF reads from snapshots only
 - 1.2 Neutralize broken UI — web stubs → Coming Soon; mobile "בקרוב" buttons removed; bedek_bait settings button hidden; CLAUDE.md feature status updated
+- 1.3 New screens — statistics, help/FAQ, standalone templates management
+- 1.4 Protocol settings UX — toggle flip, dirty check, scroll, char counter, menu cleanup
 
 Next: Phase 2 — Web Admin Console + Checklist Templates (data-driven)
 
@@ -93,6 +95,9 @@ Next: Phase 2 — Web Admin Console + Checklist Templates (data-driven)
 | Search overlay              | ✅ built — SearchOverlay component + wired to trigger     |
 | Round 2 inherited defects   | ✅ built — copyInheritedDefects + ReviewStatusPill + hook |
 | Iron Rule property fields   | ✅ built (migration 033 — 4 snapshot columns)             |
+| Statistics screen           | ✅ built — report counts, defects, project progress       |
+| Help/FAQ screen             | ✅ built — FAQ accordion with search + onboarding modal   |
+| Templates management        | ✅ built — standalone screen (moved from settings tab)    |
 | WhatsApp send (Green API)   | 🔴 not built                                              |
 | Offline sync (WatermelonDB) | 🔴 deferred post-MVP                                      |
 | Speech recognition          | 🔴 post-MVP                                               |
@@ -150,11 +155,18 @@ apps/mobile/
 │       │       └── apartments/
 │       │           ├── _layout.tsx    ✅ Stack layout
 │       │           └── index.tsx      ✅ Apartments list (floor groups, status, wizard)
+│       ├── statistics/
+│       │   ├── _layout.tsx            ✅ Stack layout
+│       │   └── index.tsx              ✅ Statistics (report counts, defect stats, project progress)
+│       ├── help/
+│       │   ├── _layout.tsx            ✅ Stack layout
+│       │   └── index.tsx              ✅ Help/FAQ (search, accordion, onboarding modal)
 │       └── settings/
 │           ├── _layout.tsx            ✅ Stack layout
-│           └── index.tsx              ✅ Settings (profile, password, preferences, sign out)
+│           ├── index.tsx              ✅ Settings (profile, password, preferences, sign out)
+│           └── templates.tsx          ✅ Standalone templates management screen
 ├── components/                        # 100+ files, 10 categories — see Component Architecture below
-├── hooks/                             # 20 custom hooks — see Hooks below
+├── hooks/                             # 24 custom hooks — see Hooks below
 ├── contexts/AuthContext.tsx            ✅ Supabase auth + expo-secure-store
 ├── constants/theme.ts                 ✅ Design tokens
 ├── lib/
@@ -174,7 +186,8 @@ components/
 ├── checklist/     CheckItem, RoomAccordion, BathTypeSelect, ChecklistHeader, ChecklistFooter,
 │                  AddDefectSheet, ReportPreviewSheet, ReportSettingsSheet
 ├── defect/        FormField, CategoryPicker, CostSection, PhotoGrid, DefectLibraryCard, ComboField
-├── home/          HomeHeader, StatsStrip, ReportsSection, ProjectsSection, ToolGrid
+├── home/          HomeHeader, ActionCard, ProgressCard, StatsStrip, ReportsSection,
+│                  ProjectsSection, ToolGrid
 ├── projects/      ProjectCard, NewProjectSheet, ProjectsFilterBar, ProjectsSortSheet,
 │                  ProjectsLoadingState, ProjectsFAB, SubHeader, ProgressStrip,
 │                  BuildingCard, ApartmentRow, AddBuildingSheet
@@ -202,7 +215,10 @@ All directories have barrel `index.ts` exports.
 hooks/
 ├── useAnnotationEditor.ts  # Photo annotation editor state
 ├── useChecklist.ts         # Checklist state management
+├── useChecklistTemplate.ts # Single checklist template edit state
+├── useChecklistTemplates.ts# Checklist templates list + CRUD operations
 ├── useDefectLibrary.ts     # Defect library search + categories
+├── useDefectReviewStatus.ts# Round 2 defect review status tracking
 ├── useDeleteProject.ts     # Project deletion with confirmation
 ├── useDeleteReport.ts      # Report deletion with confirmation
 ├── useIdleTimeout.ts       # 30min idle session timeout
@@ -216,6 +232,7 @@ hooks/
 ├── useReportContent.ts     # Report content tab data
 ├── useReports.ts           # Reports list
 ├── useReportShortages.ts   # Report shortages tab data
+├── useReportDefaults.ts    # Report default values (profile, template selection)
 ├── useReportStatus.ts      # Report status transitions
 ├── useSideMenu.ts          # Side menu visibility
 ├── useSignature.ts         # Signature capture + persistence
