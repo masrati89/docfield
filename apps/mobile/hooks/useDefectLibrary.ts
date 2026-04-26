@@ -17,6 +17,7 @@ export interface DefectLibraryItem {
   cost: number | null;
   costUnit: string | null;
   notes: string | null;
+  price: number | null;
   source: 'system' | 'user';
   userId: string | null;
 }
@@ -43,7 +44,7 @@ async function fetchDefectLibrary(
   const { data, error } = await supabase
     .from('defect_library')
     .select(
-      'id, description, category, standard_reference, is_global, organization_id'
+      'id, description, category, standard_reference, recommendation, price, is_global, organization_id'
     )
     .order('category')
     .order('description');
@@ -56,10 +57,11 @@ async function fetchDefectLibrary(
     category: (d.category as string) ?? '',
     location: '',
     standardRef: (d.standard_reference as string) ?? null,
-    recommendation: null,
+    recommendation: (d.recommendation as string) ?? null,
     cost: null,
     costUnit: null,
     notes: null,
+    price: (d.price as number) ?? null,
     source: (d.is_global as boolean) ? ('system' as const) : ('user' as const),
     userId: null,
   }));

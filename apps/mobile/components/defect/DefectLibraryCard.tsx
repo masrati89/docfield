@@ -231,8 +231,8 @@ function DefectLibraryCardInner({
           </View>
         </View>
 
-        {/* Cost badge */}
-        {item.cost !== null && item.cost !== undefined && item.cost > 0 && (
+        {/* Price badge — default from library */}
+        {item.price !== null && item.price !== undefined && item.price > 0 && (
           <View
             style={{
               backgroundColor: COLORS.gold[100],
@@ -249,7 +249,7 @@ function DefectLibraryCardInner({
                 fontFamily: 'Rubik-Medium',
               }}
             >
-              ₪{item.cost.toLocaleString()}
+              ₪{item.price.toLocaleString()}
             </Text>
           </View>
         )}

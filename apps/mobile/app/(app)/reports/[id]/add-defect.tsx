@@ -96,6 +96,7 @@ export default function AddDefectScreen() {
   const [costAmount, setCostAmount] = useState('');
   const [costQty, setCostQty] = useState('');
   const [costPerUnit, setCostPerUnit] = useState('');
+  const [defaultPrice, setDefaultPrice] = useState<number | null>(null);
   const [note, setNote] = useState('');
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [entrySource, setEntrySource] = useState<'direct' | 'library'>(
@@ -163,10 +164,14 @@ export default function AddDefectScreen() {
       }
       if (item.recommendation && !recommendation)
         setRecommendation(item.recommendation);
+      if (item.price && !defaultPrice) {
+        setDefaultPrice(item.price);
+        setCostAmount(item.price.toString());
+      }
       setShowSuggestions(false);
       setEntrySource('library');
     },
-    [category, location, standardRef, recommendation, standardDescMap]
+    [category, location, standardRef, recommendation, defaultPrice, standardDescMap]
   );
 
   // "Add to Library" handler
@@ -185,6 +190,7 @@ export default function AddDefectScreen() {
         cost: costAmount ? parseFloat(costAmount) : null,
         costUnit: costUnit || null,
         notes: note.trim() || null,
+        price: defaultPrice || (costAmount ? parseFloat(costAmount) : null),
       });
       setAddedToLibrary(true);
       showToast('נוסף למאגר בהצלחה', 'success');
@@ -951,8 +957,8 @@ export default function AddDefectScreen() {
                         {item.title}
                       </Text>
 
-                      {/* Row 2: Category badge + location + cost badge */}
-                      {item.category || item.location || item.cost !== null ? (
+                      {/* Row 2: Category badge + location + price badge */}
+                      {item.category || item.location || item.price !== null ? (
                         <View
                           style={{
                             flexDirection: 'row-reverse',
@@ -995,7 +1001,7 @@ export default function AddDefectScreen() {
                             </Text>
                           ) : null}
 
-                          {item.cost !== null ? (
+                          {item.price !== null ? (
                             <View
                               style={{
                                 backgroundColor: COLORS.gold[100],
@@ -1011,7 +1017,7 @@ export default function AddDefectScreen() {
                                   color: COLORS.gold[700],
                                 }}
                               >
-                                ₪{item.cost}
+                                ₪{item.price.toLocaleString()}
                               </Text>
                             </View>
                           ) : null}
