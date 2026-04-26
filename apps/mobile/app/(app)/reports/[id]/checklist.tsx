@@ -1,5 +1,12 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, Platform, Modal, Pressable } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  Platform,
+  Modal,
+  Pressable,
+} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
@@ -179,8 +186,13 @@ function DeleteConfirmModal({
 export default function ChecklistScreen() {
   const { id: reportId } = useLocalSearchParams<{ id: string }>();
 
-  // Web fallback: extract id from URL path if not in params
-  const finalReportId = reportId || (typeof window !== 'undefined' ? window.location.pathname.match(/\/reports\/([^/]+)/)?.[1] : undefined);
+  // Web fallback: extract id from URL path (pathname or hash) if not in params
+  const finalReportId =
+    reportId ||
+    (typeof window !== 'undefined'
+      ? window.location.pathname.match(/\/reports\/([^/]+)/)?.[1] ||
+        window.location.hash.match(/\/reports\/([^/]+)/)?.[1]
+      : undefined);
 
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -688,7 +700,9 @@ export default function ChecklistScreen() {
                   <PressableScale
                     onPress={() => {
                       if (finalReportId) {
-                        router.push(`/(app)/reports/${finalReportId}/add-defect`);
+                        router.push(
+                          `/(app)/reports/${finalReportId}/add-defect`
+                        );
                       }
                     }}
                     style={{
@@ -915,7 +929,9 @@ export default function ChecklistScreen() {
                     <PressableScale
                       onPress={() => {
                         if (finalReportId) {
-                          router.push(`/(app)/reports/${finalReportId}/add-defect`);
+                          router.push(
+                            `/(app)/reports/${finalReportId}/add-defect`
+                          );
                         }
                       }}
                       style={{

@@ -73,11 +73,12 @@ export default function AddDefectScreen() {
     category?: string;
   }>();
 
-  // Web fallback: extract id from URL path if not in params
+  // Web fallback: extract id from URL path (pathname or hash) if not in params
   const finalReportId =
     reportId ||
     (typeof window !== 'undefined'
-      ? window.location.pathname.match(/\/reports\/([^/]+)\/add-defect/)?.[1]
+      ? window.location.pathname.match(/\/reports\/([^/]+)/)?.[1] ||
+        window.location.hash.match(/\/reports\/([^/]+)/)?.[1]
       : undefined);
 
   const router = useRouter();

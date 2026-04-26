@@ -39,11 +39,12 @@ type ReportStatus = 'draft' | 'in_progress' | 'completed' | 'sent';
 export default function ReportDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  // Web fallback: extract id from URL path if not in params
+  // Web fallback: extract id from URL path (pathname or hash) if not in params
   let reportId: string | undefined = id;
   if (!reportId && typeof window !== 'undefined') {
-    const match = window.location.pathname.match(/\/reports\/([^/]+)/);
-    reportId = match?.[1];
+    reportId =
+      window.location.pathname.match(/\/reports\/([^/]+)/)?.[1] ||
+      window.location.hash.match(/\/reports\/([^/]+)/)?.[1];
   }
 
   const router = useRouter();
@@ -277,7 +278,14 @@ export default function ReportDetailScreen() {
     }
     setShowSummary(false);
     setShowTenantSignature(true);
-  }, [reportId, pdfAction, getTenantSignature, generatePdf, sharePdf, showToast]);
+  }, [
+    reportId,
+    pdfAction,
+    getTenantSignature,
+    generatePdf,
+    sharePdf,
+    showToast,
+  ]);
 
   const handleTenantSign = useCallback(
     async (name: string, base64Png: string) => {
@@ -311,7 +319,14 @@ export default function ReportDetailScreen() {
       }
       // in_progress → draft: blocked (one-way transition)
     },
-    [reportId, report, profile, markCompleted, reopenForEditing, finalizeFromDraft]
+    [
+      reportId,
+      report,
+      profile,
+      markCompleted,
+      reopenForEditing,
+      finalizeFromDraft,
+    ]
   );
 
   return (
