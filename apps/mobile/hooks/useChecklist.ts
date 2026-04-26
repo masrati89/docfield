@@ -162,34 +162,79 @@ export function useChecklist(
   const viewModeRef = useRef(viewMode);
   viewModeRef.current = viewMode;
 
-  // --- Persist state to Supabase (fire-and-forget, optimistic) ---
+  // Track report status to prevent updates to completed reports (C3/H5)
+  const [reportStatus, setReportStatus] = useState<string>('draft');
+  useEffect(() => {
+    if (!reportId) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('delivery_reports')
+        .select('status')
+        .eq('id', reportId)
+        .single();
+      if (!cancelled && !error && data) {
+        setReportStatus((data.status as string) ?? 'draft');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [reportId]);
+
+  // Debounce timer ref for persist (H5)
+  const persistTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // --- Persist state to Supabase (debounced 400ms, fire-and-forget) ---
   const persistState = useCallback(
-    async (
+    (
       nextStatuses: StatusMap,
       nextDefectTexts: DefectTextMap,
       nextBathTypes: BathTypeMap
     ) => {
-      if (!reportId) return;
+      if (!reportId || reportStatus === 'completed') return; // C3: skip if completed
 
-      const payload: ChecklistState = {
-        statuses: nextStatuses,
-        defectTexts: nextDefectTexts,
-        bathTypes: nextBathTypes,
-        viewMode: viewModeRef.current,
-      };
-
-      const { error } = await supabase
-        .from('delivery_reports')
-        .update({ checklist_state: payload })
-        .eq('id', reportId);
-
-      if (error) {
-        console.error('[useChecklist] Failed to persist state:', error.message);
-        onSaveError?.('לא הצלחנו לשמור — נסה שוב');
+      // Clear pending debounce
+      if (persistTimeoutRef.current) {
+        clearTimeout(persistTimeoutRef.current);
       }
+
+      // Schedule new persist in 400ms (H5: debounce)
+      persistTimeoutRef.current = setTimeout(() => {
+        (async () => {
+          const payload: ChecklistState = {
+            statuses: nextStatuses,
+            defectTexts: nextDefectTexts,
+            bathTypes: nextBathTypes,
+            viewMode: viewModeRef.current,
+          };
+
+          const { error } = await supabase
+            .from('delivery_reports')
+            .update({ checklist_state: payload })
+            .eq('id', reportId);
+
+          if (error) {
+            console.error(
+              '[useChecklist] Failed to persist state:',
+              error.message
+            );
+            onSaveError?.('לא הצלחנו לשמור — נסה שוב');
+          }
+        })();
+      }, 400);
     },
-    [reportId, onSaveError]
+    [reportId, reportStatus, onSaveError]
   );
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (persistTimeoutRef.current) {
+        clearTimeout(persistTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // --- Toggle room (accordion — one open at a time) ---
   const toggleRoom = useCallback((roomId: string) => {
@@ -201,7 +246,7 @@ export function useChecklist(
     });
   }, []);
 
-  // --- Set item status (optimistic + persist) ---
+  // --- Set item status (optimistic + debounced persist) ---
   const setItemStatus = useCallback(
     (itemId: string, status: ChecklistStatus) => {
       setStatuses((prev) => {
@@ -216,7 +261,6 @@ export function useChecklist(
           setDefectTexts(nextDefectTexts);
         }
 
-        // Fire-and-forget persist
         persistState(next, nextDefectTexts, bathTypesRef.current);
         return next;
       });
@@ -224,7 +268,7 @@ export function useChecklist(
     [persistState]
   );
 
-  // --- Set defect text (optimistic + persist) ---
+  // --- Set defect text (optimistic + debounced persist) ---
   const setDefectText = useCallback(
     (itemId: string, text: string) => {
       setDefectTexts((prev) => {
@@ -237,7 +281,7 @@ export function useChecklist(
     [persistState]
   );
 
-  // --- Set bath type (optimistic + persist) ---
+  // --- Set bath type (optimistic + debounced persist) ---
   const setBathType = useCallback(
     (roomId: string, value: 'shower' | 'bath') => {
       setBathTypes((prev) => {
