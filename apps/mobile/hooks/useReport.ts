@@ -59,12 +59,13 @@ export const reportKeys = {
 // --- Fetcher ---
 
 async function fetchReport(id: string): Promise<ReportDetail> {
-  // Fetch report with apartment → building → project (left join — apartment_id can be null)
+  // Fetch report — for completed reports, read snapshots; otherwise read live data
   const { data: reportData, error: reportError } = await supabase
     .from('delivery_reports')
     .select(
       `id, report_type, status, tenant_name, report_date, notes, property_floor,
        checklist_template_id, no_checklist, show_severity, round_number, previous_round_id,
+       property_project_name, property_project_address, property_building_name, property_apartment_number,
        apartments(number, buildings(name, projects(name, address)))`
     )
     .eq('id', id)
@@ -72,6 +73,8 @@ async function fetchReport(id: string): Promise<ReportDetail> {
 
   if (reportError) throw reportError;
 
+  // M1: For completed reports, read from snapshots; for draft/in-progress, read live
+  const isCompleted = reportData.status === 'completed';
   const apt = reportData.apartments as unknown as {
     number: string;
     buildings: {
@@ -87,10 +90,18 @@ async function fetchReport(id: string): Promise<ReportDetail> {
     tenantName: reportData.tenant_name,
     reportDate: reportData.report_date,
     notes: reportData.notes,
-    projectName: apt?.buildings?.projects?.name ?? '',
-    buildingName: apt?.buildings?.name ?? '',
-    apartmentNumber: apt?.number ?? '',
-    address: apt?.buildings?.projects?.address ?? null,
+    projectName: isCompleted
+      ? ((reportData.property_project_name as string | null) ?? '')
+      : (apt?.buildings?.projects?.name ?? ''),
+    buildingName: isCompleted
+      ? ((reportData.property_building_name as string | null) ?? '')
+      : (apt?.buildings?.name ?? ''),
+    apartmentNumber: isCompleted
+      ? ((reportData.property_apartment_number as string | null) ?? '')
+      : (apt?.number ?? ''),
+    address: isCompleted
+      ? ((reportData.property_project_address as string | null) ?? null)
+      : (apt?.buildings?.projects?.address ?? null),
     floor: (reportData.property_floor as number | null) ?? null,
     checklistTemplateId:
       (reportData.checklist_template_id as string | null) ?? null,
