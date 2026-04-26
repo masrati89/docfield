@@ -1,7 +1,20 @@
 -- Migration: 031_seed_global_defect_library_updated
--- Description: Seed 338 system defects with recommendation and price
--- Dependencies: 008_create_defect_library, 049_add_recommendation_price_to_defect_library
+-- Description: Add recommendation/price columns and seed 338 system defects
+-- Dependencies: 008_create_defect_library
 
+-- Add recommendation column
+ALTER TABLE defect_library
+  ADD COLUMN IF NOT EXISTS recommendation TEXT;
+
+COMMENT ON COLUMN defect_library.recommendation IS 'Recommended repair/fix action for this defect';
+
+-- Add price column (in shekalim)
+ALTER TABLE defect_library
+  ADD COLUMN IF NOT EXISTS price NUMERIC(10, 2);
+
+COMMENT ON COLUMN defect_library.price IS 'Default estimated price in NIS (₪) for fixing this defect';
+
+-- Seed 338 system defects
 INSERT INTO defect_library (organization_id, user_id, source, category, title, description, standard, standard_reference, recommendation, price, is_global, default_severity)
 SELECT NULL, NULL, 'system', 'טיח ושפכטל', NULL, 'סדקים בטיח חיצוני — סדקים באורכים ובעומקים שונים בשכבת הטיח החיצוני של הבניין. סדקים אלו עלולים לאפשר חדירת מים ורטיבות לתוך המבנה, ולפגוע באיטום ובבידוד התרמי', 'ת"י 1415 — תקן טיח לבניינים — סדקים ברוחב מעל 0.5 מ"מ בטיח חיצוני אינם מותרים', 'ת"י 1415 — תקן טיח לבניינים — סדקים ברוחב מעל 0.5 מ"מ בטיח חיצוני אינם מותרים', 'ניקוי והרחבת הסדק, מילוי בחומר גמיש מתאים (אקרילי או פוליאורטני), וציפוי מחדש בטיח בהתאם למפרט', 150, true, 'medium'
 WHERE NOT EXISTS (
