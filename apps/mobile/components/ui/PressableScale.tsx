@@ -8,8 +8,6 @@ import Animated, {
 import * as Haptics from '@/lib/haptics';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-const PressableComponent =
-  Platform.OS === 'web' ? Pressable : AnimatedPressable;
 
 const SPRING_CONFIG = { damping: 15, stiffness: 150 };
 
@@ -59,23 +57,37 @@ export function PressableScale({
     onPress?.();
   }, [enableHaptic, onPress]);
 
+  // On Web, disable animations and use simpler approach
+  if (Platform.OS === 'web') {
+    return (
+      <Pressable
+        onPress={handlePress}
+        onLongPress={onLongPress}
+        disabled={disabled}
+        hitSlop={hitSlop}
+        style={[style, disabled ? { opacity: 0.5 } : undefined]}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole={accessibilityRole}
+      >
+        {children}
+      </Pressable>
+    );
+  }
+
+  // Native: use animated version
   return (
-    <PressableComponent
+    <AnimatedPressable
       onPress={handlePress}
       onLongPress={onLongPress}
-      onPressIn={Platform.OS === 'web' ? undefined : handlePressIn}
-      onPressOut={Platform.OS === 'web' ? undefined : handlePressOut}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={disabled}
       hitSlop={hitSlop}
-      style={[
-        Platform.OS === 'web' ? undefined : animatedStyle,
-        style,
-        disabled ? { opacity: 0.5 } : undefined,
-      ]}
+      style={[animatedStyle, style, disabled ? { opacity: 0.5 } : undefined]}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole={accessibilityRole}
     >
       {children}
-    </PressableComponent>
+    </AnimatedPressable>
   );
 }
