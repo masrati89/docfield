@@ -74,8 +74,16 @@ export default function EditTextScreen() {
   }, [rawSettings, settingsKey, localValue, saveSettings]);
 
   const handleBack = useCallback(() => {
+    const goBack = () => {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(app)/settings');
+      }
+    };
+
     if (!isDirty) {
-      router.back();
+      goBack();
       return;
     }
     setConfirmAction({
@@ -85,7 +93,7 @@ export default function EditTextScreen() {
       cancelLabel: 'צא ללא שמירה',
       onConfirm: () => {
         saveSettings({ ...rawSettings, [settingsKey]: localValue });
-        router.back();
+        goBack();
       },
     });
   }, [isDirty, router, rawSettings, settingsKey, localValue, saveSettings]);
@@ -289,7 +297,11 @@ export default function EditTextScreen() {
               <Pressable
                 onPress={() => {
                   setConfirmAction(null);
-                  router.back();
+                  if (router.canGoBack()) {
+                    router.back();
+                  } else {
+                    router.replace('/(app)/settings');
+                  }
                 }}
                 style={{
                   flex: 1,

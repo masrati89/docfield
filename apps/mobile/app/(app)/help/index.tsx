@@ -628,7 +628,15 @@ export default function HelpScreen() {
           gap: 12,
         }}
       >
-        <PressableScale onPress={() => router.back()}>
+        <PressableScale
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(app)');
+            }
+          }}
+        >
           <Feather name="arrow-right" size={22} color={COLORS.neutral[700]} />
         </PressableScale>
         <Text

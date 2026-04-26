@@ -310,7 +310,11 @@ export default function LibraryScreen() {
               if (Platform.OS !== 'web') {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }
-              router.back();
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(app)');
+              }
             }}
             onPressIn={handleBackPressIn}
             onPressOut={handleBackPressOut}

@@ -98,7 +98,6 @@ export default function AddDefectScreen() {
   const [costPerUnit, setCostPerUnit] = useState('');
   const [defaultPrice, setDefaultPrice] = useState<number | null>(null);
   const [note, setNote] = useState('');
-  const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [entrySource, setEntrySource] = useState<'direct' | 'library'>(
     'direct'
   );
@@ -119,6 +118,43 @@ export default function AddDefectScreen() {
 
   // Defect library for autocomplete suggestions
   const { allItems: libraryItems, addItem, isAdding } = useDefectLibrary();
+
+  // === New Hooks (Step-by-step JSX wiring) ===
+  const form = useDefectForm(initialCategory);
+  const photos = useDefectPhotos({ showToast });
+  const _library = useDefectLibrarySuggestions({
+    description: form.description,
+    category: form.category,
+    location: form.location,
+    standardRef: form.standardRef,
+    recommendation: form.recommendation,
+    costAmount: form.costAmount,
+    costUnit: form.costUnit,
+    note: form.note,
+    defaultPrice: form.defaultPrice,
+    standardDescMap: form.standardDescMap,
+    setDescription: form.setDescription,
+    setCategory: form.setCategory,
+    setLocation: form.setLocation,
+    setStandardRef: form.setStandardRef,
+    setStandardDisplay: form.setStandardDisplay,
+    setRecommendation: form.setRecommendation,
+    setDefaultPrice: form.setDefaultPrice,
+    setCostAmount: form.setCostAmount,
+    setEntrySource: form.setEntrySource,
+    libraryItems,
+    addItem,
+    isAdding,
+    showToast,
+  });
+  const _save = useDefectSave({
+    reportId: reportId ?? '',
+    organizationId,
+    form,
+    photos: photos.photos,
+    showToast,
+    isDirty: form.isDirty,
+  });
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [addedToLibrary, setAddedToLibrary] = useState(false);
 

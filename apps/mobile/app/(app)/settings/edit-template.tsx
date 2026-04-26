@@ -23,10 +23,20 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
-import DraggableFlatList, {
-  ScaleDecorator,
-  type RenderItemParams,
-} from 'react-native-draggable-flatlist';
+type RenderItemParams<T> = { item: T; index: number; drag: () => void };
+
+let DraggableFlatList: typeof FlatList = FlatList as any;
+let ScaleDecorator = ({ children }: { children: React.ReactNode }) => <>{children}</>;
+
+if (Platform.OS !== 'web') {
+  try {
+    const draggable = require('react-native-draggable-flatlist');
+    DraggableFlatList = draggable.default;
+    ScaleDecorator = draggable.ScaleDecorator;
+  } catch (e) {
+    // Fallback if library not available
+  }
+}
 
 import { COLORS, SHADOWS } from '@infield/ui';
 
@@ -978,7 +988,11 @@ export default function EditTemplateScreen() {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(app)/settings/templates');
+    }
   }, [router]);
 
   // Add room

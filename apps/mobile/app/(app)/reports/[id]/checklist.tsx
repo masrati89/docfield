@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, Platform, Modal } from 'react-native';
+import { View, Text, ScrollView, Platform, Modal, Pressable } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
@@ -178,6 +178,10 @@ function DeleteConfirmModal({
 
 export default function ChecklistScreen() {
   const { id: reportId } = useLocalSearchParams<{ id: string }>();
+
+  // Web fallback: extract id from URL path if not in params
+  const finalReportId = reportId || (typeof window !== 'undefined' ? window.location.pathname.match(/\/reports\/([^/?]+)/)?.[1] : undefined);
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { toast, showToast, hideToast } = useToast();
@@ -189,10 +193,10 @@ export default function ChecklistScreen() {
     defects,
     isLoading: reportLoading,
     refetch,
-  } = useReport(reportId);
+  } = useReport(finalReportId);
 
   const { updateReviewStatus, isUpdating: isReviewUpdating } =
-    useDefectReviewStatus(reportId);
+    useDefectReviewStatus(finalReportId);
 
   // PDF generation — Iron Rule: all inspector/org data comes from snapshot columns
   const { generatePdf, sharePdf } = usePdfGeneration(
@@ -216,7 +220,7 @@ export default function ChecklistScreen() {
     setDefectText,
     setBathType,
     setActiveDefect,
-  } = useChecklist(reportId, templateId, (msg) => showToast(msg, 'error'));
+  } = useChecklist(finalReportId, templateId, (msg) => showToast(msg, 'error'));
 
   // Refetch when screen regains focus (e.g. after adding a defect via add-defect screen)
   useFocusEffect(
@@ -239,12 +243,12 @@ export default function ChecklistScreen() {
   const [notes, setNotes] = useState<string | null>(null);
 
   const fetchExtended = useCallback(async () => {
-    if (!reportId) return;
+    if (!finalReportId) return;
     try {
       const { data } = await supabase
         .from('delivery_reports')
         .select('round_number, tenant_phone, notes')
-        .eq('id', reportId)
+        .eq('id', finalReportId)
         .single();
       if (data) {
         setRoundNumber((data.round_number as number) ?? 1);
@@ -254,7 +258,7 @@ export default function ChecklistScreen() {
     } catch {
       // Silent fail
     }
-  }, [reportId]);
+  }, [finalReportId]);
 
   useEffect(() => {
     fetchExtended();
@@ -308,12 +312,12 @@ export default function ChecklistScreen() {
   }, []);
 
   const handleShare = useCallback(async () => {
-    if (!reportId) return;
+    if (!finalReportId) return;
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    await sharePdf(reportId);
-  }, [reportId, sharePdf]);
+    await sharePdf(finalReportId);
+  }, [finalReportId, sharePdf]);
 
   const handleSettings = useCallback(() => {
     if (Platform.OS !== 'web') {
@@ -323,12 +327,12 @@ export default function ChecklistScreen() {
   }, []);
 
   const handleDownload = useCallback(async () => {
-    if (!reportId) return;
+    if (!finalReportId) return;
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    await generatePdf(reportId);
-  }, [reportId, generatePdf]);
+    await generatePdf(finalReportId);
+  }, [finalReportId, generatePdf]);
 
   const handleSettingsSaved = useCallback(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -683,8 +687,8 @@ export default function ChecklistScreen() {
                   </Text>
                   <PressableScale
                     onPress={() => {
-                      if (reportId) {
-                        router.push(`/(app)/reports/${reportId}/add-defect`);
+                      if (finalReportId) {
+                        router.push(`/(app)/reports/${finalReportId}/add-defect`);
                       }
                     }}
                     style={{
@@ -910,8 +914,8 @@ export default function ChecklistScreen() {
                     </Text>
                     <PressableScale
                       onPress={() => {
-                        if (reportId) {
-                          router.push(`/(app)/reports/${reportId}/add-defect`);
+                        if (finalReportId) {
+                          router.push(`/(app)/reports/${finalReportId}/add-defect`);
                         }
                       }}
                       style={{
@@ -1097,7 +1101,7 @@ export default function ChecklistScreen() {
           if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }
-          router.push(`/(app)/reports/${reportId}/add-defect`);
+          router.push(`/(app)/reports/${finalReportId}/add-defect`);
         }}
         onSearch={() => setShowSearch(true)}
       />
@@ -1131,14 +1135,14 @@ export default function ChecklistScreen() {
       )}
 
       {/* Settings bottom sheet */}
-      {showSettings && reportId && (
+      {showSettings && finalReportId && (
         <BottomSheetWrapper
           ref={settingsSheetRef}
           enableDynamicSizing
           onClose={() => setShowSettings(false)}
         >
           <ReportSettingsSheet
-            reportId={reportId}
+            reportId={finalReportId}
             tenantName={report?.tenantName ?? null}
             tenantPhone={tenantPhone}
             notes={notes}

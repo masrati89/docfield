@@ -38,6 +38,14 @@ type ReportStatus = 'draft' | 'in_progress' | 'completed' | 'sent';
 
 export default function ReportDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+
+  // Web fallback: extract id from URL path if not in params
+  let reportId: string | undefined = id;
+  if (!reportId && typeof window !== 'undefined') {
+    const match = window.location.pathname.match(/\/reports\/([^/?]+)/);
+    reportId = match?.[1];
+  }
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { toast, showToast, hideToast } = useToast();
@@ -50,14 +58,14 @@ export default function ReportDetailScreen() {
     isLoading,
     error: hasError,
     refetch,
-  } = useReport(id);
+  } = useReport(reportId);
 
   // Delivery reports → checklist is the main page
   useEffect(() => {
-    if (report?.reportType === 'delivery' && id) {
-      router.replace(`/(app)/reports/${id}/checklist`);
+    if (report?.reportType === 'delivery' && reportId) {
+      router.replace(`/(app)/reports/${reportId}/checklist`);
     }
-  }, [report?.reportType, id, router]);
+  }, [report?.reportType, reportId, router]);
 
   // Refetch when screen regains focus (e.g., after adding a defect)
   useFocusEffect(
@@ -115,7 +123,7 @@ export default function ReportDetailScreen() {
   } = useSignature();
 
   const { updateReviewStatus, isUpdating: isReviewUpdating } =
-    useDefectReviewStatus(id);
+    useDefectReviewStatus(reportId);
 
   // Iron Rule: PDF generator reads all inspector/org data from snapshot columns.
 
@@ -195,14 +203,14 @@ export default function ReportDetailScreen() {
       if (Platform.OS !== 'web') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
-      const path = `/(app)/reports/${id}/add-defect` as const;
+      const path = `/(app)/reports/${reportId}/add-defect` as const;
       if (category) {
         router.push({ pathname: path, params: { category } });
       } else {
         router.push(path);
       }
     },
-    [id, router]
+    [reportId, router]
   );
 
   const subtitle = report
@@ -210,13 +218,13 @@ export default function ReportDetailScreen() {
     : '';
 
   const handleGeneratePdf = useCallback(() => {
-    if (!id) return;
+    if (!reportId) return;
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setPdfAction('generate');
     setShowSummary(true);
-  }, [id]);
+  }, [reportId]);
 
   // Called from inside ReportPreviewModal — must close preview first to
   // avoid two React Native Modals stacking (BUG-02).
@@ -230,80 +238,80 @@ export default function ReportDetailScreen() {
   }, [handleGeneratePdf]);
 
   const handleSharePdf = useCallback(() => {
-    if (!id) return;
+    if (!reportId) return;
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setPdfAction('share');
     setShowSummary(true);
-  }, [id]);
+  }, [reportId]);
 
   // Summary → generate PDF (bedek bayit) or continue to signature (delivery)
   const handleSummaryGenerate = useCallback(async () => {
-    if (!id) return;
+    if (!reportId) return;
     setShowSummary(false);
     if (!profile?.signatureUrl) {
       showToast('לא הוגדרה חתימה — הגדר בהגדרות', 'info');
     }
     if (pdfAction === 'share') {
-      await sharePdf(id);
+      await sharePdf(reportId);
     } else {
-      const uri = await generatePdf(id);
+      const uri = await generatePdf(reportId);
       if (uri) setPdfUri(uri);
     }
-  }, [id, pdfAction, profile, generatePdf, sharePdf, showToast]);
+  }, [reportId, pdfAction, profile, generatePdf, sharePdf, showToast]);
 
   const handleContinueToSignature = useCallback(async () => {
-    if (!id) return;
-    const existing = await getTenantSignature(id);
+    if (!reportId) return;
+    const existing = await getTenantSignature(reportId);
     if (existing) {
       showToast('חתימת דייר קיימת', 'info');
       setShowSummary(false);
       if (pdfAction === 'share') {
-        await sharePdf(id);
+        await sharePdf(reportId);
       } else {
-        const uri = await generatePdf(id);
+        const uri = await generatePdf(reportId);
         if (uri) setPdfUri(uri);
       }
       return;
     }
     setShowSummary(false);
     setShowTenantSignature(true);
-  }, [id, pdfAction, getTenantSignature, generatePdf, sharePdf, showToast]);
+  }, [reportId, pdfAction, getTenantSignature, generatePdf, sharePdf, showToast]);
 
   const handleTenantSign = useCallback(
     async (name: string, base64Png: string) => {
-      if (!id) return;
-      await saveTenantSignature(id, name, base64Png);
+      if (!reportId) return;
+      await saveTenantSignature(reportId, name, base64Png);
       setShowTenantSignature(false);
       if (pdfAction === 'share') {
-        await sharePdf(id);
+        await sharePdf(reportId);
       } else {
-        const uri = await generatePdf(id);
+        const uri = await generatePdf(reportId);
         if (uri) setPdfUri(uri);
       }
     },
-    [id, pdfAction, saveTenantSignature, generatePdf, sharePdf]
+    [reportId, pdfAction, saveTenantSignature, generatePdf, sharePdf]
   );
 
   const handleStatusChange = useCallback(
     (newStatus: ReportStatus) => {
-      if (!id || !report) return;
+      if (!reportId || !report) return;
       if (newStatus === 'completed') {
-        markCompleted(id);
+        markCompleted(reportId);
       } else if (report.status === 'completed' && newStatus === 'in_progress') {
-        reopenForEditing(id);
+        reopenForEditing(reportId);
       } else if (report.status === 'draft' && newStatus === 'in_progress') {
         // Draft → in_progress: billing moment with confirmation
         finalizeFromDraft({
-          reportId: id,
+          reportId: reportId,
           userId: profile?.id ?? '',
           organizationId: profile?.organizationId ?? '',
         });
       }
       // in_progress → draft: blocked (one-way transition)
     },
-    [id, report, profile, markCompleted, reopenForEditing, finalizeFromDraft]
+    [reportId, report, profile, markCompleted, reopenForEditing, finalizeFromDraft]
   );
 
   return (
