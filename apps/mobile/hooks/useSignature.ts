@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import * as ImageManipulator from 'expo-image-manipulator';
+import * as Crypto from 'expo-crypto';
 import { decode } from 'base64-arraybuffer';
 
 import { supabase } from '@/lib/supabase';
@@ -48,14 +49,17 @@ export function useSignature(): UseSignatureReturn {
       setError(null);
 
       try {
-        const filePath = `${profile.organizationId}/inspector_${profile.id}.png`;
         const arrayBuffer = decode(base64Png);
+        const hash = await Crypto.digestStringAsync(
+          Crypto.CryptoDigestAlgorithm.SHA256,
+          base64Png
+        );
+        const filePath = `${profile.organizationId}/inspector_${profile.id}_${hash.slice(0, 8)}.png`;
 
         const { error: uploadError } = await supabase.storage
           .from('signatures')
           .upload(filePath, arrayBuffer, {
             contentType: 'image/png',
-            upsert: true,
           });
 
         if (uploadError) throw uploadError;
@@ -85,17 +89,13 @@ export function useSignature(): UseSignatureReturn {
     [profile]
   );
 
-  // Delete inspector signature
+  // Delete inspector signature (immutable — just nullify URL reference)
   const deleteInspectorSignature = useCallback(async () => {
     if (!profile) return;
     setIsUploading(true);
     setError(null);
 
     try {
-      const filePath = `${profile.organizationId}/inspector_${profile.id}.png`;
-
-      await supabase.storage.from('signatures').remove([filePath]);
-
       const { error: updateError } = await supabase
         .from('users')
         .update({ signature_url: null })
@@ -131,13 +131,16 @@ export function useSignature(): UseSignatureReturn {
         const blob = await response.blob();
         const arrayBuffer = await blob.arrayBuffer();
 
-        const filePath = `${profile.organizationId}/stamp_${profile.id}.png`;
+        const hash = await Crypto.digestStringAsync(
+          Crypto.CryptoDigestAlgorithm.SHA256,
+          await blob.text()
+        );
+        const filePath = `${profile.organizationId}/stamp_${profile.id}_${hash.slice(0, 8)}.png`;
 
         const { error: uploadError } = await supabase.storage
           .from('signatures')
           .upload(filePath, arrayBuffer, {
             contentType: 'image/png',
-            upsert: true,
           });
 
         if (uploadError) throw uploadError;
@@ -167,17 +170,13 @@ export function useSignature(): UseSignatureReturn {
     [profile]
   );
 
-  // Delete inspector stamp
+  // Delete inspector stamp (immutable — just nullify URL reference)
   const deleteInspectorStamp = useCallback(async () => {
     if (!profile) return;
     setIsUploading(true);
     setError(null);
 
     try {
-      const filePath = `${profile.organizationId}/stamp_${profile.id}.png`;
-
-      await supabase.storage.from('signatures').remove([filePath]);
-
       const { error: updateError } = await supabase
         .from('users')
         .update({ stamp_url: null })

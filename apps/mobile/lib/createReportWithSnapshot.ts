@@ -118,6 +118,7 @@ interface PropertySnapshot {
   projectAddress: string | null;
   buildingName: string | null;
   apartmentNumber: string | null;
+  floor: number | null;
 }
 
 async function fetchPropertySnapshot(
@@ -133,12 +134,13 @@ async function fetchPropertySnapshot(
       projectAddress: propertyAddress ?? null,
       buildingName: null,
       apartmentNumber: apartmentLabelFreetext,
+      floor: null,
     };
   }
 
   const { data, error } = await supabase
     .from('apartments')
-    .select('number, buildings(name, projects(name, address))')
+    .select('number, floor, buildings(name, projects(name, address))')
     .eq('id', apartmentId)
     .single();
 
@@ -150,11 +152,13 @@ async function fetchPropertySnapshot(
       projectAddress: null,
       buildingName: null,
       apartmentNumber: apartmentLabelFreetext,
+      floor: null,
     };
   }
 
   const apt = data as unknown as {
     number: string;
+    floor: number | null;
     buildings: {
       name: string;
       projects: { name: string; address: string | null };
@@ -166,6 +170,7 @@ async function fetchPropertySnapshot(
     projectAddress: apt.buildings?.projects?.address ?? null,
     buildingName: apt.buildings?.name ?? null,
     apartmentNumber: apt.number ?? apartmentLabelFreetext,
+    floor: apt.floor ?? null,
   };
 }
 
@@ -277,11 +282,12 @@ export async function createReportWithSnapshot(
     organization_legal_disclaimer_snapshot:
       (orgSettings.legal_disclaimer as string) ?? null,
 
-    // Property snapshots (4) — Iron Rule completion
+    // Property snapshots (5) — Iron Rule completion (migration 050)
     property_project_name: propertySnapshot.projectName,
     property_project_address: propertySnapshot.projectAddress,
     property_building_name: propertySnapshot.buildingName,
     property_apartment_number: propertySnapshot.apartmentNumber,
+    property_floor: propertySnapshot.floor,
 
     // BOQ rate snapshots (3) — Iron Rule (migration 037)
     org_boq_batzam_rate_snapshot: boqRates.batzam ?? null,

@@ -29,41 +29,19 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const SYNCED_TABLES = [
-  'projects',
-  'buildings',
-  'apartments',
-  'delivery_reports',
-  'checklist_results',
-  'defects',
-  'defect_photos',
-  'signatures',
-  'clients',
-] as const;
-
-interface SyncRequest {
-  lastSyncedAt: string | null;
-  changes: Record<
-    string,
-    {
-      created: Record<string, unknown>[];
-      updated: Record<string, unknown>[];
-      deleted: string[];
-    }
-  >;
-}
-
-interface SyncResponse {
-  changes: Record<
-    string,
-    {
-      created: Record<string, unknown>[];
-      updated: Record<string, unknown>[];
-      deleted: string[];
-    }
-  >;
-  timestamp: string;
-}
+// Phase 2 feature: offline sync with WatermelonDB
+// Tables that will be synced once implemented
+// const SYNCED_TABLES = [
+//   'projects',
+//   'buildings',
+//   'apartments',
+//   'delivery_reports',
+//   'checklist_results',
+//   'defects',
+//   'defect_photos',
+//   'signatures',
+//   'clients',
+// ] as const;
 
 // Allowed CORS origins for dev/local environments.
 // For production, set ALLOWED_ORIGIN env var to your deployed domain.
@@ -141,39 +119,20 @@ serve(async (request: Request) => {
     });
   }
 
-  // Parse request
-  const _body: SyncRequest = await request.json();
-  const timestamp = new Date().toISOString();
-
-  // TODO: Implement full sync logic
-  // 1. PUSH: Apply device changes to database (body.changes)
-  //    - For each table in SYNCED_TABLES:
-  //      - INSERT created records
-  //      - UPDATE updated records (last_write_wins)
-  //      - DELETE (soft) deleted records
-  //    - All within organization_id scope (RLS enforces this)
-  //
-  // 2. PULL: Get server changes since lastSyncedAt
-  //    - For each table in SYNCED_TABLES:
-  //      - SELECT * WHERE updated_at > lastSyncedAt
-  //      - Return as created/updated/deleted
-
-  // Placeholder: return empty changes
-  const emptyChanges: SyncResponse['changes'] = {};
-  for (const table of SYNCED_TABLES) {
-    emptyChanges[table] = { created: [], updated: [], deleted: [] };
-  }
-
-  const response: SyncResponse = {
-    changes: emptyChanges,
-    timestamp,
-  };
-
-  return new Response(JSON.stringify(response), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json',
-      ...corsHeaders(request),
-    },
-  });
+  // C5: Offline sync is deferred to Phase 2 (post-MVP)
+  // Return 501 Not Implemented to signal that this feature is not yet available
+  return new Response(
+    JSON.stringify({
+      error: 'Offline sync (WatermelonDB) is not yet implemented',
+      status: 'not_implemented',
+      phase: 'Phase 2 (post-MVP)',
+    }),
+    {
+      status: 501,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders(request),
+      },
+    }
+  );
 });
