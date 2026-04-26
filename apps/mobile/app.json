@@ -37,7 +37,7 @@
       "versionCode": 1
     },
     "web": {
-      "bundler": "metro",
+      "bundler": "webpack",
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
