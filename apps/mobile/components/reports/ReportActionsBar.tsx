@@ -15,10 +15,6 @@ export function ReportActionsBar({
   onAddDefect,
   onSearch,
 }: ReportActionsBarProps) {
-  console.warn(
-    '[ReportActionsBar] rendering, onAddDefect:',
-    typeof onAddDefect
-  );
   return (
     <View
       style={{
@@ -59,10 +55,7 @@ export function ReportActionsBar({
 
       {/* Add defect button */}
       <PressableScale
-        onPress={() => {
-          console.warn('[ReportActionsBar] Add defect button pressed');
-          onAddDefect();
-        }}
+        onPress={onAddDefect}
         scale={0.96}
         style={{
           flex: 1,

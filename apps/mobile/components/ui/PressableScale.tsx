@@ -8,6 +8,8 @@ import Animated, {
 import * as Haptics from '@/lib/haptics';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const PressableComponent =
+  Platform.OS === 'web' ? Pressable : AnimatedPressable;
 
 const SPRING_CONFIG = { damping: 15, stiffness: 150 };
 
@@ -58,18 +60,22 @@ export function PressableScale({
   }, [enableHaptic, onPress]);
 
   return (
-    <AnimatedPressable
+    <PressableComponent
       onPress={handlePress}
       onLongPress={onLongPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      onPressIn={Platform.OS === 'web' ? undefined : handlePressIn}
+      onPressOut={Platform.OS === 'web' ? undefined : handlePressOut}
       disabled={disabled}
       hitSlop={hitSlop}
-      style={[animatedStyle, style, disabled ? { opacity: 0.5 } : undefined]}
+      style={[
+        Platform.OS === 'web' ? undefined : animatedStyle,
+        style,
+        disabled ? { opacity: 0.5 } : undefined,
+      ]}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole={accessibilityRole}
     >
       {children}
-    </AnimatedPressable>
+    </PressableComponent>
   );
 }

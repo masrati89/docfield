@@ -192,15 +192,10 @@ export default function ReportDetailScreen() {
 
   const navigateToAddDefect = useCallback(
     (category?: string) => {
-      console.warn(
-        '[ReportDetail] navigateToAddDefect called with category:',
-        category
-      );
       if (Platform.OS !== 'web') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
       const path = `/(app)/reports/${id}/add-defect` as const;
-      console.warn('[ReportDetail] navigating to path:', path);
       if (category) {
         router.push({ pathname: path, params: { category } });
       } else {
