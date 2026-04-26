@@ -26,11 +26,11 @@ CREATE TRIGGER set_clients_updated_at
 ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "clients_select" ON clients FOR SELECT USING (
-    organization_id = (SELECT organization_id FROM users WHERE id = auth.uid())
+    organization_id = get_user_org_id()
 );
 
 CREATE POLICY "clients_insert" ON clients FOR INSERT WITH CHECK (
-    organization_id = (SELECT organization_id FROM users WHERE id = auth.uid())
+    organization_id = get_user_org_id()
     AND EXISTS (
         SELECT 1 FROM users
         WHERE id = auth.uid() AND role IN ('admin', 'project_manager')
@@ -38,7 +38,7 @@ CREATE POLICY "clients_insert" ON clients FOR INSERT WITH CHECK (
 );
 
 CREATE POLICY "clients_update" ON clients FOR UPDATE USING (
-    organization_id = (SELECT organization_id FROM users WHERE id = auth.uid())
+    organization_id = get_user_org_id()
     AND EXISTS (
         SELECT 1 FROM users
         WHERE id = auth.uid() AND role IN ('admin', 'project_manager')
@@ -46,7 +46,7 @@ CREATE POLICY "clients_update" ON clients FOR UPDATE USING (
 );
 
 CREATE POLICY "clients_delete" ON clients FOR DELETE USING (
-    organization_id = (SELECT organization_id FROM users WHERE id = auth.uid())
+    organization_id = get_user_org_id()
     AND EXISTS (
         SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'
     )

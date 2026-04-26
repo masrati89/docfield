@@ -29,19 +29,19 @@ CREATE TRIGGER set_checklist_results_updated_at
 ALTER TABLE checklist_results ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "checklist_results_select" ON checklist_results FOR SELECT USING (
-    organization_id = (SELECT organization_id FROM users WHERE id = auth.uid())
+    organization_id = get_user_org_id()
 );
 
 CREATE POLICY "checklist_results_insert" ON checklist_results FOR INSERT WITH CHECK (
-    organization_id = (SELECT organization_id FROM users WHERE id = auth.uid())
+    organization_id = get_user_org_id()
 );
 
 CREATE POLICY "checklist_results_update" ON checklist_results FOR UPDATE USING (
-    organization_id = (SELECT organization_id FROM users WHERE id = auth.uid())
+    organization_id = get_user_org_id()
 );
 
 CREATE POLICY "checklist_results_delete" ON checklist_results FOR DELETE USING (
-    organization_id = (SELECT organization_id FROM users WHERE id = auth.uid())
+    organization_id = get_user_org_id()
     AND EXISTS (
         SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'
     )
