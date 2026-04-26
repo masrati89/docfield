@@ -37,10 +37,6 @@ import type { CapturedPhoto } from '@/lib/annotations';
 import type { AnnotationLayer } from '@/lib/annotations';
 
 import { useDefectLibrary } from '@/hooks/useDefectLibrary';
-import { useDefectForm } from '@/hooks/useDefectForm';
-import { useDefectPhotos } from '@/hooks/useDefectPhotos';
-import { useDefectLibrarySuggestions } from '@/hooks/useDefectLibrarySuggestions';
-import { useDefectSave } from '@/hooks/useDefectSave';
 
 import {
   FormField,
@@ -115,6 +111,7 @@ export default function AddDefectScreen() {
   const [entrySource, setEntrySource] = useState<'direct' | 'library'>(
     'direct'
   );
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [appendixDocs, setAppendixDocs] = useState<
     { id: string; uri: string }[]
   >([]);
@@ -133,79 +130,6 @@ export default function AddDefectScreen() {
   // Defect library for autocomplete suggestions
   const { allItems: libraryItems, addItem, isAdding } = useDefectLibrary();
 
-  // ===== NEW HOOKS (with _new prefix) =====
-  const _newForm = useDefectForm(initialCategory);
-  const _newPhotos = useDefectPhotos({ showToast });
-  const _newLibrary = useDefectLibrarySuggestions({
-    description: _newForm.description,
-    category: _newForm.category,
-    location: _newForm.location,
-    standardRef: _newForm.standardRef,
-    recommendation: _newForm.recommendation,
-    costAmount: _newForm.costAmount,
-    costUnit: _newForm.costUnit,
-    note: _newForm.note,
-    defaultPrice: _newForm.defaultPrice,
-    standardDescMap: _newForm.standardDescMap,
-    setDescription: _newForm.setDescription,
-    setCategory: _newForm.setCategory,
-    setLocation: _newForm.setLocation,
-    setStandardRef: _newForm.setStandardRef,
-    setStandardDisplay: _newForm.setStandardDisplay,
-    setRecommendation: _newForm.setRecommendation,
-    setDefaultPrice: _newForm.setDefaultPrice,
-    setCostAmount: _newForm.setCostAmount,
-    setEntrySource: _newForm.setEntrySource,
-    libraryItems,
-    addItem,
-    isAdding,
-    showToast,
-  });
-  const _newSave = useDefectSave({
-    reportId: finalReportId ?? '',
-    organizationId,
-    form: _newForm,
-    photos: _newPhotos.photos,
-    showToast,
-    isDirty: _newForm.isDirty,
-  });
-
-  // === New Hooks (Step-by-step JSX wiring) ===
-  const form = useDefectForm(initialCategory);
-  const photos = useDefectPhotos({ showToast });
-  const _library = useDefectLibrarySuggestions({
-    description: form.description,
-    category: form.category,
-    location: form.location,
-    standardRef: form.standardRef,
-    recommendation: form.recommendation,
-    costAmount: form.costAmount,
-    costUnit: form.costUnit,
-    note: form.note,
-    defaultPrice: form.defaultPrice,
-    standardDescMap: form.standardDescMap,
-    setDescription: form.setDescription,
-    setCategory: form.setCategory,
-    setLocation: form.setLocation,
-    setStandardRef: form.setStandardRef,
-    setStandardDisplay: form.setStandardDisplay,
-    setRecommendation: form.setRecommendation,
-    setDefaultPrice: form.setDefaultPrice,
-    setCostAmount: form.setCostAmount,
-    setEntrySource: form.setEntrySource,
-    libraryItems,
-    addItem,
-    isAdding,
-    showToast,
-  });
-  const _save = useDefectSave({
-    reportId: finalReportId ?? '',
-    organizationId,
-    form,
-    photos: photos.photos,
-    showToast,
-    isDirty: form.isDirty,
-  });
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [addedToLibrary, setAddedToLibrary] = useState(false);
 
