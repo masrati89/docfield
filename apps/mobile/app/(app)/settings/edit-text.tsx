@@ -97,7 +97,7 @@ export default function EditTextScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.cream[50] }}>
-      <StatusBar style="dark" />
+      <StatusBar style="dark" animated />
 
       {/* Header */}
       <View

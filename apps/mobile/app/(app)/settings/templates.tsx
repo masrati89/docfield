@@ -32,7 +32,7 @@ export default function TemplatesScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.cream[50] }}>
-      <StatusBar style="dark" />
+      <StatusBar style="dark" animated />
 
       {toast && (
         <Toast

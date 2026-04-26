@@ -610,8 +610,11 @@ export default function HelpScreen() {
   })).filter((category) => category.items.length > 0);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.cream[50] }}>
-      <StatusBar style="dark" />
+    <SafeAreaView
+      edges={['top']}
+      style={{ flex: 1, backgroundColor: COLORS.cream[50] }}
+    >
+      <StatusBar style="dark" animated />
 
       {/* Header */}
       <Animated.View

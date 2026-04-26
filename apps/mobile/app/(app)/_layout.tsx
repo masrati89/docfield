@@ -1,10 +1,16 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Redirect, Tabs, useSegments } from 'expo-router';
 import { Modal, Pressable, Text, View, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { StackActions, type NavigationState } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 
 import { COLORS } from '@infield/ui';
 import { useAuth } from '@/contexts/AuthContext';
@@ -67,30 +73,17 @@ export default function AppLayout() {
   const { resetTimer } = useIdleTimeout(handleIdleWarning);
   resetTimerRef.current = resetTimer;
 
-  // All hooks must be called before any early return (Rules of Hooks)
   const segments = useSegments();
 
-  // Still loading — don't redirect yet
-  if (isLoading) return null;
-
-  // Not authenticated — redirect to login
-  if (!session) {
-    return <Redirect href="/(auth)/login" />;
-  }
-
-  const bottomPadding = Math.max(insets.bottom, 8);
-
-  // Hide tab bar when inside report detail/editing screens
+  // Navigation state flags — computed before animation hooks that depend on them
   const isInsideReport =
     segments.includes('reports' as never) &&
     segments.some((s) => s !== 'reports' && s !== '(app)' && s !== 'index');
 
-  // Hide tab bar when inside nested project screens (buildings, apartments)
   const isInsideProject =
     segments.includes('projects' as never) &&
     segments.some((s) => s !== 'projects' && s !== '(app)' && s !== 'index');
 
-  // Home tab has its own gradient header — hide SharedTabHeader there
   const isHomeTab =
     !segments.includes('reports' as never) &&
     !segments.includes('projects' as never) &&
@@ -99,38 +92,69 @@ export default function AppLayout() {
     !segments.includes('statistics' as never) &&
     !segments.includes('help' as never);
 
-  // SharedTabHeader only shows on top-level tab pages (not nested screens with own headers)
   const isNestedScreen = isInsideReport || isInsideProject;
+  const showSharedHeader = !isNestedScreen && !isHomeTab;
 
-  const tabBarStyle =
-    isInsideReport || isInsideProject
-      ? { display: 'none' as const }
-      : {
-          backgroundColor:
-            Platform.OS === 'ios'
-              ? 'transparent'
-              : ('rgba(254,253,251,0.94)' as const),
-          borderTopColor: '#F5EFE6',
-          borderTopWidth: 1,
-          paddingTop: 6,
-          paddingBottom: bottomPadding + 4,
-          height: 60 + bottomPadding,
-          position: 'absolute' as const,
-          elevation: 0,
-        };
+  // --- SharedTabHeader smooth height + opacity animation ---
+  // Height = paddingTop(insets.top + 4) + content(36) + paddingBottom(8) + border(1)
+  const sharedHeaderFullHeight = insets.top + 49;
+  const headerAnim = useSharedValue(showSharedHeader ? 1 : 0);
+
+  useEffect(() => {
+    headerAnim.value = withTiming(showSharedHeader ? 1 : 0, {
+      duration: 250,
+      easing: Easing.inOut(Easing.ease),
+    });
+  }, [showSharedHeader, headerAnim]);
+
+  const headerWrapperStyle = useAnimatedStyle(
+    () => ({
+      height: headerAnim.value * sharedHeaderFullHeight,
+      opacity: headerAnim.value,
+      overflow: 'hidden' as const,
+    }),
+    [sharedHeaderFullHeight]
+  );
+
+  // --- Early returns (all hooks called above) ---
+  if (isLoading) return null;
+  if (!session) {
+    return <Redirect href="/(auth)/login" />;
+  }
+
+  const bottomPadding = Math.max(insets.bottom, 8);
+
+  // Tab bar: always rendered (position absolute), opacity hides when in nested screens
+  const tabBarStyle = {
+    backgroundColor:
+      Platform.OS === 'ios'
+        ? 'transparent'
+        : ('rgba(254,253,251,0.94)' as const),
+    borderTopColor: '#F5EFE6',
+    borderTopWidth: 1,
+    paddingTop: 6,
+    paddingBottom: bottomPadding + 4,
+    height: 60 + bottomPadding,
+    position: 'absolute' as const,
+    elevation: 0,
+    opacity: isNestedScreen ? 0 : 1,
+  };
 
   return (
     <View style={{ flex: 1 }} onTouchStart={resetTimer}>
       <NetworkBanner />
 
-      {/* Persistent header — hidden on Home tab, inside reports, and inside project detail */}
-      {!isNestedScreen && !isHomeTab && (
+      {/* SharedTabHeader — always rendered, animated height + opacity */}
+      <Animated.View
+        style={headerWrapperStyle}
+        pointerEvents={showSharedHeader ? 'auto' : 'none'}
+      >
         <SharedTabHeader
           notificationCount={notificationCount}
           onBell={() => setNotificationsOpen(true)}
           onMenu={openMenu}
         />
-      )}
+      </Animated.View>
 
       <Tabs
         backBehavior="history"
@@ -145,7 +169,7 @@ export default function AppLayout() {
           },
           tabBarStyle,
           tabBarBackground: () =>
-            Platform.OS === 'ios' && !isInsideReport && !isInsideProject ? (
+            Platform.OS === 'ios' && !isNestedScreen ? (
               <BlurView
                 intensity={18}
                 tint="light"

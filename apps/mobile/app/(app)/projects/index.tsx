@@ -184,7 +184,7 @@ export default function ProjectsScreen() {
       edges={['top']}
       style={{ flex: 1, backgroundColor: COLORS.cream[50] }}
     >
-      <StatusBar style="dark" />
+      <StatusBar style="dark" animated />
 
       <FlashList
         data={[]}

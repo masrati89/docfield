@@ -43,8 +43,11 @@ export default function SettingsScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FEFDFB' }}>
-      <StatusBar style="dark" />
+    <SafeAreaView
+      edges={['top']}
+      style={{ flex: 1, backgroundColor: '#FEFDFB' }}
+    >
+      <StatusBar style="dark" animated />
 
       {/* Toast */}
       {toast && (

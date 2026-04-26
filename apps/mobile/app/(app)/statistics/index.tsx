@@ -401,8 +401,11 @@ export default function StatisticsScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.cream[50] }}>
-      <StatusBar style="dark" />
+    <SafeAreaView
+      edges={['top']}
+      style={{ flex: 1, backgroundColor: COLORS.cream[50] }}
+    >
+      <StatusBar style="dark" animated />
 
       {/* Header */}
       <Animated.View

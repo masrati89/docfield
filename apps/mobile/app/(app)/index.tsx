@@ -182,7 +182,7 @@ export default function HomeScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.cream[100] }}>
-      <StatusBar style="light" />
+      <StatusBar style="light" animated />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={bothFailed ? { flex: 1 } : { paddingBottom: 88 }}

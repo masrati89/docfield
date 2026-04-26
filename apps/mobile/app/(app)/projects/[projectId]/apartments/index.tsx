@@ -511,7 +511,7 @@ export default function ApartmentsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.cream[100] }}>
-      <StatusBar style="dark" />
+      <StatusBar style="dark" animated />
 
       <SubHeader
         title={title}
