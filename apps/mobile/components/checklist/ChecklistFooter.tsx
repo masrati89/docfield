@@ -1,9 +1,9 @@
-import { View, Text, Pressable, Platform } from 'react-native';
+import { View, Text } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from '@/lib/haptics';
 
 import { COLORS } from '@infield/ui';
+import { PressableScale } from '@/components/ui';
 
 // --- Types ---
 
@@ -19,13 +19,6 @@ export function ChecklistFooter({
   onSearch,
 }: ChecklistFooterProps) {
   const insets = useSafeAreaInsets();
-
-  const handlePress = (cb: () => void) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    cb();
-  };
 
   return (
     <View
@@ -51,8 +44,8 @@ export function ChecklistFooter({
       }}
     >
       {/* Add defect — primary */}
-      <Pressable
-        onPress={() => handlePress(onAddDefect)}
+      <PressableScale
+        onPress={onAddDefect}
         style={{
           flex: 1,
           flexDirection: 'row-reverse',
@@ -80,11 +73,11 @@ export function ChecklistFooter({
         >
           הוסף ממצא
         </Text>
-      </Pressable>
+      </PressableScale>
 
       {/* Search */}
-      <Pressable
-        onPress={() => handlePress(onSearch)}
+      <PressableScale
+        onPress={onSearch}
         style={{
           width: 48,
           height: 48,
@@ -102,7 +95,7 @@ export function ChecklistFooter({
         }}
       >
         <Feather name="search" size={20} color={COLORS.neutral[700]} />
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }

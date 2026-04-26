@@ -1,12 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  Platform,
-  Modal,
-} from 'react-native';
+import { View, Text, ScrollView, Platform, Modal } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
@@ -688,10 +681,8 @@ export default function ChecklistScreen() {
                   >
                     הוספת ממצאים ידנית בלבד
                   </Text>
-                  <Pressable
+                  <PressableScale
                     onPress={() => {
-                      if (Platform.OS !== 'web')
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       if (reportId) {
                         router.push(`/(app)/reports/${reportId}/add-defect`);
                       }
@@ -717,7 +708,7 @@ export default function ChecklistScreen() {
                     >
                       הוסף ממצא
                     </Text>
-                  </Pressable>
+                  </PressableScale>
                 </View>
               </Animated.View>
             </>
@@ -917,12 +908,8 @@ export default function ChecklistScreen() {
                         ? `ממצאים חדשים (${defects.filter((d) => d.source !== 'inherited').length})`
                         : `ממצאים (${defects.length})`}
                     </Text>
-                    <Pressable
+                    <PressableScale
                       onPress={() => {
-                        if (Platform.OS !== 'web')
-                          Haptics.impactAsync(
-                            Haptics.ImpactFeedbackStyle.Light
-                          );
                         if (reportId) {
                           router.push(`/(app)/reports/${reportId}/add-defect`);
                         }
@@ -951,7 +938,7 @@ export default function ChecklistScreen() {
                       >
                         הוסף
                       </Text>
-                    </Pressable>
+                    </PressableScale>
                   </View>
 
                   {defects

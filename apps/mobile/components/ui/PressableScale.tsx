@@ -1,5 +1,10 @@
 import { useCallback } from 'react';
-import { Pressable, Platform, type ViewStyle } from 'react-native';
+import {
+  Pressable,
+  TouchableOpacity,
+  Platform,
+  type ViewStyle,
+} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -62,19 +67,17 @@ export function PressableScale({
     onPress?.();
   }, [enableHaptic, onPress, testID]);
 
-  // On Web, use plain Pressable with minimal config
+  // On Web, use TouchableOpacity which works better than Pressable
   if (Platform.OS === 'web') {
     return (
-      <Pressable
+      <TouchableOpacity
         onPress={handlePress}
         disabled={disabled}
         style={[style, disabled ? { opacity: 0.5 } : undefined]}
-        accessibilityLabel={accessibilityLabel}
-        accessibilityRole={accessibilityRole}
-        testID={testID}
+        activeOpacity={0.7}
       >
         {children}
-      </Pressable>
+      </TouchableOpacity>
     );
   }
 
