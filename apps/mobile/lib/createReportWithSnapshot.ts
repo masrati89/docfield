@@ -355,7 +355,6 @@ export async function createReportWithSnapshot(
     client_id_number: params.clientIdNumber ?? null,
     property_type: params.propertyType ?? null,
     property_area: params.propertyArea ?? null,
-    property_floor: params.propertyFloor ?? null,
 
     // Checklist template (migration 005 FK)
     checklist_template_id: params.checklistTemplateId ?? null,
