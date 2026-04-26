@@ -22,14 +22,17 @@ Reports are legal documents that must render from data frozen at report-creation
 
 **Why:** a report generated three months after creation — after the inspector changes their email, the organization renames itself, a building gets renumbered — must still match the report that was signed at handover. Reading live data leaks cross-user state and, worse, silently rewrites prior legal documents.
 
-**Current state (2026-04-12):**
+**Current state (2026-04-26):**
 
-- 22 snapshot columns on `delivery_reports`:
+- 23 snapshot columns on `delivery_reports`:
   - 10 inspector — migrations 029 + 032
   - 8 organization — migration 029
   - 4 property (`property_project_name`, `property_project_address`, `property_building_name`, `property_apartment_number`) — migration 033
-- `apps/mobile/lib/createReportWithSnapshot.ts` — writes all 22 fields at report INSERT time. Property fields are resolved once via a live `apartments → buildings → projects` read inside `fetchPropertySnapshot()` and then frozen.
+  - 1 floor — migration 050 (added 2026-04-26)
+- Signature paths use content hash to prevent overwrites (C1 fixed 2026-04-26)
+- `apps/mobile/lib/createReportWithSnapshot.ts` — writes all 23 fields at report INSERT time. Property fields are resolved once via a live `apartments → buildings → projects` read inside `fetchPropertySnapshot()` and then frozen.
 - `apps/mobile/hooks/usePdfGeneration.ts` — reads everything exclusively from snapshot columns; no live joins on `users`, `organizations`, `projects`, `buildings`, or `apartments`.
+- RLS status guards enforce DB-level immutability: completed reports cannot be updated/deleted (migrations 051-052, C3/C4 fixed 2026-04-26)
 
 **Rule:** any new PDF field goes through the snapshot path. If a snapshot column does not exist for it, add one in a migration — do not add a live join.
 
@@ -73,12 +76,15 @@ A repo audit on 2026-04-10 (`docs/audits/AUDIT_2026-04-10.md`) identified critic
 - 0.6 Iron Rule residue: 4 property fields frozen into snapshot columns via migration 033 + `fetchPropertySnapshot()` in `createReportWithSnapshot.ts`
 - 0.7 Design token fixes: shadows.ts warmed to `rgba(60,54,42,x)`; colors.ts already complete (gold.600, danger.200, warning.50/200 pre-existed)
 
-**Phase 1 — Feature Completion** (started 2026-04-12):
+**Phase 1 — Feature Completion** (started 2026-04-12, ongoing):
 
-- 1.1 Iron Rule property fields — migration 033 (4 snapshot columns) + `fetchPropertySnapshot()` + PDF reads from snapshots only
-- 1.2 Neutralize broken UI — web stubs → Coming Soon; mobile "בקרוב" buttons removed; bedek_bait settings button hidden; CLAUDE.md feature status updated
-- 1.3 New screens — statistics, help/FAQ, standalone templates management
-- 1.4 Protocol settings UX — toggle flip, dirty check, scroll, char counter, menu cleanup
+- 1.1 ✅ Iron Rule property fields — migration 033 (4 snapshot columns) + `fetchPropertySnapshot()` + PDF reads from snapshots only
+- 1.2 ✅ Iron Rule enforcement — migrations 050 + 051 + 052: property_floor snapshot, RLS status guards (C1-C4 fixed 2026-04-26)
+- 1.3 ✅ Signature immutability — content-hash based paths prevent overwrites (C1 fixed 2026-04-26)
+- 1.4 ✅ useChecklist debounce — 400ms debounce + status guard to prevent persist on completed reports (H5 fixed 2026-04-26)
+- 1.5 Neutralize broken UI — web stubs → Coming Soon; mobile "בקרוב" buttons removed; bedek_bait settings button hidden
+- 1.6 New screens — statistics, help/FAQ, standalone templates management
+- 1.7 Protocol settings UX — toggle flip, dirty check, scroll, char counter, menu cleanup
 
 **Phase 1.5 — Pre-Beta Hardening** (completed 2026-04-24):
 
@@ -291,7 +297,7 @@ packages/ui/       (@infield/ui)
 
 ## Database (supabase/migrations/)
 
-48 migrations through 048. See `supabase/migrations/` for the full list. Key milestones:
+52 migrations through 052 (as of 2026-04-26). See `supabase/migrations/` for the full list. Key milestones:
 
 - **001–011** — core schema: organizations, users, projects, checklist_templates, delivery_reports, checklist_results, defects, defect_library, signatures, clients, storage_buckets
 - **012–015** — early extensions: round 2 fields + freetext (012), report_log audit trail (013), notifications (014), nullable apartment_id (015)
@@ -305,6 +311,10 @@ packages/ui/       (@infield/ui)
 - **043–045** — security hardening: registration policies, israeli_standards RLS, users SELECT restriction, checklist_templates RLS recursion fix
 - **046–047** — default status in_progress, show_severity column on delivery_reports
 - **048** — restrict users UPDATE policy (prevent role/organization_id self-escalation)
+- **049** — defect library recommendation + unit_price (two migration files)
+- **050** — property_floor snapshot column (C2 Iron Rule completion, 2026-04-26)
+- **051** — RLS status guards on delivery_reports/defects/checklist_results UPDATE/DELETE (C3+C4, 2026-04-26)
+- **052** — fix signature cascade: ON DELETE RESTRICT (H3 immutability, 2026-04-26)
 
 All tables: RLS enforced, organization_id tenant isolation.
 Signatures + report_log: no UPDATE/DELETE policies (immutable).
