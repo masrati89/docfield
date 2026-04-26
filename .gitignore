@@ -54,3 +54,13 @@ backups/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# EAS & App Store credentials (sensitive)
+service-account.json
+*.p8
+*.pem
+*.p12
+*.pfx
+
+# EAS build artifacts
+*.eas.json.local

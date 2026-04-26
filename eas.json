@@ -1,0 +1,51 @@
+{
+  "cli": {
+    "version": ">= 7.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "resourceClass": "m1"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "resourceClass": "m1"
+      }
+    },
+    "production": {
+      "resourceClass": "large",
+      "distribution": "store",
+      "ios": {
+        "resourceClass": "m1"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "ascAppId": "[CHANGE_ME: App Store Connect App ID]",
+        "appleId": "[CHANGE_ME: Apple ID email]",
+        "appleTeamId": "[CHANGE_ME: Apple Team ID — must match app.json ios.teamId]",
+        "itcTeamId": "[CHANGE_ME: iTunes Connect Team ID (numeric)]"
+      },
+      "android": {
+        "serviceAccount": "[CHANGE_ME: path/to/service-account.json]",
+        "track": "internal",
+        "changesNotSentForReview": false
+      }
+    }
+  }
+}

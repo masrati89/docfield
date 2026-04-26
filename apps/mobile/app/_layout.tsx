@@ -19,8 +19,11 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { COLORS } from '@infield/ui';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ErrorBoundary } from '@/components/ui';
+import { initializeSentry } from '@/lib/sentry';
 
 import '../global.css';
+
+initializeSentry();
 
 const queryClient = new QueryClient({
   defaultOptions: {
