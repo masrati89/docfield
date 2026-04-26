@@ -82,9 +82,14 @@ A repo audit on 2026-04-10 (`docs/audits/AUDIT_2026-04-10.md`) identified critic
 - 1.2 ✅ Iron Rule enforcement — migrations 050 + 051 + 052: property_floor snapshot, RLS status guards (C1-C4 fixed 2026-04-26)
 - 1.3 ✅ Signature immutability — content-hash based paths prevent overwrites (C1 fixed 2026-04-26)
 - 1.4 ✅ useChecklist debounce — 400ms debounce + status guard to prevent persist on completed reports (H5 fixed 2026-04-26)
-- 1.5 Neutralize broken UI — web stubs → Coming Soon; mobile "בקרוב" buttons removed; bedek_bait settings button hidden
-- 1.6 New screens — statistics, help/FAQ, standalone templates management
-- 1.7 Protocol settings UX — toggle flip, dirty check, scroll, char counter, menu cleanup
+- 1.5 ✅ RLS pattern modernization — replace all inline subqueries with get_user_org_id() in migrations 004/006/010/014; migration 053 updates organization policies (H1 fixed 2026-04-26)
+- 1.6 ✅ User roles documentation — implicit admin for first org user noted in register.tsx (H2 fixed 2026-04-26)
+- 1.7 ✅ Registration error recovery — improved rollback with orphaned auth user deletion on org/profile creation failure (H6 fixed 2026-04-26)
+- 1.8 ✅ Add-defect component refactoring — extracted 4 focused hooks (useDefectForm, useDefectPhotos, useDefectLibrarySuggestions, useDefectSave) to decompose 1520-line monolith (H4 partial: hooks created 2026-04-26, JSX integration pending)
+- 1.9 ✅ Snapshot-first report reading — useReport now reads snapshot columns for completed reports (M1 fixed 2026-04-26)
+- 1.10 Neutralize broken UI — web stubs → Coming Soon; mobile "בקרוב" buttons removed; bedek_bait settings button hidden
+- 1.11 New screens — statistics, help/FAQ, standalone templates management
+- 1.12 Protocol settings UX — toggle flip, dirty check, scroll, char counter, menu cleanup
 
 **Phase 1.5 — Pre-Beta Hardening** (completed 2026-04-24):
 
@@ -297,7 +302,7 @@ packages/ui/       (@infield/ui)
 
 ## Database (supabase/migrations/)
 
-52 migrations through 052 (as of 2026-04-26). See `supabase/migrations/` for the full list. Key milestones:
+53 migrations through 053 (as of 2026-04-26). See `supabase/migrations/` for the full list. Key milestones:
 
 - **001–011** — core schema: organizations, users, projects, checklist_templates, delivery_reports, checklist_results, defects, defect_library, signatures, clients, storage_buckets
 - **012–015** — early extensions: round 2 fields + freetext (012), report_log audit trail (013), notifications (014), nullable apartment_id (015)
