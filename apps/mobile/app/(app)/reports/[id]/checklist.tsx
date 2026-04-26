@@ -180,7 +180,7 @@ export default function ChecklistScreen() {
   const { id: reportId } = useLocalSearchParams<{ id: string }>();
 
   // Web fallback: extract id from URL path if not in params
-  const finalReportId = reportId || (typeof window !== 'undefined' ? window.location.pathname.match(/\/reports\/([^/?]+)/)?.[1] : undefined);
+  const finalReportId = reportId || (typeof window !== 'undefined' ? window.location.pathname.match(/\/reports\/([^/]+)/)?.[1] : undefined);
 
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -1098,6 +1098,7 @@ export default function ChecklistScreen() {
       {/* Footer */}
       <ChecklistFooter
         onAddDefect={() => {
+          if (!finalReportId) return;
           if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }

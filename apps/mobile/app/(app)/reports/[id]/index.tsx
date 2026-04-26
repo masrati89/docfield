@@ -42,7 +42,7 @@ export default function ReportDetailScreen() {
   // Web fallback: extract id from URL path if not in params
   let reportId: string | undefined = id;
   if (!reportId && typeof window !== 'undefined') {
-    const match = window.location.pathname.match(/\/reports\/([^/?]+)/);
+    const match = window.location.pathname.match(/\/reports\/([^/]+)/);
     reportId = match?.[1];
   }
 

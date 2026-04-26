@@ -37,6 +37,11 @@ import type { CapturedPhoto } from '@/lib/annotations';
 import type { AnnotationLayer } from '@/lib/annotations';
 
 import { useDefectLibrary } from '@/hooks/useDefectLibrary';
+import { useDefectForm } from '@/hooks/useDefectForm';
+import { useDefectPhotos } from '@/hooks/useDefectPhotos';
+import { useDefectLibrarySuggestions } from '@/hooks/useDefectLibrarySuggestions';
+import { useDefectSave } from '@/hooks/useDefectSave';
+
 import {
   FormField,
   ComboField,
@@ -67,13 +72,17 @@ export default function AddDefectScreen() {
     id: string;
     category?: string;
   }>();
+
+  // Web fallback: extract id from URL path if not in params
+  const finalReportId = reportId || (typeof window !== 'undefined' ? window.location.pathname.match(/\/reports\/([^/]+)\/add-defect/)?.[1] : undefined);
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { profile } = useAuth();
   const { toast, showToast, hideToast } = useToast();
 
   // Report data — detect mode (bedek_bait vs delivery)
-  const { report: reportInfo } = useReport(reportId);
+  const { report: reportInfo } = useReport(finalReportId);
   const reportType = reportInfo?.reportType ?? 'bedek_bait';
   const isDelivery = reportType === 'delivery';
   const showSeverity = reportInfo?.showSeverity ?? true;
@@ -119,6 +128,44 @@ export default function AddDefectScreen() {
   // Defect library for autocomplete suggestions
   const { allItems: libraryItems, addItem, isAdding } = useDefectLibrary();
 
+  // ===== NEW HOOKS (with _new prefix) =====
+  const _newForm = useDefectForm(initialCategory);
+  const _newPhotos = useDefectPhotos({ showToast });
+  const _newLibrary = useDefectLibrarySuggestions({
+    description: _newForm.description,
+    category: _newForm.category,
+    location: _newForm.location,
+    standardRef: _newForm.standardRef,
+    recommendation: _newForm.recommendation,
+    costAmount: _newForm.costAmount,
+    costUnit: _newForm.costUnit,
+    note: _newForm.note,
+    defaultPrice: _newForm.defaultPrice,
+    standardDescMap: _newForm.standardDescMap,
+    setDescription: _newForm.setDescription,
+    setCategory: _newForm.setCategory,
+    setLocation: _newForm.setLocation,
+    setStandardRef: _newForm.setStandardRef,
+    setStandardDisplay: _newForm.setStandardDisplay,
+    setRecommendation: _newForm.setRecommendation,
+    setDefaultPrice: _newForm.setDefaultPrice,
+    setCostAmount: _newForm.setCostAmount,
+    setEntrySource: _newForm.setEntrySource,
+    libraryItems,
+    addItem,
+    isAdding,
+    showToast,
+  });
+  const _newSave = useDefectSave({
+    reportId: finalReportId ?? '',
+    organizationId,
+    form: _newForm,
+    photos: _newPhotos.photos,
+    showToast,
+    isDirty: _newForm.isDirty,
+  });
+
+
   // === New Hooks (Step-by-step JSX wiring) ===
   const form = useDefectForm(initialCategory);
   const photos = useDefectPhotos({ showToast });
@@ -148,7 +195,7 @@ export default function AddDefectScreen() {
     showToast,
   });
   const _save = useDefectSave({
-    reportId: reportId ?? '',
+    reportId: finalReportId ?? '',
     organizationId,
     form,
     photos: photos.photos,
@@ -403,7 +450,7 @@ export default function AddDefectScreen() {
       showToast('יש למלא תיאור וקטגוריה', 'error');
       return;
     }
-    if (!reportId || !organizationId) {
+    if (!finalReportId || !organizationId) {
       showToast('שגיאה בטעינת הדוח. נסה לצאת ולהיכנס מחדש', 'error');
       return;
     }
@@ -415,7 +462,7 @@ export default function AddDefectScreen() {
     try {
       // Zod validation before Supabase insert (security M1)
       const validation = createDefectSchema.safeParse({
-        deliveryReportId: reportId,
+        deliveryReportId: finalReportId,
         description: description.trim(),
         room: location || '',
         category: category || '',
@@ -456,7 +503,7 @@ export default function AddDefectScreen() {
       const { data: defectData, error: defectError } = await supabase
         .from('defects')
         .insert({
-          delivery_report_id: reportId,
+          delivery_report_id: finalReportId,
           organization_id: organizationId,
           description,
           room: location || null,
@@ -496,7 +543,7 @@ export default function AddDefectScreen() {
           if (photo.localUri && !photo.publicUrl) {
             try {
               const uuid = String(Date.now()) + '_' + i;
-              const filePath = `${organizationId}/${reportId}/${uuid}.jpg`;
+              const filePath = `${organizationId}/${finalReportId}/${uuid}.jpg`;
               const response = await fetch(photo.localUri);
               const blob = await response.blob();
 
