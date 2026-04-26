@@ -15,7 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useNavigation } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '@/lib/haptics';
 
 import * as ImagePicker from 'expo-image-picker';
 
@@ -229,6 +229,15 @@ export default function AddDefectScreen() {
 
   const navigation = useNavigation();
 
+  const closeModal = useCallback(() => {
+    savedRef.current = true;
+    if (router.canDismiss()) {
+      router.dismiss();
+    } else if (router.canGoBack()) {
+      router.back();
+    }
+  }, [router]);
+
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
       if (!isDirty || savedRef.current || savingRef.current) return;
@@ -239,15 +248,12 @@ export default function AddDefectScreen() {
       setConfirmAction({
         title: 'שינויים שלא נשמרו',
         message: 'יש שינויים שלא נשמרו. לצאת בלי לשמור?',
-        onConfirm: () => {
-          savedRef.current = true;
-          router.dismiss();
-        },
+        onConfirm: () => closeModal(),
       });
     });
 
     return unsubscribe;
-  }, [isDirty, navigation, router]);
+  }, [isDirty, navigation, closeModal]);
 
   const canSave = !!category && description.trim().length > 0;
 
@@ -488,9 +494,8 @@ export default function AddDefectScreen() {
         }
       }
 
-      savedRef.current = true;
       showToast('הממצא נשמר בהצלחה', 'success');
-      router.dismiss();
+      closeModal();
     } catch {
       showToast('שגיאה בשמירת הממצא', 'error');
     } finally {
@@ -514,7 +519,7 @@ export default function AddDefectScreen() {
     costPerUnit,
     costQty,
     photos,
-    router,
+    closeModal,
     showToast,
   ]);
 
@@ -551,16 +556,12 @@ export default function AddDefectScreen() {
         onPress={() => {
           if (savingRef.current) return;
           if (!isDirty || savedRef.current) {
-            savedRef.current = true;
-            router.dismiss();
+            closeModal();
           } else {
             setConfirmAction({
               title: 'שינויים שלא נשמרו',
               message: 'יש שינויים שלא נשמרו. לצאת בלי לשמור?',
-              onConfirm: () => {
-                savedRef.current = true;
-                router.dismiss();
-              },
+              onConfirm: () => closeModal(),
             });
           }
         }}
@@ -662,16 +663,12 @@ export default function AddDefectScreen() {
             onPress={() => {
               if (savingRef.current) return;
               if (!isDirty || savedRef.current) {
-                savedRef.current = true;
-                router.dismiss();
+                closeModal();
               } else {
                 setConfirmAction({
                   title: 'שינויים שלא נשמרו',
                   message: 'יש שינויים שלא נשמרו. לצאת בלי לשמור?',
-                  onConfirm: () => {
-                    savedRef.current = true;
-                    router.dismiss();
-                  },
+                  onConfirm: () => closeModal(),
                 });
               }
             }}
