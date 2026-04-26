@@ -204,6 +204,11 @@ export default function ReportDetailScreen() {
       if (Platform.OS !== 'web') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
+      console.warn('[NavigateToAddDefect]', {
+        reportId,
+        category,
+        reportType: report?.reportType,
+      });
       const path = `/(app)/reports/${reportId}/add-defect` as const;
       if (category) {
         router.push({ pathname: path, params: { category } });
@@ -211,7 +216,7 @@ export default function ReportDetailScreen() {
         router.push(path);
       }
     },
-    [reportId, router]
+    [reportId, router, report?.reportType]
   );
 
   const subtitle = report

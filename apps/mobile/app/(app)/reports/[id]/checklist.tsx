@@ -1123,6 +1123,10 @@ export default function ChecklistScreen() {
       {/* Footer */}
       <ChecklistFooter
         onAddDefect={() => {
+          console.warn('[ChecklistFooter AddDefect]', {
+            finalReportId,
+            reportType: report?.reportType,
+          });
           if (!finalReportId) return;
           if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
