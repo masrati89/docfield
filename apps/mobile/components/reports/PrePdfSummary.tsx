@@ -19,6 +19,8 @@ interface DefectInfo {
   id: string;
   category: string | null;
   severity?: string;
+  source?: string;
+  reviewStatus?: string | null;
 }
 
 interface PrePdfSummaryProps {
@@ -98,7 +100,16 @@ export function PrePdfSummary({
   onClose,
 }: PrePdfSummaryProps) {
   const isDelivery = report.reportType === 'delivery';
+  const isRound2 = report.roundNumber > 1;
   const totalDefects = defects.length;
+  const inheritedDefects = defects.filter((d) => d.source === 'inherited');
+  const fixedCount = inheritedDefects.filter(
+    (d) => d.reviewStatus === 'fixed'
+  ).length;
+  const openCount = inheritedDefects.length - fixedCount;
+  const newDefectsCount = defects.filter(
+    (d) => d.source !== 'inherited'
+  ).length;
   const categoryGroups = groupDefectsByCategory(defects);
 
   const handleCta = () => {
@@ -233,6 +244,109 @@ export function PrePdfSummary({
                 </Text>
               </View>
             </View>
+
+            {/* Round 2 breakdown */}
+            {isRound2 && inheritedDefects.length > 0 && (
+              <View
+                style={{
+                  flexDirection: 'row-reverse',
+                  gap: 8,
+                  paddingHorizontal: 20,
+                  marginBottom: 8,
+                }}
+              >
+                <View
+                  style={{
+                    flex: 1,
+                    backgroundColor: COLORS.success[50],
+                    borderRadius: BORDER_RADIUS.md,
+                    padding: 10,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: '700',
+                      fontFamily: 'Rubik-Bold',
+                      color: COLORS.success[500],
+                    }}
+                  >
+                    {fixedCount}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontFamily: 'Rubik-Regular',
+                      color: COLORS.neutral[500],
+                      marginTop: 2,
+                    }}
+                  >
+                    תוקנו
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    flex: 1,
+                    backgroundColor: COLORS.danger[50],
+                    borderRadius: BORDER_RADIUS.md,
+                    padding: 10,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: '700',
+                      fontFamily: 'Rubik-Bold',
+                      color: COLORS.danger[500],
+                    }}
+                  >
+                    {openCount}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontFamily: 'Rubik-Regular',
+                      color: COLORS.neutral[500],
+                      marginTop: 2,
+                    }}
+                  >
+                    נותרו פתוחים
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    flex: 1,
+                    backgroundColor: COLORS.info[50],
+                    borderRadius: BORDER_RADIUS.md,
+                    padding: 10,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: '700',
+                      fontFamily: 'Rubik-Bold',
+                      color: COLORS.info[500],
+                    }}
+                  >
+                    {newDefectsCount}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontFamily: 'Rubik-Regular',
+                      color: COLORS.neutral[500],
+                      marginTop: 2,
+                    }}
+                  >
+                    חדשים
+                  </Text>
+                </View>
+              </View>
+            )}
 
             {/* Category breakdown */}
             <ScrollView

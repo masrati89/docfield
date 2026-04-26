@@ -1,7 +1,11 @@
 // --- Report Types ---
 
 export type ReportType = 'delivery' | 'bedek_bait';
-export type WizardStepId = 'report_type' | 'property' | 'client_details';
+export type WizardStepId =
+  | 'report_type'
+  | 'property'
+  | 'client_details'
+  | 'round_summary';
 
 // --- Prefill (from Apartments / Projects context) ---
 
@@ -61,6 +65,12 @@ export interface WizardState {
   noChecklist: boolean;
   // draft mode
   isDraft: boolean;
+  // round detection (populated async when apartmentId + delivery type)
+  roundNumber: number;
+  previousRoundId: string | null;
+  previousRoundDate: string | null;
+  previousDefectCount: number;
+  previousOpenDefectCount: number;
   // meta
   isSubmitting: boolean;
 }
@@ -88,6 +98,16 @@ export type WizardAction =
   | { type: 'NEXT_STEP' }
   | { type: 'PREV_STEP' }
   | { type: 'SET_SUBMITTING'; payload: boolean }
+  | {
+      type: 'SET_ROUND_INFO';
+      payload: {
+        roundNumber: number;
+        previousRoundId: string | null;
+        previousRoundDate: string | null;
+        previousDefectCount: number;
+        previousOpenDefectCount: number;
+      };
+    }
   | { type: 'RESET' };
 
 // --- Step Component Props ---

@@ -20,6 +20,8 @@ export interface ReportInfo {
   checklistTemplateId: string | null;
   noChecklist: boolean;
   showSeverity: boolean;
+  roundNumber: number;
+  previousRoundId: string | null;
 }
 
 export type DefectSource = 'checklist' | 'manual' | 'library' | 'inherited';
@@ -62,7 +64,7 @@ async function fetchReport(id: string): Promise<ReportDetail> {
     .from('delivery_reports')
     .select(
       `id, report_type, status, tenant_name, report_date, notes, property_floor,
-       checklist_template_id, no_checklist, show_severity,
+       checklist_template_id, no_checklist, show_severity, round_number, previous_round_id,
        apartments(number, buildings(name, projects(name, address)))`
     )
     .eq('id', id)
@@ -94,6 +96,8 @@ async function fetchReport(id: string): Promise<ReportDetail> {
       (reportData.checklist_template_id as string | null) ?? null,
     noChecklist: (reportData.no_checklist as boolean) ?? false,
     showSeverity: (reportData.show_severity as boolean) ?? true,
+    roundNumber: (reportData.round_number as number) ?? 1,
+    previousRoundId: (reportData.previous_round_id as string | null) ?? null,
   };
 
   // Fetch defects with photo count

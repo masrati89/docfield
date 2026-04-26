@@ -340,6 +340,23 @@ export default function ReportDetailScreen() {
             : undefined
         }
         onDownload={handleGeneratePdf}
+        roundNumber={report?.roundNumber ?? 1}
+        reportType={report?.reportType}
+        inheritedReviewedCount={
+          defects.filter(
+            (d) =>
+              d.source === 'inherited' && d.reviewStatus !== 'pending_review'
+          ).length
+        }
+        inheritedTotalCount={
+          defects.filter((d) => d.source === 'inherited').length
+        }
+        onViewPreviousRound={
+          report?.previousRoundId
+            ? () =>
+                router.push(`/(app)/reports/${report.previousRoundId}` as const)
+            : undefined
+        }
       />
 
       {isLoading ? (

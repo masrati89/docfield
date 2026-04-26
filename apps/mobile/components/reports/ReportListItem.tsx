@@ -111,6 +111,39 @@ export function ReportRow({
             >
               {TYPE_LABELS[item.reportType]}
             </Text>
+            {item.roundNumber > 1 && (
+              <>
+                <Text style={{ fontSize: 10, color: COLORS.neutral[300] }}>
+                  ·
+                </Text>
+                <View
+                  style={{
+                    flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse',
+                    alignItems: 'center',
+                    gap: 2,
+                    backgroundColor: COLORS.info[50],
+                    paddingHorizontal: 5,
+                    paddingVertical: 1,
+                    borderRadius: 4,
+                  }}
+                >
+                  <Feather
+                    name="refresh-cw"
+                    size={8}
+                    color={COLORS.info[500]}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 9,
+                      fontFamily: 'Rubik-SemiBold',
+                      color: COLORS.info[700],
+                    }}
+                  >
+                    {`סבב ${item.roundNumber}`}
+                  </Text>
+                </View>
+              </>
+            )}
             <Text style={{ fontSize: 10, color: COLORS.neutral[300] }}>·</Text>
             <View
               style={{
@@ -133,7 +166,7 @@ export function ReportRow({
           </View>
         </View>
 
-        {/* Status badge + defect count */}
+        {/* Status badge + defect count + round progress */}
         <View style={{ alignItems: 'center', gap: 3, marginStart: 8 }}>
           <View
             style={{
@@ -172,6 +205,17 @@ export function ReportRow({
               {item.defectCount}
             </Text>
           </View>
+          {item.roundNumber > 1 && item.inheritedTotalCount > 0 && (
+            <Text
+              style={{
+                fontSize: 9,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.primary[500],
+              }}
+            >
+              {`${item.inheritedFixedCount}/${item.inheritedTotalCount} תוקנו`}
+            </Text>
+          )}
         </View>
 
         {/* Chevron */}

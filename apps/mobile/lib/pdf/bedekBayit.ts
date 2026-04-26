@@ -160,6 +160,14 @@ function execSummaryPageHtml(
   logoUrl?: string
 ): string {
   const _totalCost = data.defects.reduce((s, d) => s + (d.cost ?? 0), 0);
+  const isRound2 = (data.roundNumber ?? 1) > 1;
+
+  // Round 2 status counts
+  const fixedCount = data.defects.filter(
+    (d) => d.roundStatus === 'fixed'
+  ).length;
+  const openCount = data.defects.filter((d) => d.roundStatus === 'open').length;
+  const newCount = data.defects.filter((d) => d.roundStatus === 'new').length;
 
   // Severity counts
   const sevCounts: Record<string, number> = {
@@ -174,6 +182,28 @@ function execSummaryPageHtml(
   }
 
   const hideSev = data.showSeverity === false;
+
+  const round2Summary = isRound2
+    ? `${sectionTitle('סיכום בדיקה חוזרת')}
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin:0 0 6px;">
+      <div style="text-align:center;padding:5px 3px;background:${PDF.bg};border-radius:3px;border:1px solid ${PDF.bdrLt};">
+        <div style="font-size:17px;font-weight:700;color:${PDF.dk};">${data.defects.length}</div>
+        <div style="font-size:8px;color:${PDF.lt};margin-top:1px;">סה״כ</div>
+      </div>
+      <div style="text-align:center;padding:5px 3px;background:#ecfdf5;border-radius:3px;border:1px solid ${PDF.bdrLt};">
+        <div style="font-size:17px;font-weight:700;color:${PDF.dk};">${fixedCount}</div>
+        <div style="font-size:8px;color:${PDF.lt};margin-top:1px;">תוקנו</div>
+      </div>
+      <div style="text-align:center;padding:5px 3px;background:#fef2f2;border-radius:3px;border:1px solid ${PDF.bdrLt};">
+        <div style="font-size:17px;font-weight:700;color:${PDF.dk};">${openCount}</div>
+        <div style="font-size:8px;color:${PDF.lt};margin-top:1px;">נותרו פתוחים</div>
+      </div>
+      <div style="text-align:center;padding:5px 3px;background:#fef7e6;border-radius:3px;border:1px solid ${PDF.bdrLt};">
+        <div style="font-size:17px;font-weight:700;color:${PDF.dk};">${newCount}</div>
+        <div style="font-size:8px;color:${PDF.lt};margin-top:1px;">חדשים</div>
+      </div>
+    </div>`
+    : '';
 
   const sevCards = hideSev
     ? ''
@@ -223,6 +253,7 @@ function execSummaryPageHtml(
   return `
     ${breadcrumbHeaderHtml('\u05EA\u05E7\u05E6\u05D9\u05E8 \u05DE\u05E0\u05D4\u05DC\u05D9\u05DD', logoUrl)}
     <div style="font-size:16px;font-weight:700;color:${PDF.dk};margin-bottom:6px;">\u05EA\u05E7\u05E6\u05D9\u05E8 \u05DE\u05E0\u05D4\u05DC\u05D9\u05DD</div>
+    ${round2Summary}
     ${hideSev ? '' : `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin:0 0 6px;">${sevCards}</div>`}
     ${sectionTitle('\u05DE\u05E4\u05EA\u05D7 \u05DC\u05D9\u05E7\u05D5\u05D9\u05D9\u05DD')}
     <div style="border:1px solid ${PDF.bdr};border-radius:2px;overflow:hidden;font-size:10px;">
@@ -454,7 +485,23 @@ function detailsPageHtml(data: PdfReportData, logoUrl?: string): string {
 // PAGES 8-N: DEFECT PAGES — with severity + price×qty + 100×75 photos
 // ═══════════════════════════════════════════════════════════
 
-function defectFullHtml(d: PdfDefect, showSeverity = true): string {
+function roundStatusBadge(status: 'fixed' | 'open' | 'new'): string {
+  const cfg = {
+    fixed: { label: 'תוקן', bg: '#ecfdf5', color: PDF.accent, sym: '✓' },
+    open: { label: 'נותר פתוח', bg: '#fef2f2', color: PDF.red, sym: '✗' },
+    new: { label: 'ממצא חדש', bg: '#fef7e6', color: PDF.amber, sym: '★' },
+  };
+  const c = cfg[status];
+  return `<span style="display:inline-flex;align-items:center;gap:3px;padding:1.5px 6px;border-radius:10px;background:${c.bg};color:${c.color};font-size:9px;font-weight:700;flex-shrink:0;">
+    <span style="font-size:10px;">${c.sym}</span>${c.label}
+  </span>`;
+}
+
+function defectFullHtml(
+  d: PdfDefect,
+  showSeverity = true,
+  isRound2 = false
+): string {
   const photos =
     d.photos ?? d.photoUrls?.map((url) => ({ url, caption: undefined })) ?? [];
   const total = d.unitPrice && d.quantity ? d.unitPrice * d.quantity : null;
@@ -463,16 +510,18 @@ function defectFullHtml(d: PdfDefect, showSeverity = true): string {
     : d.cost
       ? formatCurrency(d.cost)
       : '';
+  const isFixed = d.roundStatus === 'fixed';
 
   const labelStyle = `font-weight:600;color:${PDF.lt};font-size:10px;min-width:90px;flex-shrink:0;`;
   const valueStyle = `font-size:10px;color:${PDF.dk};flex:1;`;
   const rowStyle = `display:flex;gap:6px;padding:3px 0;border-bottom:1px solid ${PDF.bdrLt};`;
 
   let html = `
-    <div style="padding:8px 0;border:1px solid ${PDF.bdr};border-radius:3px;margin-bottom:6px;overflow:hidden;">
+    <div style="padding:8px 0;border:1px solid ${PDF.bdr};border-radius:3px;margin-bottom:6px;overflow:hidden;${isFixed ? 'opacity:0.72;' : ''}">
       <div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:${PDF.bg};border-bottom:1px solid ${PDF.bdr};">
         <div style="font-size:9px;font-weight:700;color:white;background:${PDF.dk};min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0 5px;">${d.number}</div>
         <div style="flex:1;"></div>
+        ${isRound2 && d.roundStatus ? roundStatusBadge(d.roundStatus) : ''}
         ${showSeverity && d.severity ? sevBadgeHtml(d.severity) : ''}
         ${costDisplay ? `<div style="font-size:10px;font-weight:700;color:${PDF.accent};background:${PDF.accentLt};padding:2px 8px;border-radius:10px;">${costDisplay}</div>` : ''}
       </div>
@@ -548,7 +597,8 @@ function defectPagesContent(
   defects: PdfDefect[],
   groups: DefectGroup[],
   logoUrl?: string,
-  showSeverity = true
+  showSeverity = true,
+  isRound2 = false
 ): string[] {
   const pages: string[] = [];
   const maxDefectsPerPage = DEFECTS_PER_PAGE;
@@ -572,7 +622,11 @@ function defectPagesContent(
     currentContent += categoryHeader;
 
     for (let di = 0; di < group.defects.length; di++) {
-      currentContent += defectFullHtml(group.defects[di], showSeverity);
+      currentContent += defectFullHtml(
+        group.defects[di],
+        showSeverity,
+        isRound2
+      );
       defectsOnPage++;
 
       if (defectsOnPage >= maxDefectsPerPage && di < group.defects.length - 1) {
@@ -1012,11 +1066,13 @@ export async function generateBedekBayitHtml(
 
   // Pages N: Defects
   const defectStartPage = pages.length + 1;
+  const isRound2 = (data.roundNumber ?? 1) > 1;
   const defectPageContents = defectPagesContent(
     data.defects,
     groups,
     data.logoUrl,
-    data.showSeverity !== false
+    data.showSeverity !== false,
+    isRound2
   );
   for (let i = 0; i < defectPageContents.length; i++) {
     pages.push({

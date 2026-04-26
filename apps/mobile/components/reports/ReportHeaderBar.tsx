@@ -35,6 +35,11 @@ interface ReportHeaderBarProps {
   onDownload?: () => void;
   onManageCategories?: () => void;
   onSaveDraft?: () => void;
+  roundNumber?: number;
+  inheritedReviewedCount?: number;
+  inheritedTotalCount?: number;
+  reportType?: string;
+  onViewPreviousRound?: () => void;
 }
 
 export function ReportHeaderBar({
@@ -52,6 +57,11 @@ export function ReportHeaderBar({
   onDownload,
   onManageCategories,
   onSaveDraft,
+  roundNumber = 1,
+  inheritedReviewedCount = 0,
+  inheritedTotalCount = 0,
+  reportType,
+  onViewPreviousRound,
 }: ReportHeaderBarProps) {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
@@ -124,7 +134,8 @@ export function ReportHeaderBar({
                 textAlign: 'right',
               }}
             >
-              בדק בית
+              {reportType === 'delivery' ? 'פרוטוקול מסירה' : 'בדק בית'}
+              {roundNumber > 1 ? ` — סבב ${roundNumber}` : ''}
             </Text>
           </View>
 
@@ -277,6 +288,90 @@ export function ReportHeaderBar({
             </Text>
           </View>
         </Animated.View>
+
+        {/* Round 2+ review progress bar */}
+        {roundNumber > 1 && inheritedTotalCount > 0 && (
+          <Animated.View
+            entering={FadeInDown.delay(200).duration(250)}
+            style={{
+              marginTop: 12,
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              borderRadius: 8,
+              padding: 10,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: 'row-reverse',
+                justifyContent: 'space-between',
+                marginBottom: 6,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontFamily: 'Rubik-Medium',
+                  color: '#fff',
+                  opacity: 0.9,
+                }}
+              >
+                סקירת ליקויים מסבב קודם
+              </Text>
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontFamily: 'Inter-Bold',
+                  color: '#fff',
+                }}
+              >
+                {`${inheritedReviewedCount}/${inheritedTotalCount}`}
+              </Text>
+            </View>
+            <View
+              style={{
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: 'rgba(255,255,255,0.15)',
+              }}
+            >
+              <View
+                style={{
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: '#fff',
+                  width:
+                    inheritedTotalCount > 0
+                      ? `${(inheritedReviewedCount / inheritedTotalCount) * 100}%`
+                      : '0%',
+                }}
+              />
+            </View>
+            {onViewPreviousRound && (
+              <PressableScale
+                onPress={onViewPreviousRound}
+                style={{
+                  flexDirection: 'row-reverse',
+                  alignItems: 'center',
+                  gap: 4,
+                  marginTop: 8,
+                  alignSelf: 'flex-end',
+                }}
+              >
+                <Feather name="external-link" size={12} color="#fff" />
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontFamily: 'Rubik-Medium',
+                    color: '#fff',
+                    opacity: 0.8,
+                  }}
+                >
+                  צפה בסבב הקודם
+                </Text>
+              </PressableScale>
+            )}
+          </Animated.View>
+        )}
       </LinearGradient>
 
       {/* Dropdown menu */}

@@ -50,6 +50,12 @@ function createInitialState(prefill?: WizardPrefill): WizardState {
     noChecklist: false,
     // draft mode
     isDraft: false,
+    // round detection
+    roundNumber: 1,
+    previousRoundId: null,
+    previousRoundDate: null,
+    previousDefectCount: 0,
+    previousOpenDefectCount: 0,
     // meta
     isSubmitting: false,
   };
@@ -130,6 +136,15 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
       };
     case 'SET_SUBMITTING':
       return { ...state, isSubmitting: action.payload };
+    case 'SET_ROUND_INFO':
+      return {
+        ...state,
+        roundNumber: action.payload.roundNumber,
+        previousRoundId: action.payload.previousRoundId,
+        previousRoundDate: action.payload.previousRoundDate,
+        previousDefectCount: action.payload.previousDefectCount,
+        previousOpenDefectCount: action.payload.previousOpenDefectCount,
+      };
     case 'RESET':
       return createInitialState();
     default:
@@ -139,8 +154,10 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
 
 // --- Compute visible steps (always 3) ---
 
-function computeVisibleSteps(): WizardStepId[] {
-  return ['report_type', 'property', 'client_details'];
+function computeVisibleSteps(isRound2: boolean): WizardStepId[] {
+  const steps: WizardStepId[] = ['report_type', 'property', 'client_details'];
+  if (isRound2) steps.push('round_summary');
+  return steps;
 }
 
 // --- Hook ---
@@ -234,7 +251,62 @@ export function useWizardState(
     state.checklistTemplateId,
   ]);
 
-  const visibleSteps = useMemo(() => computeVisibleSteps(), []);
+  // Detect round 2+ when apartment + delivery type are known
+  useEffect(() => {
+    if (!visible || !state.apartmentId || state.reportType !== 'delivery')
+      return;
+
+    let cancelled = false;
+
+    async function detectRound() {
+      try {
+        const { data: prevReport } = await supabase
+          .from('delivery_reports')
+          .select('id, round_number, report_date')
+          .eq('apartment_id', state.apartmentId!)
+          .eq('report_type', 'delivery')
+          .order('round_number', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (cancelled || !prevReport) return;
+
+        const { count: totalCount } = await supabase
+          .from('defects')
+          .select('id', { count: 'exact', head: true })
+          .eq('delivery_report_id', prevReport.id);
+
+        const { count: openCount } = await supabase
+          .from('defects')
+          .select('id', { count: 'exact', head: true })
+          .eq('delivery_report_id', prevReport.id)
+          .in('status', ['open', 'in_progress', 'not_fixed']);
+
+        if (cancelled) return;
+
+        dispatch({
+          type: 'SET_ROUND_INFO',
+          payload: {
+            roundNumber: (prevReport.round_number as number) + 1,
+            previousRoundId: prevReport.id as string,
+            previousRoundDate: (prevReport.report_date as string) ?? null,
+            previousDefectCount: totalCount ?? 0,
+            previousOpenDefectCount: openCount ?? 0,
+          },
+        });
+      } catch {
+        // Non-fatal — proceed as round 1
+      }
+    }
+
+    detectRound();
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, state.apartmentId, state.reportType, dispatch]);
+
+  const isRound2 = state.roundNumber > 1;
+  const visibleSteps = useMemo(() => computeVisibleSteps(isRound2), [isRound2]);
 
   const currentStepId = visibleSteps[state.currentStepIndex] ?? 'report_type';
   const isLastStep = state.currentStepIndex >= visibleSteps.length - 1;
@@ -248,6 +320,8 @@ export function useWizardState(
         return true;
       case 'client_details':
         // All fields optional — always allow proceeding
+        return true;
+      case 'round_summary':
         return true;
       default:
         return false;
@@ -284,26 +358,8 @@ export function useWizardState(
 
     try {
       const apartmentId = state.apartmentId;
-
-      // Auto-detect delivery round for this apartment
-      let roundNumber = 1;
-      let previousRoundId: string | null = null;
-
-      if (state.reportType === 'delivery' && apartmentId) {
-        const { data: prevReport } = await supabase
-          .from('delivery_reports')
-          .select('id, round_number')
-          .eq('apartment_id', apartmentId)
-          .eq('report_type', 'delivery')
-          .order('round_number', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (prevReport) {
-          roundNumber = (prevReport.round_number as number) + 1;
-          previousRoundId = prevReport.id as string;
-        }
-      }
+      const roundNumber = state.roundNumber;
+      const previousRoundId = state.previousRoundId;
 
       const { id: reportId } = await createReportWithSnapshot({
         apartmentId: apartmentId ?? null,

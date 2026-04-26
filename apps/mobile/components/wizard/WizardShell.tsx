@@ -20,6 +20,7 @@ import { COLORS } from '@infield/ui';
 import { StepReportType } from './StepReportType';
 import { StepProperty } from './StepProperty';
 import { StepClientDetails } from './StepClientDetails';
+import { StepRoundSummary } from './StepRoundSummary';
 
 import type {
   WizardState,
@@ -33,6 +34,7 @@ const STEP_TITLES: Record<WizardStepId, string> = {
   report_type: 'בדיקה חדשה',
   property: 'פרטי נכס (אופציונלי)',
   client_details: 'פרטי מזמין (אופציונלי)',
+  round_summary: 'סבב נוסף',
 };
 
 // --- Props ---
@@ -248,7 +250,13 @@ export function WizardShell({
           accessibilityRole="button"
           accessibilityLabel={isLastStep ? 'התחל בדיקה' : 'המשך'}
         >
-          {isLastStep && <Feather name="plus" size={16} color="white" />}
+          {isLastStep && (
+            <Feather
+              name={currentStepId === 'round_summary' ? 'refresh-cw' : 'plus'}
+              size={16}
+              color="white"
+            />
+          )}
           <Text
             style={{
               fontSize: 15,
@@ -263,7 +271,9 @@ export function WizardShell({
             {state.isSubmitting
               ? 'יוצר דוח...'
               : isLastStep
-                ? 'התחל בדיקה'
+                ? currentStepId === 'round_summary'
+                  ? `התחל סבב ${state.roundNumber}`
+                  : 'התחל בדיקה'
                 : 'המשך'}
           </Text>
           {!isLastStep && !state.isSubmitting && (
@@ -296,5 +306,7 @@ function renderStep(
       return <StepProperty {...props} />;
     case 'client_details':
       return <StepClientDetails {...props} />;
+    case 'round_summary':
+      return <StepRoundSummary {...props} />;
   }
 }

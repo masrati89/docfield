@@ -12,6 +12,9 @@ export interface ReportItem {
   status: 'draft' | 'in_progress' | 'completed' | 'sent';
   defectCount: number;
   updatedAt: string;
+  roundNumber: number;
+  inheritedFixedCount: number;
+  inheritedTotalCount: number;
 }
 
 // --- Query Key ---
@@ -27,9 +30,9 @@ async function fetchReports(): Promise<ReportItem[]> {
   const { data, error } = await supabase
     .from('delivery_reports')
     .select(
-      `id, report_type, status, updated_at, report_date,
+      `id, report_type, status, updated_at, report_date, round_number,
        apartments(number, buildings(name, projects(name))),
-       defects(id)`
+       defects(id, source, review_status)`
     )
     .order('updated_at', { ascending: false });
 
@@ -39,7 +42,14 @@ async function fetchReports(): Promise<ReportItem[]> {
     const apt = r.apartments as Record<string, unknown> | undefined;
     const bld = apt?.buildings as Record<string, unknown> | undefined;
     const prj = bld?.projects as Record<string, unknown> | undefined;
-    const defects = r.defects as Array<unknown> | undefined;
+    const defects =
+      (r.defects as Array<{
+        id: string;
+        source: string | null;
+        review_status: string | null;
+      }>) ?? [];
+
+    const inherited = defects.filter((d) => d.source === 'inherited');
 
     return {
       id: r.id as string,
@@ -47,8 +57,12 @@ async function fetchReports(): Promise<ReportItem[]> {
       apartment: `דירה ${apt?.number ?? ''}, ${bld?.name ?? ''}`,
       reportType: (r.report_type as ReportItem['reportType']) ?? 'delivery',
       status: (r.status as ReportItem['status']) ?? 'draft',
-      defectCount: defects?.length ?? 0,
+      defectCount: defects.length,
       updatedAt: (r.updated_at as string) ?? (r.report_date as string) ?? '',
+      roundNumber: (r.round_number as number) ?? 1,
+      inheritedFixedCount: inherited.filter((d) => d.review_status === 'fixed')
+        .length,
+      inheritedTotalCount: inherited.length,
     };
   });
 }

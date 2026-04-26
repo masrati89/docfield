@@ -41,8 +41,10 @@ import {
 import { SearchOverlay } from '@/components/reports/SearchOverlay';
 import { useChecklist } from '@/hooks/useChecklist';
 import { useReport } from '@/hooks/useReport';
+import { useDefectReviewStatus } from '@/hooks/useDefectReviewStatus';
 import { usePdfGeneration } from '@/hooks/usePdfGeneration';
 import { useToast } from '@/hooks/useToast';
+import { ReviewStatusPill } from '@/components/reports/ReviewStatusPill';
 
 // --- Confirm Modal (replaces Alert.alert — works on all platforms) ---
 
@@ -195,6 +197,9 @@ export default function ChecklistScreen() {
     isLoading: reportLoading,
     refetch,
   } = useReport(reportId);
+
+  const { updateReviewStatus, isUpdating: isReviewUpdating } =
+    useDefectReviewStatus(reportId);
 
   // PDF generation — Iron Rule: all inspector/org data comes from snapshot columns
   const { generatePdf, sharePdf } = usePdfGeneration(
@@ -739,8 +744,157 @@ export default function ChecklistScreen() {
                 </Animated.View>
               ))}
 
-              {/* Defects list */}
-              {defects.length > 0 && (
+              {/* Inherited defects section (round 2+) */}
+              {roundNumber > 1 &&
+                defects.filter((d) => d.source === 'inherited').length > 0 && (
+                  <View style={{ marginTop: 16 }}>
+                    <View
+                      style={{
+                        flexDirection: 'row-reverse',
+                        alignItems: 'center',
+                        gap: 8,
+                        marginBottom: 8,
+                        paddingBottom: 8,
+                        borderBottomWidth: 1,
+                        borderBottomColor: COLORS.info[50],
+                      }}
+                    >
+                      <Feather
+                        name="refresh-cw"
+                        size={14}
+                        color={COLORS.info[500]}
+                      />
+                      <Text
+                        style={{
+                          flex: 1,
+                          fontSize: 15,
+                          fontWeight: '700',
+                          fontFamily: 'Rubik-Bold',
+                          color: COLORS.info[700],
+                          textAlign: 'right',
+                        }}
+                      >
+                        ליקויים מסבב קודם (
+                        {defects.filter((d) => d.source === 'inherited').length}
+                        )
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontFamily: 'Rubik-Medium',
+                          color: COLORS.primary[500],
+                        }}
+                      >
+                        {`${defects.filter((d) => d.source === 'inherited' && d.reviewStatus !== 'pending_review').length}/${defects.filter((d) => d.source === 'inherited').length} נבדקו`}
+                      </Text>
+                    </View>
+                    {defects
+                      .filter((d) => d.source === 'inherited')
+                      .map((defect, idx) => (
+                        <Animated.View
+                          key={defect.id}
+                          entering={FadeInUp.delay(idx * 60).duration(200)}
+                          style={{
+                            flexDirection: 'row-reverse',
+                            alignItems: 'center',
+                            gap: 10,
+                            paddingVertical: 10,
+                            paddingHorizontal: 12,
+                            marginBottom: 6,
+                            backgroundColor: COLORS.info[50],
+                            borderWidth: 1,
+                            borderColor: COLORS.info[500] + '33',
+                            borderRadius: 10,
+                            borderRightWidth: 3,
+                            borderRightColor: COLORS.info[500],
+                          }}
+                        >
+                          <View
+                            style={{
+                              width: 24,
+                              height: 24,
+                              borderRadius: 6,
+                              backgroundColor: COLORS.info[500] + '22',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Feather
+                              name="corner-up-left"
+                              size={12}
+                              color={COLORS.info[500]}
+                            />
+                          </View>
+                          <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+                            <Text
+                              style={{
+                                fontSize: 13,
+                                fontWeight: '600',
+                                fontFamily: 'Rubik-SemiBold',
+                                color: COLORS.neutral[800],
+                                textAlign: 'right',
+                              }}
+                              numberOfLines={2}
+                            >
+                              {defect.description}
+                            </Text>
+                            <View
+                              style={{
+                                flexDirection: 'row-reverse',
+                                alignItems: 'center',
+                                gap: 6,
+                              }}
+                            >
+                              {defect.category && (
+                                <Text
+                                  style={{
+                                    fontSize: 10,
+                                    fontFamily: 'Rubik-Regular',
+                                    color: COLORS.neutral[400],
+                                  }}
+                                >
+                                  {defect.category}
+                                </Text>
+                              )}
+                            </View>
+                            {defect.reviewStatus && (
+                              <ReviewStatusPill
+                                status={defect.reviewStatus}
+                                onChange={(newStatus) =>
+                                  updateReviewStatus(defect.id, newStatus)
+                                }
+                                isUpdating={isReviewUpdating}
+                              />
+                            )}
+                          </View>
+                          <Pressable
+                            onPress={() => handleDeleteDefect(defect.id)}
+                            hitSlop={8}
+                            style={({ pressed }) => ({
+                              width: 28,
+                              height: 28,
+                              borderRadius: 6,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: pressed
+                                ? COLORS.danger[50]
+                                : COLORS.cream[100],
+                              transform: [{ scale: pressed ? 0.9 : 1 }],
+                            })}
+                          >
+                            <Feather
+                              name="trash-2"
+                              size={14}
+                              color={COLORS.neutral[400]}
+                            />
+                          </Pressable>
+                        </Animated.View>
+                      ))}
+                  </View>
+                )}
+
+              {/* Defects list (non-inherited) */}
+              {defects.filter((d) => d.source !== 'inherited').length > 0 && (
                 <View style={{ marginTop: 16 }}>
                   <View
                     style={{
@@ -759,7 +913,9 @@ export default function ChecklistScreen() {
                         textAlign: 'right',
                       }}
                     >
-                      ממצאים ({defects.length})
+                      {roundNumber > 1
+                        ? `ממצאים חדשים (${defects.filter((d) => d.source !== 'inherited').length})`
+                        : `ממצאים (${defects.length})`}
                     </Text>
                     <Pressable
                       onPress={() => {
@@ -798,147 +954,149 @@ export default function ChecklistScreen() {
                     </Pressable>
                   </View>
 
-                  {defects.map((defect, idx) => (
-                    <Animated.View
-                      key={defect.id}
-                      entering={FadeInUp.delay(idx * 60).duration(200)}
-                      style={{
-                        flexDirection: 'row-reverse',
-                        alignItems: 'center',
-                        gap: 10,
-                        paddingVertical: 10,
-                        paddingHorizontal: 12,
-                        marginBottom: 6,
-                        backgroundColor: COLORS.cream[50],
-                        borderWidth: 1,
-                        borderColor: COLORS.cream[200],
-                        borderRadius: 10,
-                        borderRightWidth: 3,
-                        borderRightColor:
-                          defect.severity === 'high' ||
-                          defect.severity === 'critical'
-                            ? COLORS.danger[500]
-                            : defect.severity === 'low'
-                              ? COLORS.primary[500]
-                              : COLORS.gold[500],
-                      }}
-                    >
-                      {/* Number badge */}
-                      <View
+                  {defects
+                    .filter((d) => d.source !== 'inherited')
+                    .map((defect, idx) => (
+                      <Animated.View
+                        key={defect.id}
+                        entering={FadeInUp.delay(idx * 60).duration(200)}
                         style={{
-                          width: 24,
-                          height: 24,
-                          borderRadius: 6,
-                          backgroundColor: COLORS.cream[200],
+                          flexDirection: 'row-reverse',
                           alignItems: 'center',
-                          justifyContent: 'center',
+                          gap: 10,
+                          paddingVertical: 10,
+                          paddingHorizontal: 12,
+                          marginBottom: 6,
+                          backgroundColor: COLORS.cream[50],
+                          borderWidth: 1,
+                          borderColor: COLORS.cream[200],
+                          borderRadius: 10,
+                          borderRightWidth: 3,
+                          borderRightColor:
+                            defect.severity === 'high' ||
+                            defect.severity === 'critical'
+                              ? COLORS.danger[500]
+                              : defect.severity === 'low'
+                                ? COLORS.primary[500]
+                                : COLORS.gold[500],
                         }}
                       >
-                        <Text
-                          style={{
-                            fontSize: 11,
-                            fontWeight: '700',
-                            color: COLORS.neutral[600],
-                          }}
-                        >
-                          {idx + 1}
-                        </Text>
-                      </View>
-
-                      {/* Content */}
-                      <View style={{ flex: 1, minWidth: 0 }}>
-                        <Text
-                          style={{
-                            fontSize: 13,
-                            fontWeight: '600',
-                            fontFamily: 'Rubik-SemiBold',
-                            color: COLORS.neutral[800],
-                            textAlign: 'right',
-                          }}
-                          numberOfLines={2}
-                        >
-                          {defect.description}
-                        </Text>
+                        {/* Number badge */}
                         <View
                           style={{
-                            flexDirection: 'row-reverse',
+                            width: 24,
+                            height: 24,
+                            borderRadius: 6,
+                            backgroundColor: COLORS.cream[200],
                             alignItems: 'center',
-                            gap: 8,
-                            marginTop: 2,
+                            justifyContent: 'center',
                           }}
                         >
-                          {defect.category && (
-                            <Text
-                              style={{
-                                fontSize: 10,
-                                fontFamily: 'Rubik-Regular',
-                                color: COLORS.neutral[400],
-                              }}
-                            >
-                              {defect.category}
-                            </Text>
-                          )}
-                          {defect.room && (
-                            <Text
-                              style={{
-                                fontSize: 10,
-                                fontFamily: 'Rubik-Regular',
-                                color: COLORS.neutral[400],
-                              }}
-                            >
-                              {defect.room}
-                            </Text>
-                          )}
-                          {defect.photoCount > 0 && (
-                            <View
-                              style={{
-                                flexDirection: 'row-reverse',
-                                alignItems: 'center',
-                                gap: 2,
-                              }}
-                            >
-                              <Feather
-                                name="camera"
-                                size={10}
-                                color={COLORS.neutral[400]}
-                              />
+                          <Text
+                            style={{
+                              fontSize: 11,
+                              fontWeight: '700',
+                              color: COLORS.neutral[600],
+                            }}
+                          >
+                            {idx + 1}
+                          </Text>
+                        </View>
+
+                        {/* Content */}
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Text
+                            style={{
+                              fontSize: 13,
+                              fontWeight: '600',
+                              fontFamily: 'Rubik-SemiBold',
+                              color: COLORS.neutral[800],
+                              textAlign: 'right',
+                            }}
+                            numberOfLines={2}
+                          >
+                            {defect.description}
+                          </Text>
+                          <View
+                            style={{
+                              flexDirection: 'row-reverse',
+                              alignItems: 'center',
+                              gap: 8,
+                              marginTop: 2,
+                            }}
+                          >
+                            {defect.category && (
                               <Text
                                 style={{
                                   fontSize: 10,
+                                  fontFamily: 'Rubik-Regular',
                                   color: COLORS.neutral[400],
                                 }}
                               >
-                                {defect.photoCount}
+                                {defect.category}
                               </Text>
-                            </View>
-                          )}
+                            )}
+                            {defect.room && (
+                              <Text
+                                style={{
+                                  fontSize: 10,
+                                  fontFamily: 'Rubik-Regular',
+                                  color: COLORS.neutral[400],
+                                }}
+                              >
+                                {defect.room}
+                              </Text>
+                            )}
+                            {defect.photoCount > 0 && (
+                              <View
+                                style={{
+                                  flexDirection: 'row-reverse',
+                                  alignItems: 'center',
+                                  gap: 2,
+                                }}
+                              >
+                                <Feather
+                                  name="camera"
+                                  size={10}
+                                  color={COLORS.neutral[400]}
+                                />
+                                <Text
+                                  style={{
+                                    fontSize: 10,
+                                    color: COLORS.neutral[400],
+                                  }}
+                                >
+                                  {defect.photoCount}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
                         </View>
-                      </View>
 
-                      {/* Delete button */}
-                      <Pressable
-                        onPress={() => handleDeleteDefect(defect.id)}
-                        hitSlop={8}
-                        style={({ pressed }) => ({
-                          width: 28,
-                          height: 28,
-                          borderRadius: 6,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: pressed
-                            ? COLORS.danger[50]
-                            : COLORS.cream[100],
-                          transform: [{ scale: pressed ? 0.9 : 1 }],
-                        })}
-                      >
-                        <Feather
-                          name="trash-2"
-                          size={14}
-                          color={COLORS.neutral[400]}
-                        />
-                      </Pressable>
-                    </Animated.View>
-                  ))}
+                        {/* Delete button */}
+                        <Pressable
+                          onPress={() => handleDeleteDefect(defect.id)}
+                          hitSlop={8}
+                          style={({ pressed }) => ({
+                            width: 28,
+                            height: 28,
+                            borderRadius: 6,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: pressed
+                              ? COLORS.danger[50]
+                              : COLORS.cream[100],
+                            transform: [{ scale: pressed ? 0.9 : 1 }],
+                          })}
+                        >
+                          <Feather
+                            name="trash-2"
+                            size={14}
+                            color={COLORS.neutral[400]}
+                          />
+                        </Pressable>
+                      </Animated.View>
+                    ))}
                 </View>
               )}
             </>
