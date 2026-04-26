@@ -107,6 +107,7 @@ export default function AddDefectScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [cameraVisible, setCameraVisible] = useState(false);
   const savedRef = useRef(false);
+  const savingRef = useRef(false);
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
@@ -230,9 +231,8 @@ export default function AddDefectScreen() {
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
-      if (!isDirty || savedRef.current) return;
+      if (!isDirty || savedRef.current || savingRef.current) return;
 
-      // Prevent default behavior of leaving the screen
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (e as any).preventDefault();
 
@@ -343,10 +343,18 @@ export default function AddDefectScreen() {
   );
 
   const handleSave = useCallback(async () => {
-    if (!canSave || !reportId || !organizationId) return;
+    if (!canSave) {
+      showToast('יש למלא תיאור וקטגוריה', 'error');
+      return;
+    }
+    if (!reportId || !organizationId) {
+      showToast('שגיאה בטעינת הדוח. נסה לצאת ולהיכנס מחדש', 'error');
+      return;
+    }
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    savingRef.current = true;
     setIsSaving(true);
     try {
       // Zod validation before Supabase insert (security M1)
@@ -413,7 +421,10 @@ export default function AddDefectScreen() {
         .single();
 
       if (defectError || !defectData) {
-        showToast('שגיאה בשמירת הממצא', 'error');
+        if (__DEV__) {
+          console.error('[AddDefect] insert error:', defectError?.message);
+        }
+        showToast(defectError?.message ?? 'שגיאה בשמירת הממצא', 'error');
         return;
       }
 
@@ -481,6 +492,7 @@ export default function AddDefectScreen() {
     } catch {
       showToast('שגיאה בשמירת הממצא', 'error');
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
   }, [
@@ -535,6 +547,7 @@ export default function AddDefectScreen() {
       {/* Dimmed overlay — tap to dismiss */}
       <Pressable
         onPress={() => {
+          if (savingRef.current) return;
           if (!isDirty || savedRef.current) {
             savedRef.current = true;
             router.back();
@@ -645,6 +658,7 @@ export default function AddDefectScreen() {
           </View>
           <Pressable
             onPress={() => {
+              if (savingRef.current) return;
               if (!isDirty || savedRef.current) {
                 savedRef.current = true;
                 router.back();
