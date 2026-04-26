@@ -11,6 +11,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import * as Haptics from '@/lib/haptics';
+import { debugLogger } from '@/lib/debugLogger';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -58,17 +59,11 @@ export function PressableScale({
   }, [scaleValue]);
 
   const handlePress = useCallback(() => {
-    console.warn(
-      `[PressableScale] ${testID || 'unnamed'} pressed (Platform: ${Platform.OS})`
-    );
-    if (typeof window !== 'undefined' && __DEV__) {
-      console.warn('[PressableScale Web Debug]', {
-        testID,
-        disabled,
-        onPressExists: !!onPress,
-        timestamp: new Date().toISOString(),
-      });
-    }
+    debugLogger.log('click', testID || 'Button', 'Pressed', {
+      platform: Platform.OS,
+      hasCallback: !!onPress,
+      disabled,
+    });
     if (enableHaptic && Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }

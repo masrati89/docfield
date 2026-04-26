@@ -14,6 +14,7 @@ import * as Haptics from '@/lib/haptics';
 import { COLORS } from '@infield/ui';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { debugLogger } from '@/lib/debugLogger';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Toast } from '@/components/ui/Toast';
 import { SideMenu } from '@/components/ui/SideMenu';
@@ -204,12 +205,13 @@ export default function ReportDetailScreen() {
       if (Platform.OS !== 'web') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
-      console.warn('[NavigateToAddDefect]', {
+      const path = `/(app)/reports/${reportId}/add-defect` as const;
+      debugLogger.log('navigation', 'ReportDetail', `Navigate to add-defect`, {
         reportId,
         category,
         reportType: report?.reportType,
+        path,
       });
-      const path = `/(app)/reports/${reportId}/add-defect` as const;
       if (category) {
         router.push({ pathname: path, params: { category } });
       } else {

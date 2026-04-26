@@ -19,6 +19,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { COLORS } from '@infield/ui';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ErrorBoundary } from '@/components/ui';
+import { DebugPanel } from '@/components/debug';
 import { initializeSentry } from '@/lib/sentry';
 
 import '../global.css';
@@ -183,6 +184,7 @@ export default function RootLayout() {
             <View style={{ flex: 1 }}>
               <Slot />
               {!splashDone && <AnimatedSplash onFinish={handleSplashFinish} />}
+              <DebugPanel />
             </View>
           </AuthProvider>
         </ErrorBoundary>
