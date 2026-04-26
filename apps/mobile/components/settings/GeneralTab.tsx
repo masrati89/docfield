@@ -16,7 +16,7 @@ interface GeneralTabProps {
   email: string | undefined;
   role: string | undefined;
   profession: import('@infield/shared').ProfessionValue | undefined;
-  organizationId: string | undefined;
+  organizationName: string | undefined;
   onChangePassword: () => void;
   onSignOut: () => Promise<void>;
   onError: (message: string) => void;
@@ -29,7 +29,7 @@ export function GeneralTab({
   email,
   role,
   profession,
-  organizationId,
+  organizationName,
   onChangePassword,
   onSignOut,
   onError,
@@ -42,7 +42,7 @@ export function GeneralTab({
         email={email}
         role={role}
         profession={profession}
-        organizationId={organizationId}
+        organizationName={organizationName}
       />
 
       {/* Divider */}

@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await supabase
         .from('users')
         .select(
-          'id, organization_id, email, full_name, first_name, profession, role, phone, signature_url, stamp_url, avatar_url, provider, is_active, preferences, created_at, updated_at'
+          'id, organization_id, email, full_name, first_name, profession, role, phone, signature_url, stamp_url, avatar_url, provider, is_active, preferences, created_at, updated_at, organizations(name)'
         )
         .eq('id', userId)
         .single();
@@ -79,9 +79,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Map snake_case DB columns to camelCase TypeScript interface
+      const orgRaw = data.organizations as unknown;
+      const org = (Array.isArray(orgRaw) ? orgRaw[0] : orgRaw) as {
+        name: string;
+      } | null;
       const userProfile: User = {
         id: data.id,
         organizationId: data.organization_id,
+        organizationName: org?.name ?? undefined,
         email: data.email,
         fullName: data.full_name,
         firstName: data.first_name ?? undefined,

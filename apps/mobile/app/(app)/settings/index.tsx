@@ -103,7 +103,7 @@ export default function SettingsScreen() {
               email={user?.email}
               role={profile?.role}
               profession={profile?.profession}
-              organizationId={profile?.organizationId}
+              organizationName={profile?.organizationName}
               onChangePassword={() => setShowPasswordSheet(true)}
               onSignOut={signOut}
               onError={handleError}

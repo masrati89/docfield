@@ -23,6 +23,7 @@ export interface User extends TenantEntity {
   email: string;
   fullName: string;
   firstName?: string;
+  organizationName?: string;
   profession?: UserProfession;
   role: UserRole;
   phone?: string;
