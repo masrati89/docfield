@@ -35,9 +35,12 @@ class DebugLogger {
     // Notify listeners
     this.listeners.forEach((cb) => cb(this.logs));
 
-    // Also log to console
+    // Also log to console AND browser console
     const style = this.getConsoleStyle(level);
     console.warn(`%c[${category}]`, style, message, data || '');
+    if (typeof window !== 'undefined') {
+      console.error(`[DEBUG-LOG] ${category}: ${message}`, data);
+    }
   }
 
   private getConsoleStyle(level: DebugLog['level']): string {

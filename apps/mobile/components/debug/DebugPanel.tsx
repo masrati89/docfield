@@ -17,7 +17,12 @@ export function DebugPanel() {
     return unsubscribe;
   }, []);
 
-  if (!__DEV__) return null;
+  // Show in dev mode OR if localhost (development)
+  const isDev =
+    __DEV__ ||
+    (typeof window !== 'undefined' && window.location.hostname === 'localhost');
+
+  if (!isDev) return null;
 
   const colors: Record<DebugLog['level'], string> = {
     info: '#E8F5E9',

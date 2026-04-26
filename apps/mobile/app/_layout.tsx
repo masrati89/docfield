@@ -21,8 +21,13 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ErrorBoundary } from '@/components/ui';
 import { DebugPanel } from '@/components/debug';
 import { initializeSentry } from '@/lib/sentry';
+import { debugLogger } from '@/lib/debugLogger';
 
 import '../global.css';
+
+if (__DEV__) {
+  debugLogger.log('info', 'App', 'Application started in development mode');
+}
 
 initializeSentry();
 
