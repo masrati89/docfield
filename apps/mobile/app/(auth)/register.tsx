@@ -209,6 +209,8 @@ export default function RegisterScreen() {
 
       // Step 3: Create organization (generate UUID client-side —
       // SELECT policy requires user profile, which doesn't exist yet)
+      // H2: First user in new org is always admin (implicit until Phase 2 team mode)
+      // When Phase 2 implements team invitations, new invitees will be inspectors.
       const newOrgId = Crypto.randomUUID();
       console.warn('[Register] Step 3: creating org', newOrgId);
       const { error: orgError } = await supabase.from('organizations').insert({
@@ -222,6 +224,15 @@ export default function RegisterScreen() {
           orgError.message,
           orgError.code
         );
+        // H6: Rollback — delete orphaned auth user to allow retry
+        try {
+          await supabase.auth.admin.deleteUser(newUser.id);
+        } catch (deleteErr) {
+          console.warn(
+            '[Register] Could not delete orphaned auth user:',
+            deleteErr
+          );
+        }
         await supabase.auth.signOut();
         setErrors({ general: `שגיאה ביצירת הארגון: ${orgError.message}` });
         triggerShake();
@@ -249,8 +260,13 @@ export default function RegisterScreen() {
           profileError.code,
           profileError.details
         );
-        // Rollback: delete org and sign out
-        await supabase.from('organizations').delete().eq('id', newOrgId);
+        // H6: Rollback — delete org and orphaned auth user to allow retry
+        try {
+          await supabase.from('organizations').delete().eq('id', newOrgId);
+          await supabase.auth.admin.deleteUser(newUser.id);
+        } catch (deleteErr) {
+          console.warn('[Register] Partial rollback failed:', deleteErr);
+        }
         await supabase.auth.signOut();
         setErrors({ general: `שגיאה ביצירת הפרופיל: ${profileError.message}` });
         triggerShake();
