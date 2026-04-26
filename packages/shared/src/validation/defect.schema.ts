@@ -6,7 +6,7 @@ export const createDefectSchema = z.object({
     .string()
     .min(2, 'תיאור ליקוי חייב להכיל לפחות 2 תווים')
     .max(500, 'תיאור ארוך מדי'),
-  room: z.string().min(1, 'יש לבחור חדר'),
+  room: z.string().optional(),
   category: z.string().min(1, 'יש לבחור קטגוריה'),
   severity: z.enum(['critical', 'high', 'medium', 'low']),
   source: z.enum(['checklist', 'manual', 'library']).default('manual'),
