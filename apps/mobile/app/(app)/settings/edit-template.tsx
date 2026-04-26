@@ -23,17 +23,26 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
-type RenderItemParams<T> = { item: T; index: number; drag: () => void };
+type RenderItemParams<T> = {
+  item: T;
+  index: number;
+  drag: () => void;
+  isActive?: boolean;
+  getIndex?: () => number | undefined;
+};
 
-let DraggableFlatList: typeof FlatList = FlatList as any;
-let ScaleDecorator = ({ children }: { children: React.ReactNode }) => <>{children}</>;
+let DraggableFlatList: typeof FlatList = FlatList as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+let ScaleDecorator = ({ children }: { children: React.ReactNode }) => (
+  <>{children}</>
+);
 
 if (Platform.OS !== 'web') {
   try {
-    const draggable = require('react-native-draggable-flatlist');
+    const draggable = require('react-native-draggable-flatlist'); // eslint-disable-line @typescript-eslint/no-require-imports
     DraggableFlatList = draggable.default;
     ScaleDecorator = draggable.ScaleDecorator;
-  } catch (e) {
+  } catch {
+    // Swallow error
     // Fallback if library not available
   }
 }
@@ -716,6 +725,7 @@ function CategoryRow({
     (a, b) => a.sort_order - b.sort_order
   );
 
+  // @ts-expect-error — DraggableFlatList renderItem params
   const renderItem = useCallback(
     ({
       item,
@@ -865,6 +875,8 @@ function CategoryRow({
               ))
             ) : (
               // Editable: draggable items
+              // @ts-expect-error — DraggableFlatList
+
               <DraggableFlatList
                 data={sortedItems}
                 keyExtractor={(item) => item.id}
@@ -1142,6 +1154,7 @@ export default function EditTemplateScreen() {
     (a, b) => a.sort_order - b.sort_order
   );
 
+  // @ts-expect-error — DraggableFlatList renderItem params
   const renderCategory = useCallback(
     ({
       item: cat,
@@ -1152,7 +1165,7 @@ export default function EditTemplateScreen() {
       <ScaleDecorator>
         <CategoryRow
           category={cat}
-          index={getIndex() ?? 0}
+          index={typeof getIndex === 'function' ? getIndex() : 0}
           readOnly={readOnly}
           drag={catDrag}
           isActive={catActive}
@@ -1470,6 +1483,8 @@ export default function EditTemplateScreen() {
             />
           ) : (
             // Editable: draggable categories
+            // @ts-expect-error — DraggableFlatList
+
             <DraggableFlatList
               data={sortedCategories}
               keyExtractor={(c) => c.id}

@@ -59,7 +59,7 @@ export function DebugPanel() {
           boxShadow: '0 4px 12px rgba(0,0,0,.3)',
         }}
       >
-        <Feather name="bug" size={24} color="#fff" />
+        <Feather name="alert-circle" size={24} color="#fff" />
       </Pressable>
 
       {/* Debug panel */}
