@@ -77,6 +77,16 @@ export default function AddDefectScreen() {
         window.location.hash.match(/\/reports\/([^/]+)/)?.[1]
       : undefined);
 
+  if (typeof window !== 'undefined' && __DEV__) {
+    console.warn('[AddDefect Debug]', {
+      reportId,
+      finalReportId,
+      pathname: window.location.pathname,
+      hash: window.location.hash,
+      href: window.location.href,
+    });
+  }
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { profile } = useAuth();

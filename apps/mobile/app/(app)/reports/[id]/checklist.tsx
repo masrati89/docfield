@@ -194,6 +194,15 @@ export default function ChecklistScreen() {
         window.location.hash.match(/\/reports\/([^/]+)/)?.[1]
       : undefined);
 
+  if (typeof window !== 'undefined' && __DEV__) {
+    console.warn('[Checklist Debug]', {
+      reportId,
+      finalReportId,
+      pathname: window.location.pathname,
+      hash: window.location.hash,
+    });
+  }
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { toast, showToast, hideToast } = useToast();

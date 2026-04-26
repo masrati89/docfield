@@ -61,11 +61,19 @@ export function PressableScale({
     console.warn(
       `[PressableScale] ${testID || 'unnamed'} pressed (Platform: ${Platform.OS})`
     );
+    if (typeof window !== 'undefined' && __DEV__) {
+      console.warn('[PressableScale Web Debug]', {
+        testID,
+        disabled,
+        onPressExists: !!onPress,
+        timestamp: new Date().toISOString(),
+      });
+    }
     if (enableHaptic && Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     onPress?.();
-  }, [enableHaptic, onPress, testID]);
+  }, [enableHaptic, onPress, testID, disabled]);
 
   // On Web, use TouchableOpacity which works better than Pressable
   if (Platform.OS === 'web') {
