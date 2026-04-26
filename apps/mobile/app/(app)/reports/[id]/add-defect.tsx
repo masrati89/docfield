@@ -42,11 +42,6 @@ import { useDefectPhotos } from '@/hooks/useDefectPhotos';
 import { useDefectLibrarySuggestions } from '@/hooks/useDefectLibrarySuggestions';
 import { useDefectSave } from '@/hooks/useDefectSave';
 
-import { useDefectForm } from '@/hooks/useDefectForm';
-import { useDefectPhotos } from '@/hooks/useDefectPhotos';
-import { useDefectLibrarySuggestions } from '@/hooks/useDefectLibrarySuggestions';
-import { useDefectSave } from '@/hooks/useDefectSave';
-
 import {
   FormField,
   ComboField,
