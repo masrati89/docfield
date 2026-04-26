@@ -8,8 +8,7 @@ export default function ReportDetailLayout() {
         options={{
           presentation: 'transparentModal',
           animation: 'slide_from_bottom',
-          gestureEnabled: true,
-          gestureDirection: 'vertical',
+          gestureEnabled: false,
           contentStyle: { backgroundColor: 'transparent' },
         }}
       />

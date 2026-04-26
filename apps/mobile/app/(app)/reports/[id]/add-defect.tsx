@@ -239,13 +239,15 @@ export default function AddDefectScreen() {
       setConfirmAction({
         title: 'שינויים שלא נשמרו',
         message: 'יש שינויים שלא נשמרו. לצאת בלי לשמור?',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        onConfirm: () => navigation.dispatch((e as any).data.action),
+        onConfirm: () => {
+          savedRef.current = true;
+          router.dismiss();
+        },
       });
     });
 
     return unsubscribe;
-  }, [isDirty, navigation]);
+  }, [isDirty, navigation, router]);
 
   const canSave = !!category && description.trim().length > 0;
 
@@ -488,7 +490,7 @@ export default function AddDefectScreen() {
 
       savedRef.current = true;
       showToast('הממצא נשמר בהצלחה', 'success');
-      router.back();
+      router.dismiss();
     } catch {
       showToast('שגיאה בשמירת הממצא', 'error');
     } finally {
@@ -550,14 +552,14 @@ export default function AddDefectScreen() {
           if (savingRef.current) return;
           if (!isDirty || savedRef.current) {
             savedRef.current = true;
-            router.back();
+            router.dismiss();
           } else {
             setConfirmAction({
               title: 'שינויים שלא נשמרו',
               message: 'יש שינויים שלא נשמרו. לצאת בלי לשמור?',
               onConfirm: () => {
                 savedRef.current = true;
-                router.back();
+                router.dismiss();
               },
             });
           }
@@ -661,14 +663,14 @@ export default function AddDefectScreen() {
               if (savingRef.current) return;
               if (!isDirty || savedRef.current) {
                 savedRef.current = true;
-                router.back();
+                router.dismiss();
               } else {
                 setConfirmAction({
                   title: 'שינויים שלא נשמרו',
                   message: 'יש שינויים שלא נשמרו. לצאת בלי לשמור?',
                   onConfirm: () => {
                     savedRef.current = true;
-                    router.back();
+                    router.dismiss();
                   },
                 });
               }
