@@ -194,12 +194,14 @@ export default function ChecklistScreen() {
         window.location.hash.match(/\/reports\/([^/]+)/)?.[1]
       : undefined);
 
-  if (typeof window !== 'undefined' && __DEV__) {
-    console.warn('[Checklist Debug]', {
+  if (typeof window !== 'undefined') {
+    console.error('[Checklist ID Debug]', {
       reportId,
       finalReportId,
       pathname: window.location.pathname,
       hash: window.location.hash,
+      pathnameMatch: window.location.pathname.match(/\/reports\/([^/]+)/)?.[1],
+      hashMatch: window.location.hash.match(/\/reports\/([^/]+)/)?.[1],
     });
   }
 
@@ -1123,15 +1125,20 @@ export default function ChecklistScreen() {
       {/* Footer */}
       <ChecklistFooter
         onAddDefect={() => {
+          console.error('[ChecklistFooter] Button clicked', {
+            finalReportId,
+            hasID: !!finalReportId,
+            reportType: report?.reportType,
+          });
           if (!finalReportId) {
-            console.warn('[Checklist] Missing finalReportId!');
+            console.error('[ChecklistFooter] ERROR: Missing finalReportId!');
             return;
           }
           if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }
           const path = `/(app)/reports/${finalReportId}/add-defect`;
-          console.warn('[ChecklistFooter]', { finalReportId, path });
+          console.error('[ChecklistFooter] Navigating to:', path);
           router.push(path);
         }}
         onSearch={() => setShowSearch(true)}
