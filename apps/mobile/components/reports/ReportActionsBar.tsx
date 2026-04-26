@@ -15,6 +15,10 @@ export function ReportActionsBar({
   onAddDefect,
   onSearch,
 }: ReportActionsBarProps) {
+  console.warn(
+    '[ReportActionsBar] rendering, onAddDefect:',
+    typeof onAddDefect
+  );
   return (
     <View
       style={{
@@ -31,6 +35,8 @@ export function ReportActionsBar({
         flexDirection: 'row-reverse',
         gap: 10,
         boxShadow: '0 -4px 20px rgba(60,54,42,.12)',
+        pointerEvents: 'auto',
+        zIndex: 100,
       }}
     >
       {/* Search button */}
@@ -53,7 +59,10 @@ export function ReportActionsBar({
 
       {/* Add defect button */}
       <PressableScale
-        onPress={onAddDefect}
+        onPress={() => {
+          console.warn('[ReportActionsBar] Add defect button pressed');
+          onAddDefect();
+        }}
         scale={0.96}
         style={{
           flex: 1,
