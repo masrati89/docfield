@@ -79,7 +79,11 @@ export default function AddDefectScreen() {
   }>();
 
   // Web fallback: extract id from URL path if not in params
-  const finalReportId = reportId || (typeof window !== 'undefined' ? window.location.pathname.match(/\/reports\/([^/]+)\/add-defect/)?.[1] : undefined);
+  const finalReportId =
+    reportId ||
+    (typeof window !== 'undefined'
+      ? window.location.pathname.match(/\/reports\/([^/]+)\/add-defect/)?.[1]
+      : undefined);
 
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -170,7 +174,6 @@ export default function AddDefectScreen() {
     isDirty: _newForm.isDirty,
   });
 
-
   // === New Hooks (Step-by-step JSX wiring) ===
   const form = useDefectForm(initialCategory);
   const photos = useDefectPhotos({ showToast });
@@ -259,7 +262,14 @@ export default function AddDefectScreen() {
       setShowSuggestions(false);
       setEntrySource('library');
     },
-    [category, location, standardRef, recommendation, defaultPrice, standardDescMap]
+    [
+      category,
+      location,
+      standardRef,
+      recommendation,
+      defaultPrice,
+      standardDescMap,
+    ]
   );
 
   // "Add to Library" handler
@@ -295,6 +305,7 @@ export default function AddDefectScreen() {
     costAmount,
     costUnit,
     note,
+    defaultPrice,
     isAdding,
     addItem,
     showToast,
@@ -604,7 +615,7 @@ export default function AddDefectScreen() {
     }
   }, [
     canSave,
-    reportId,
+    finalReportId,
     organizationId,
     description,
     location,
