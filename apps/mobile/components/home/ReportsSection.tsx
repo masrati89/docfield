@@ -6,7 +6,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '@/lib/haptics';
 
 import { COLORS, SHADOWS } from '@infield/ui';
 import { SkeletonBlock, EmptyState } from '@/components/ui';

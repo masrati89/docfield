@@ -1,6 +1,6 @@
 import { View, Text, Platform, I18nManager } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '@/lib/haptics';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import {
   useSharedValue,

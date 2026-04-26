@@ -1,5 +1,5 @@
 import { Platform, Pressable } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '@/lib/haptics';
 import Animated from 'react-native-reanimated';
 
 // --- Types ---

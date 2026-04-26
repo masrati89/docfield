@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Canvas, Path, Skia, useCanvasRef } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '@/lib/haptics';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
 

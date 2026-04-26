@@ -14,7 +14,7 @@ import * as Linking from 'expo-linking';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as Crypto from 'expo-crypto';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '@/lib/haptics';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
@@ -202,6 +202,9 @@ export function CameraCapture({
     resetState();
     onPhotosConfirmed(photos);
   }, [capturedPhotos, resetState, onPhotosConfirmed]);
+
+  // Web: camera not supported
+  if (Platform.OS === 'web') return null;
 
   // --- Permission screens ---
 

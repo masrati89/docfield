@@ -9,7 +9,7 @@ import {
   Switch,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '@/lib/haptics';
 import Fuse from 'fuse.js';
 
 import { COLORS } from '@infield/ui';

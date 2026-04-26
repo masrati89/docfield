@@ -1,5 +1,5 @@
 import { View, Text, Pressable, Platform } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '@/lib/haptics';
 
 import { COLORS } from '@infield/ui';
 import { TABS } from '@/components/reports/reportDetailConstants';

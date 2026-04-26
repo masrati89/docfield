@@ -7,7 +7,7 @@ import Animated, {
   SlideOutUp,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '@/lib/haptics';
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
 
 type ReportStatus = 'draft' | 'in_progress' | 'completed' | 'sent';

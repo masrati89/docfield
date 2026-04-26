@@ -26,7 +26,7 @@ const notificationKeys = {
 // --- Hook ---
 
 export function useNotifications() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const queryClient = useQueryClient();
   const userId = user?.id ?? '';
 
@@ -43,7 +43,7 @@ export function useNotifications() {
       if (error) throw error;
       return count ?? 0;
     },
-    enabled: !!userId,
+    enabled: !!userId && !!session?.access_token,
     staleTime: 30 * 1000, // 30 seconds
     refetchInterval: 60 * 1000, // poll every 60s
     retry: 1,
@@ -71,7 +71,7 @@ export function useNotifications() {
         sentAt: n.sent_at as string,
       }));
     },
-    enabled: !!userId,
+    enabled: !!userId && !!session?.access_token,
     staleTime: 30 * 1000,
     retry: 1,
   });

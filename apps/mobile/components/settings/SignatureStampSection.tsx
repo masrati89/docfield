@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { View, Text, Pressable, Modal, Image, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '@/lib/haptics';
 
 import { COLORS, BORDER_RADIUS } from '@infield/ui';
 import { SignaturePad } from '@/components/ui/SignaturePad';
