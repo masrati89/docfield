@@ -801,6 +801,31 @@ export default function RegisterScreen() {
               </Animated.View>
             </Animated.View>
 
+            {/* Legal links */}
+            <Animated.View
+              entering={FadeInDown.delay(250).duration(400).springify()}
+              className="mt-[20px] gap-[12px]"
+            >
+              <Text className="text-[12px] font-rubik text-neutral-600 text-center leading-[18px]">
+                על ידי יצירת חשבון אתה מסכים ל
+                <Link href="/(app)/legal/terms" asChild>
+                  <Pressable>
+                    <Text className="text-primary-500 font-rubik-medium underline">
+                      תנאי השימוש
+                    </Text>
+                  </Pressable>
+                </Link>{' '}
+                ול
+                <Link href="/(app)/legal/privacy" asChild>
+                  <Pressable>
+                    <Text className="text-primary-500 font-rubik-medium underline">
+                      מדיניות הפרטיות
+                    </Text>
+                  </Pressable>
+                </Link>
+              </Text>
+            </Animated.View>
+
             {/* Login link */}
             <Animated.View
               entering={FadeInDown.delay(300).duration(400).springify()}

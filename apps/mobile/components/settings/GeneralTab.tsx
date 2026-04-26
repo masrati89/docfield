@@ -1,4 +1,5 @@
 import { View, Text, Pressable, Platform } from 'react-native';
+import { Link } from 'expo-router';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import * as Haptics from '@/lib/haptics';
 import { Feather } from '@expo/vector-icons';
@@ -149,6 +150,56 @@ export function GeneralTab({
           1.0.0
         </Text>
       </Animated.View>
+
+      {/* Legal links */}
+      <View
+        style={{
+          marginHorizontal: 20,
+          flexDirection: 'row-reverse',
+          gap: 16,
+          marginBottom: 24,
+        }}
+      >
+        <Link href="/(app)/legal/privacy" asChild>
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation();
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.primary[500],
+                textDecorationLine: 'underline',
+              }}
+            >
+              מדיניות הפרטיות
+            </Text>
+          </Pressable>
+        </Link>
+        <Text style={{ color: COLORS.cream[300] }}>•</Text>
+        <Link href="/(app)/legal/terms" asChild>
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation();
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.primary[500],
+                textDecorationLine: 'underline',
+              }}
+            >
+              תנאי השימוש
+            </Text>
+          </Pressable>
+        </Link>
+      </View>
 
       {/* Divider */}
       <View

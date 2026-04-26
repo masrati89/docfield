@@ -20,10 +20,12 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.infield.app",
       "usesAppleSignIn": true,
+      "buildNumber": "1",
+      "teamId": "CHANGE_ME",
       "infoPlist": {
-        "NSCameraUsageDescription": "inField needs camera access to photograph construction defects",
-        "NSPhotoLibraryUsageDescription": "inField needs photo library access to attach existing photos to defect reports",
-        "NSPhotoLibraryAddUsageDescription": "inField needs permission to save PDF reports and photos to your library"
+        "NSCameraUsageDescription": "אפליקציית inField זקוקה לגישה למצלמה כדי לצלם ליקויים בבנייה",
+        "NSPhotoLibraryUsageDescription": "אפליקציית inField זקוקה לגישה לספריית התמונות כדי לצרף תמונות קיימות לדוחות ליקויים",
+        "NSPhotoLibraryAddUsageDescription": "אפליקציית inField זקוקה לרשות לשמור דוחות PDF ותמונות לספריית התמונות שלך"
       }
     },
     "android": {
@@ -31,7 +33,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0F4F2E"
       },
-      "package": "com.infield.app"
+      "package": "com.infield.app",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",
@@ -45,14 +48,14 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "inField needs camera access to photograph construction defects"
+          "cameraPermission": "אפליקציית inField זקוקה לגישה למצלמה כדי לצלם ליקויים בבנייה"
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "inField needs photo library access to attach existing photos to defect reports",
-          "cameraPermission": "inField needs camera access to photograph construction defects"
+          "photosPermission": "אפליקציית inField זקוקה לגישה לספריית התמונות כדי לצרף תמונות קיימות לדוחות ליקויים",
+          "cameraPermission": "אפליקציית inField זקוקה לגישה למצלמה כדי לצלם ליקויים בבנייה"
         }
       ],
       "expo-web-browser"

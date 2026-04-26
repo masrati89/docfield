@@ -1,6 +1,6 @@
 {
   "name": "infield",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "description": "inField — Construction delivery reports, inspection & supervision system",
   "workspaces": [

@@ -271,6 +271,12 @@ export default function AddDefectScreen() {
       return;
     }
 
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      showToast('נדרשת גישה לספריית התמונות כדי להוסיף תמונות', 'error');
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 0.8,
