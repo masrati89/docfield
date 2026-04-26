@@ -1,10 +1,5 @@
 import { useCallback } from 'react';
-import {
-  Pressable,
-  TouchableOpacity,
-  Platform,
-  type ViewStyle,
-} from 'react-native';
+import { Pressable, Platform, type ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -27,6 +22,7 @@ interface PressableScaleProps {
   accessibilityLabel?: string;
   accessibilityRole?: 'button' | 'menuitem' | 'link';
   hitSlop?: number;
+  testID?: string;
 }
 
 export function PressableScale({
@@ -40,6 +36,7 @@ export function PressableScale({
   accessibilityLabel,
   accessibilityRole = 'button',
   hitSlop,
+  testID,
 }: PressableScaleProps) {
   const scaleValue = useSharedValue(1);
 
@@ -56,23 +53,28 @@ export function PressableScale({
   }, [scaleValue]);
 
   const handlePress = useCallback(() => {
+    console.warn(
+      `[PressableScale] ${testID || 'unnamed'} pressed (Platform: ${Platform.OS})`
+    );
     if (enableHaptic && Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     onPress?.();
-  }, [enableHaptic, onPress]);
+  }, [enableHaptic, onPress, testID]);
 
-  // On Web, use TouchableOpacity which works better
+  // On Web, use plain Pressable with minimal config
   if (Platform.OS === 'web') {
     return (
-      <TouchableOpacity
+      <Pressable
         onPress={handlePress}
         disabled={disabled}
         style={[style, disabled ? { opacity: 0.5 } : undefined]}
-        activeOpacity={0.7}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole={accessibilityRole}
+        testID={testID}
       >
         {children}
-      </TouchableOpacity>
+      </Pressable>
     );
   }
 
@@ -88,6 +90,7 @@ export function PressableScale({
       style={[animatedStyle, style, disabled ? { opacity: 0.5 } : undefined]}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole={accessibilityRole}
+      testID={testID}
     >
       {children}
     </AnimatedPressable>

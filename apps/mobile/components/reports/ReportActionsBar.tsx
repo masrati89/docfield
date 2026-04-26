@@ -15,6 +15,10 @@ export function ReportActionsBar({
   onAddDefect,
   onSearch,
 }: ReportActionsBarProps) {
+  console.warn('[ReportActionsBar] rendered with callbacks:', {
+    onAddDefect: !!onAddDefect,
+    onSearch: !!onSearch,
+  });
   return (
     <View
       style={{
@@ -37,6 +41,7 @@ export function ReportActionsBar({
     >
       {/* Search button */}
       <PressableScale
+        testID="report-actions-search"
         onPress={onSearch}
         style={{
           width: 48,
@@ -55,6 +60,7 @@ export function ReportActionsBar({
 
       {/* Add defect button */}
       <PressableScale
+        testID="report-actions-add-defect"
         onPress={onAddDefect}
         scale={0.96}
         style={{
