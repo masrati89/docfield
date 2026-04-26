@@ -1,0 +1,8 @@
+{
+  "android": {
+    "package": "com.anonymous.infield"
+  },
+  "ios": {
+    "bundleIdentifier": "com.anonymous.infield"
+  }
+}

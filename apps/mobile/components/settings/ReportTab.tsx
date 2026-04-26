@@ -155,7 +155,7 @@ export function ReportTab({ onSuccess, onError }: ReportTabProps) {
                 }}
                 onPress={() => {
                   router.push(
-                    `/settings/edit-text?field=${field.settingsKey}&label=${encodeURIComponent(field.label)}`
+                    `/(app)/settings/edit-text?field=${field.settingsKey}&label=${encodeURIComponent(field.label)}`
                   );
                 }}
               />
@@ -174,7 +174,7 @@ export function ReportTab({ onSuccess, onError }: ReportTabProps) {
         <PressableScale
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.push('/settings/templates');
+            router.push('/(app)/settings/templates');
           }}
           style={{
             flexDirection: 'row-reverse',

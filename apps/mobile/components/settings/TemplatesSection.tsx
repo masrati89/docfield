@@ -791,7 +791,7 @@ export function TemplatesSection({
         setBusy(true);
         const id = await createTemplate(name, reportType);
         onSuccess?.('התבנית נוצרה בהצלחה');
-        router.push(`/settings/edit-template?id=${id}`);
+        router.push(`/(app)/settings/edit-template?id=${id}`);
       } catch (err) {
         console.error('[TemplatesSection] create failed:', err);
         onError?.('שגיאה ביצירת תבנית');
