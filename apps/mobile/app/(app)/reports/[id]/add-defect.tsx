@@ -132,7 +132,8 @@ export default function AddDefectScreen() {
     setCostAmount: form.setCostAmount,
     setEntrySource: form.setEntrySource,
     libraryItems,
-    addItem,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    addItem: addItem as any,
     isAdding,
     showToast,
   });
@@ -180,7 +181,9 @@ export default function AddDefectScreen() {
       isUploading: false,
     }));
 
-    photos.setPhotos((prev) => [...prev, ...newPhotos].slice(0, MAX_PHOTOS));
+    photos.setPhotos((prev: PhotoItem[]) =>
+      [...prev, ...newPhotos].slice(0, MAX_PHOTOS)
+    );
   }, [photos, showToast]);
 
   const handlePhotosConfirmed = useCallback(
@@ -191,7 +194,9 @@ export default function AddDefectScreen() {
         isUploading: false,
         annotations: photo.annotations,
       }));
-      photos.setPhotos((prev) => [...prev, ...newPhotos].slice(0, MAX_PHOTOS));
+      photos.setPhotos((prev: PhotoItem[]) =>
+        [...prev, ...newPhotos].slice(0, MAX_PHOTOS)
+      );
       photos.setCameraVisible(false);
     },
     [photos]
@@ -199,8 +204,10 @@ export default function AddDefectScreen() {
 
   const handleUpdateAnnotations = useCallback(
     (photoId: string, annotations: AnnotationLayer) => {
-      photos.setPhotos((prev) =>
-        prev.map((p) => (p.id === photoId ? { ...p, annotations } : p))
+      photos.setPhotos((prev: PhotoItem[]) =>
+        prev.map((p: PhotoItem) =>
+          p.id === photoId ? { ...p, annotations } : p
+        )
       );
     },
     [photos]
@@ -208,8 +215,8 @@ export default function AddDefectScreen() {
 
   const handleUpdateCaption = useCallback(
     (photoId: string, caption: string) => {
-      photos.setPhotos((prev) =>
-        prev.map((p) => (p.id === photoId ? { ...p, caption } : p))
+      photos.setPhotos((prev: PhotoItem[]) =>
+        prev.map((p: PhotoItem) => (p.id === photoId ? { ...p, caption } : p))
       );
     },
     [photos]
@@ -221,7 +228,9 @@ export default function AddDefectScreen() {
       if (!photo) return;
 
       // Remove from local state immediately
-      photos.setPhotos((prev) => prev.filter((p) => p.id !== photoId));
+      photos.setPhotos((prev: PhotoItem[]) =>
+        prev.filter((p: PhotoItem) => p.id !== photoId)
+      );
 
       // If photo was saved to DB, delete from defect_photos table and storage
       if (photo.dbId) {
@@ -941,9 +950,9 @@ export default function AddDefectScreen() {
             </FormField>
 
             {/* 3. Location */}
-            <FormField label="מיקום" filled={!!location} icon="map-pin">
+            <FormField label="מיקום" filled={!!form.location} icon="map-pin">
               <ComboField
-                value={location}
+                value={form.location}
                 onSelect={form.setLocation}
                 options={locationLabels}
                 placeholder="הקלד או בחר מיקום..."
@@ -1213,9 +1222,12 @@ export default function AddDefectScreen() {
                   onAddFromCamera={() => {
                     // Placeholder — camera capture for appendix not yet implemented
                   }}
-                  onDelete={(id) =>
-                    photos.setAppendixDocs((prev) =>
-                      prev.filter((d) => d.id !== id)
+                  onDelete={(id: string) =>
+                    photos.setAppendixDocs(
+                      (prev: { id: string; uri: string }[]) =>
+                        prev.filter(
+                          (d: { id: string; uri: string }) => d.id !== id
+                        )
                     )
                   }
                 />

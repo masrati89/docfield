@@ -13,9 +13,13 @@ const MAX_PHOTOS = 20;
 
 export interface UseDefectPhotosReturn {
   photos: PhotoItem[];
-  setPhotos: (val: PhotoItem[]) => void;
+  setPhotos: (val: PhotoItem[] | ((prev: PhotoItem[]) => PhotoItem[])) => void;
   appendixDocs: { id: string; uri: string }[];
-  setAppendixDocs: (val: { id: string; uri: string }[]) => void;
+  setAppendixDocs: (
+    val:
+      | { id: string; uri: string }[]
+      | ((prev: { id: string; uri: string }[]) => { id: string; uri: string }[])
+  ) => void;
   cameraVisible: boolean;
   setCameraVisible: (val: boolean) => void;
   handleAddPhoto: () => void;
