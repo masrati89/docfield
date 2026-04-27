@@ -27,7 +27,6 @@ import { useSignature } from '@/hooks/useSignature';
 import { CategoryAccordion } from '@/components/reports/CategoryAccordion';
 import { ReportSkeleton } from '@/components/reports/ReportSkeleton';
 import { ReportHeaderBar } from '@/components/reports/ReportHeaderBar';
-import { ReportActionsBar } from '@/components/reports/ReportActionsBar';
 import { PrePdfSummary } from '@/components/reports/PrePdfSummary';
 import { ReportPreviewModal } from '@/components/reports/ReportPreviewModal';
 import { TenantSignatureScreen } from '@/components/reports/TenantSignatureScreen';
@@ -455,17 +454,6 @@ export default function ReportDetailScreen() {
               )}
             </View>
           </ScrollView>
-
-          {/* Bottom action bar: search + add defect */}
-          <ReportActionsBar
-            bottomInset={insets.bottom}
-            onAddDefect={() => {
-              if (reportId) {
-                router.push(`/(app)/reports/${reportId}/add-defect`);
-              }
-            }}
-            onSearch={() => setShowSearch(true)}
-          />
 
           {/* Summary modal */}
           {report && (

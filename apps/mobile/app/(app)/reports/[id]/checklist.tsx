@@ -33,7 +33,6 @@ import {
 } from '@/components/ui';
 import { Toast } from '@/components/ui/Toast';
 import {
-  ChecklistFooter,
   RoomAccordion,
   ReportPreviewSheet,
   ReportSettingsSheet,
@@ -1121,20 +1120,6 @@ export default function ChecklistScreen() {
           )}
         </View>
       </ScrollView>
-
-      {/* Footer */}
-      <ChecklistFooter
-        onAddDefect={() => {
-          if (!finalReportId) {
-            return;
-          }
-          if (Platform.OS !== 'web') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
-          router.push(`/(app)/reports/${finalReportId}/add-defect`);
-        }}
-        onSearch={() => setShowSearch(true)}
-      />
 
       {/* Search overlay */}
       {showSearch && (
