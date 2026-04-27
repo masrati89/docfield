@@ -10,6 +10,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 import * as Haptics from '@/lib/haptics';
 import { COLORS } from '@infield/ui';
 import { supabase } from '@/lib/supabase';
@@ -462,6 +463,48 @@ export default function ReportDetailScreen() {
               )}
             </View>
           </ScrollView>
+
+          {/* Quick add defect button */}
+          <View
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              alignItems: 'flex-end',
+            }}
+          >
+            <Pressable
+              onPress={() => {
+                if (reportId) {
+                  router.push(`/(app)/reports/${reportId}/add-defect`);
+                }
+              }}
+              style={{
+                flexDirection: 'row-reverse',
+                alignItems: 'center',
+                gap: 6,
+                backgroundColor: COLORS.primary[500],
+                borderRadius: 10,
+                paddingVertical: 10,
+                paddingHorizontal: 16,
+                shadowColor: 'rgb(27,122,68)',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.22,
+                shadowRadius: 8,
+                elevation: 4,
+              }}
+            >
+              <Feather name="plus" size={16} color={COLORS.white} />
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontFamily: 'Rubik-SemiBold',
+                  color: COLORS.white,
+                }}
+              >
+                הוסף ממצא
+              </Text>
+            </Pressable>
+          </View>
 
           {/* Summary modal */}
           {report && (
