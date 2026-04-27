@@ -462,49 +462,50 @@ export default function ReportDetailScreen() {
                 ))
               )}
             </View>
-          </ScrollView>
 
-          {/* Quick add defect button */}
-          <View
-            style={{
-              paddingHorizontal: 16,
-              paddingVertical: 10,
-              alignItems: 'flex-end',
-            }}
-          >
-            <Pressable
-              onPress={() => {
-                if (reportId) {
-                  router.push(`/(app)/reports/${reportId}/add-defect`);
-                }
-              }}
+            {/* Quick add defect button — inside ScrollView to avoid Tab Bar overlap */}
+            <View
               style={{
-                flexDirection: 'row-reverse',
-                alignItems: 'center',
-                gap: 6,
-                backgroundColor: COLORS.primary[500],
-                borderRadius: 10,
-                paddingVertical: 10,
                 paddingHorizontal: 16,
-                shadowColor: 'rgb(27,122,68)',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.22,
-                shadowRadius: 8,
-                elevation: 4,
+                paddingTop: 16,
+                paddingBottom: 100, // Space for Tab Bar
+                alignItems: 'flex-end',
               }}
             >
-              <Feather name="plus" size={16} color={COLORS.white} />
-              <Text
+              <Pressable
+                onPress={() => {
+                  if (reportId) {
+                    router.push(`/(app)/reports/${reportId}/add-defect`);
+                  }
+                }}
                 style={{
-                  fontSize: 13,
-                  fontFamily: 'Rubik-SemiBold',
-                  color: COLORS.white,
+                  flexDirection: 'row-reverse',
+                  alignItems: 'center',
+                  gap: 6,
+                  backgroundColor: COLORS.primary[500],
+                  borderRadius: 10,
+                  paddingVertical: 10,
+                  paddingHorizontal: 16,
+                  shadowColor: 'rgb(27,122,68)',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.22,
+                  shadowRadius: 8,
+                  elevation: 4,
                 }}
               >
-                הוסף ממצא
-              </Text>
-            </Pressable>
-          </View>
+                <Feather name="plus" size={16} color={COLORS.white} />
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontFamily: 'Rubik-SemiBold',
+                    color: COLORS.white,
+                  }}
+                >
+                  הוסף ממצא
+                </Text>
+              </Pressable>
+            </View>
+          </ScrollView>
 
           {/* Summary modal */}
           {report && (
