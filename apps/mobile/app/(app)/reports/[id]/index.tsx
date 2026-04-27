@@ -514,7 +514,7 @@ export default function ReportDetailScreen() {
               bottom: 0,
               left: 0,
               right: 0,
-              backgroundColor: COLORS.cream[50],
+              backgroundColor: 'red',
               borderTopWidth: 1,
               borderTopColor: COLORS.cream[200],
               paddingHorizontal: 16,
