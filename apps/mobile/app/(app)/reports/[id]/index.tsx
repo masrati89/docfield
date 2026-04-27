@@ -470,11 +470,15 @@ export default function ReportDetailScreen() {
               paddingTop: 10,
               paddingBottom: Math.max(insets.bottom, 22),
               boxShadow: '0 -4px 20px rgba(60,54,42,.12)',
+              zIndex: 50,
+              pointerEvents: 'auto',
             }}
           >
             <Pressable
               onPress={() => {
+                console.error('[ReportFooter] Button clicked!', { reportId });
                 if (reportId) {
+                  console.error('[ReportFooter] Pushing to add-defect');
                   router.push(`/(app)/reports/${reportId}/add-defect`);
                 }
               }}
