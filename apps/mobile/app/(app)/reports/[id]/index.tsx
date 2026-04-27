@@ -514,23 +514,26 @@ export default function ReportDetailScreen() {
               reportId={id}
             />
           )}
-          {/* Footer: add defect button */}
+          {/* Footer: add defect button — positioned absolutely at bottom */}
           <View
             style={{
-              backgroundColor: 'red',
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              backgroundColor: COLORS.cream[50],
               borderTopWidth: 1,
               borderTopColor: COLORS.cream[200],
               paddingHorizontal: 16,
               paddingTop: 10,
               paddingBottom: Math.max(insets.bottom, 22),
               boxShadow: '0 -4px 20px rgba(60,54,42,.12)',
+              zIndex: 50,
             }}
           >
             <Pressable
               onPress={() => {
-                console.error('[ReportFooter] Button clicked!', { reportId });
                 if (reportId) {
-                  console.error('[ReportFooter] Pushing to add-defect');
                   router.push(`/(app)/reports/${reportId}/add-defect`);
                 }
               }}
