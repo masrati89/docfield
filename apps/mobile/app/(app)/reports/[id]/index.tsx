@@ -14,7 +14,6 @@ import * as Haptics from '@/lib/haptics';
 import { COLORS } from '@infield/ui';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { debugLogger } from '@/lib/debugLogger';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Toast } from '@/components/ui/Toast';
 import { SideMenu } from '@/components/ui/SideMenu';
@@ -198,27 +197,6 @@ export default function ReportDetailScreen() {
       });
     },
     [refetch]
-  );
-
-  const navigateToAddDefect = useCallback(
-    (category?: string) => {
-      if (Platform.OS !== 'web') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
-      const path = `/(app)/reports/${reportId}/add-defect` as const;
-      debugLogger.log('navigation', 'ReportDetail', `Navigate to add-defect`, {
-        reportId,
-        category,
-        reportType: report?.reportType,
-        path,
-      });
-      if (category) {
-        router.push({ pathname: path, params: { category } });
-      } else {
-        router.push(path);
-      }
-    },
-    [reportId, router, report?.reportType]
   );
 
   const subtitle = report
@@ -447,7 +425,11 @@ export default function ReportDetailScreen() {
                   title="אין ממצאים עדיין"
                   subtitle="הוסף ממצא ראשון מהכפתור למטה, מהמאגר, או צלם תמונה"
                   ctaLabel="הוסף ממצא"
-                  onCta={() => navigateToAddDefect()}
+                  onCta={() => {
+                    if (reportId) {
+                      router.push(`/(app)/reports/${reportId}/add-defect`);
+                    }
+                  }}
                 />
               ) : (
                 categoryGroups.map((group, idx) => (
@@ -457,7 +439,14 @@ export default function ReportDetailScreen() {
                     isOpen={openCategories[group.name] ?? false}
                     onToggle={() => toggleCategory(group.name)}
                     index={idx}
-                    onAddDefect={navigateToAddDefect}
+                    onAddDefect={(category?: string) => {
+                      if (reportId) {
+                        router.push({
+                          pathname: `/(app)/reports/${reportId}/add-defect`,
+                          params: category ? { category } : undefined,
+                        });
+                      }
+                    }}
                     onDeleteDefect={handleDeleteDefect}
                     onReviewStatusChange={updateReviewStatus}
                     isReviewUpdating={isReviewUpdating}
@@ -470,7 +459,11 @@ export default function ReportDetailScreen() {
           {/* Bottom action bar: search + add defect */}
           <ReportActionsBar
             bottomInset={insets.bottom}
-            onAddDefect={() => navigateToAddDefect()}
+            onAddDefect={() => {
+              if (reportId) {
+                router.push(`/(app)/reports/${reportId}/add-defect`);
+              }
+            }}
             onSearch={() => setShowSearch(true)}
           />
 
