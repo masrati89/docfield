@@ -124,7 +124,7 @@ export default function AppLayout() {
 
   const bottomPadding = Math.max(insets.bottom, 8);
 
-  // Tab bar: always rendered (position absolute), opacity hides when in nested screens
+  // Tab bar: display:none removes from DOM when in nested screens (prevents pointer events on web)
   const tabBarStyle = {
     backgroundColor:
       Platform.OS === 'ios'
@@ -137,8 +137,7 @@ export default function AppLayout() {
     height: 60 + bottomPadding,
     position: 'absolute' as const,
     elevation: 0,
-    opacity: isNestedScreen ? 0 : 1,
-    pointerEvents: isNestedScreen ? ('none' as const) : ('auto' as const),
+    display: isNestedScreen ? ('none' as const) : ('flex' as const),
   };
 
   return (
