@@ -315,7 +315,14 @@ export default function ReportDetailScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: COLORS.cream[50] }}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: COLORS.cream[50],
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <StatusBar style="light" />
 
       {toast && (
@@ -510,10 +517,6 @@ export default function ReportDetailScreen() {
           {/* Footer: add defect button */}
           <View
             style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
               backgroundColor: 'red',
               borderTopWidth: 1,
               borderTopColor: COLORS.cream[200],
@@ -521,7 +524,6 @@ export default function ReportDetailScreen() {
               paddingTop: 10,
               paddingBottom: Math.max(insets.bottom, 22),
               boxShadow: '0 -4px 20px rgba(60,54,42,.12)',
-              zIndex: 50,
             }}
           >
             <Pressable
@@ -541,7 +543,6 @@ export default function ReportDetailScreen() {
                 justifyContent: 'center',
                 gap: 8,
                 boxShadow: '0 2px 10px rgba(27,122,68,.26)',
-                pointerEvents: 'auto',
               }}
             >
               <Feather name="plus" size={20} color="#fff" />
