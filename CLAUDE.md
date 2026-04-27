@@ -90,6 +90,7 @@ A repo audit on 2026-04-10 (`docs/audits/AUDIT_2026-04-10.md`) identified critic
 - 1.10 Neutralize broken UI — web stubs → Coming Soon; mobile "בקרוב" buttons removed; bedek_bait settings button hidden
 - 1.11 New screens — statistics, help/FAQ, standalone templates management
 - 1.12 Protocol settings UX — toggle flip, dirty check, scroll, char counter, menu cleanup
+- 1.13 ✅ Web platform button fixes — PressableScale uses AnimatedPressable (web-compatible), hash routing fallback for ID extraction, DebugPanel click tracking (fixed 2026-04-27)
 
 **Phase 1.5 — Pre-Beta Hardening** (completed 2026-04-24):
 
