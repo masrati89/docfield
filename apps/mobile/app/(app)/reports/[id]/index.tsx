@@ -415,7 +415,8 @@ export default function ReportDetailScreen() {
         <>
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 96 }}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: 16 }}
           >
             {/* Categories — grouped accordion, DS: padding 12px 16px 0, gap 10 */}
             <View
@@ -514,13 +515,9 @@ export default function ReportDetailScreen() {
               reportId={id}
             />
           )}
-          {/* Footer: add defect button — positioned absolutely at bottom */}
+          {/* Footer: add defect button — flexbox sibling to ScrollView */}
           <View
             style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
               backgroundColor: COLORS.cream[50],
               borderTopWidth: 1,
               borderTopColor: COLORS.cream[200],
@@ -528,7 +525,6 @@ export default function ReportDetailScreen() {
               paddingTop: 10,
               paddingBottom: Math.max(insets.bottom, 22),
               boxShadow: '0 -4px 20px rgba(60,54,42,.12)',
-              zIndex: 50,
             }}
           >
             <Pressable
