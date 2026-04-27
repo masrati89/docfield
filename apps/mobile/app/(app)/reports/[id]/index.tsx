@@ -541,6 +541,7 @@ export default function ReportDetailScreen() {
                 justifyContent: 'center',
                 gap: 8,
                 boxShadow: '0 2px 10px rgba(27,122,68,.26)',
+                pointerEvents: 'auto',
               }}
             >
               <Feather name="plus" size={20} color="#fff" />
