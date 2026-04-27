@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useNavigation } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from '@/lib/haptics';
@@ -23,7 +22,6 @@ import { COLORS, BORDER_RADIUS } from '@infield/ui';
 import {
   ROOM_TYPES,
   DEFECT_CATEGORIES,
-  ISRAELI_STANDARDS,
   DEFECT_SEVERITIES,
 } from '@infield/shared';
 import { createDefectSchema } from '@infield/shared/src/validation';
@@ -37,6 +35,10 @@ import type { CapturedPhoto } from '@/lib/annotations';
 import type { AnnotationLayer } from '@/lib/annotations';
 
 import { useDefectLibrary } from '@/hooks/useDefectLibrary';
+import { useDefectForm } from '@/hooks/useDefectForm';
+import { useDefectPhotos } from '@/hooks/useDefectPhotos';
+import { useDefectLibrarySuggestions } from '@/hooks/useDefectLibrarySuggestions';
+import { useDefectSave } from '@/hooks/useDefectSave';
 
 import {
   FormField,
@@ -87,7 +89,6 @@ export default function AddDefectScreen() {
     });
   }
 
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { profile } = useAuth();
   const { toast, showToast, hideToast } = useToast();
@@ -102,206 +103,57 @@ export default function AddDefectScreen() {
   const apartmentNumber = reportInfo?.apartmentNumber ?? '';
   const roomLabel = initialCategory ?? '';
 
-  // Form state
-  const [category, setCategory] = useState(initialCategory ?? '');
-  const [categorySearch, setCategorySearch] = useState('');
-  const [description, setDescription] = useState('');
-  const [location, setLocation] = useState('');
-  const [severity, setSeverity] = useState<string>('medium');
-  const [standardRef, setStandardRef] = useState('');
-  const [standardSection, _setStandardSection] = useState('');
-  const [standardDisplay, setStandardDisplay] = useState('');
-  const [recommendation, setRecommendation] = useState('');
-  const [costUnit, setCostUnit] = useState('fixed');
-  const [costAmount, setCostAmount] = useState('');
-  const [costQty, setCostQty] = useState('');
-  const [costPerUnit, setCostPerUnit] = useState('');
-  const [defaultPrice, setDefaultPrice] = useState<number | null>(null);
-  const [note, setNote] = useState('');
-  const [entrySource, setEntrySource] = useState<'direct' | 'library'>(
-    'direct'
-  );
-  const [photos, setPhotos] = useState<PhotoItem[]>([]);
-  const [appendixDocs, setAppendixDocs] = useState<
-    { id: string; uri: string }[]
-  >([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [cameraVisible, setCameraVisible] = useState(false);
-  const savedRef = useRef(false);
-  const savingRef = useRef(false);
+  const organizationId = profile?.organizationId ?? '';
+
+  // Defect library for autocomplete suggestions
+  const { allItems: libraryItems, addItem, isAdding } = useDefectLibrary();
+
+  // Migrated hooks
+  const form = useDefectForm(initialCategory);
+  const photos = useDefectPhotos({ showToast });
+  const library = useDefectLibrarySuggestions({
+    description: form.description,
+    category: form.category,
+    location: form.location,
+    standardRef: form.standardRef,
+    recommendation: form.recommendation,
+    costAmount: form.costAmount,
+    costUnit: form.costUnit,
+    note: form.note,
+    defaultPrice: form.defaultPrice,
+    standardDescMap: form.standardDescMap,
+    setDescription: form.setDescription,
+    setCategory: form.setCategory,
+    setLocation: form.setLocation,
+    setStandardRef: form.setStandardRef,
+    setStandardDisplay: form.setStandardDisplay,
+    setRecommendation: form.setRecommendation,
+    setDefaultPrice: form.setDefaultPrice,
+    setCostAmount: form.setCostAmount,
+    setEntrySource: form.setEntrySource,
+    libraryItems,
+    addItem,
+    isAdding,
+    showToast,
+  });
+  const save = useDefectSave({
+    reportId: finalReportId ?? '',
+    organizationId,
+    form,
+    photos: photos.photos,
+    showToast,
+    isDirty: form.isDirty,
+  });
+
+  // Modal state (specific to this component)
   const [confirmAction, setConfirmAction] = useState<{
     title: string;
     message: string;
     onConfirm: () => void;
   } | null>(null);
 
-  const organizationId = profile?.organizationId ?? '';
-
-  // Defect library for autocomplete suggestions
-  const { allItems: libraryItems, addItem, isAdding } = useDefectLibrary();
-
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [addedToLibrary, setAddedToLibrary] = useState(false);
-
-  const suggestions = useMemo(() => {
-    // Start with items filtered by selected category (if any)
-    let pool = libraryItems;
-    if (category) {
-      pool = pool.filter((item) => item.category === category);
-    }
-
-    // If no text yet, show all items for this category (up to 10)
-    if (!description.trim()) {
-      return pool.slice(0, 10);
-    }
-
-    // Filter by typed text
-    const query = description.trim().toLowerCase();
-    return pool
-      .filter((item) => item.title.toLowerCase().includes(query))
-      .slice(0, 10);
-  }, [description, libraryItems, category]);
-
-  // Build a lookup map for standard descriptions (used by suggestion + standard picker)
-  const standardDescMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const std of ISRAELI_STANDARDS) {
-      for (const sec of std.sections) {
-        const key = `${std.name} סעיף ${sec.code} — ${sec.title}`;
-        map.set(key, sec.desc);
-      }
-    }
-    return map;
-  }, []);
-
-  const handleSelectSuggestion = useCallback(
-    (item: (typeof libraryItems)[0]) => {
-      setDescription(item.title);
-      if (item.category && !category) setCategory(item.category);
-      if (item.location && !location) setLocation(item.location);
-      if (item.standardRef && !standardRef) {
-        setStandardRef(item.standardRef);
-        setStandardDisplay(standardDescMap.get(item.standardRef) ?? '');
-      }
-      if (item.recommendation && !recommendation)
-        setRecommendation(item.recommendation);
-      if (item.price && !defaultPrice) {
-        setDefaultPrice(item.price);
-        setCostAmount(item.price.toString());
-      }
-      setShowSuggestions(false);
-      setEntrySource('library');
-    },
-    [
-      category,
-      location,
-      standardRef,
-      recommendation,
-      defaultPrice,
-      standardDescMap,
-    ]
-  );
-
-  // "Add to Library" handler
-  const handleAddToLibrary = useCallback(async () => {
-    if (!description.trim() || isAdding) return;
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    try {
-      await addItem({
-        title: description.trim(),
-        category: category || '',
-        location: location || '',
-        standardRef: standardRef.trim() || null,
-        recommendation: recommendation.trim() || null,
-        cost: costAmount ? parseFloat(costAmount) : null,
-        costUnit: costUnit || null,
-        notes: note.trim() || null,
-        price: defaultPrice || (costAmount ? parseFloat(costAmount) : null),
-      });
-      setAddedToLibrary(true);
-      showToast('נוסף למאגר בהצלחה', 'success');
-      setTimeout(() => setAddedToLibrary(false), 2000);
-    } catch {
-      showToast('שגיאה בהוספה למאגר', 'error');
-    }
-  }, [
-    description,
-    category,
-    location,
-    standardRef,
-    recommendation,
-    costAmount,
-    costUnit,
-    note,
-    defaultPrice,
-    isAdding,
-    addItem,
-    showToast,
-  ]);
-
-  // Show "Add to Library" when description has text and no exact match in library
-  const showAddToLibrary = useMemo(() => {
-    if (!description.trim() || description.trim().length < 2) return false;
-    const query = description.trim().toLowerCase();
-    return !libraryItems.some((item) => item.title.toLowerCase() === query);
-  }, [description, libraryItems]);
-
-  // Dirty check — warn if user tries to leave with unsaved changes
-  // Exclude initialCategory from dirty check since it's pre-filled
-  const isDirty =
-    (!!category && category !== (initialCategory ?? '')) ||
-    !!description.trim() ||
-    !!location ||
-    !!standardRef.trim() ||
-    !!recommendation.trim() ||
-    !!costAmount ||
-    !!costQty ||
-    !!costPerUnit ||
-    !!note.trim() ||
-    photos.length > 0;
-
-  const navigation = useNavigation();
-
-  const closeModal = useCallback(() => {
-    savedRef.current = true;
-    if (router.canDismiss()) {
-      router.dismiss();
-    } else if (router.canGoBack()) {
-      router.back();
-    }
-  }, [router]);
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
-      if (!isDirty || savedRef.current || savingRef.current) return;
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (e as any).preventDefault();
-
-      setConfirmAction({
-        title: 'שינויים שלא נשמרו',
-        message: 'יש שינויים שלא נשמרו. לצאת בלי לשמור?',
-        onConfirm: () => closeModal(),
-      });
-    });
-
-    return unsubscribe;
-  }, [isDirty, navigation, closeModal]);
-
-  const canSave = !!category && description.trim().length > 0;
-
-  const handleAddPhoto = useCallback(() => {
-    if (photos.length >= MAX_PHOTOS) {
-      showToast('ניתן להוסיף עד 20 תמונות', 'error');
-      return;
-    }
-    setCameraVisible(true);
-  }, [photos.length, showToast]);
-
   const handlePickFromGallery = useCallback(async () => {
-    if (photos.length >= MAX_PHOTOS) {
+    if (photos.photos.length >= MAX_PHOTOS) {
       showToast('ניתן להוסיף עד 20 תמונות', 'error');
       return;
     }
@@ -316,7 +168,7 @@ export default function AddDefectScreen() {
       mediaTypes: ['images'],
       quality: 0.8,
       allowsMultipleSelection: true,
-      selectionLimit: MAX_PHOTOS - photos.length,
+      selectionLimit: MAX_PHOTOS - photos.photos.length,
     });
 
     if (result.canceled || !result.assets) return;
@@ -328,45 +180,48 @@ export default function AddDefectScreen() {
       isUploading: false,
     }));
 
-    setPhotos((prev) => [...prev, ...newPhotos].slice(0, MAX_PHOTOS));
-  }, [photos.length, showToast]);
+    photos.setPhotos((prev) => [...prev, ...newPhotos].slice(0, MAX_PHOTOS));
+  }, [photos, showToast]);
 
-  const handlePhotosConfirmed = useCallback((captured: CapturedPhoto[]) => {
-    const newPhotos: PhotoItem[] = captured.map((photo, i) => ({
-      id: String(Date.now() + i),
-      localUri: photo.uri,
-      isUploading: false,
-      annotations: photo.annotations,
-    }));
-    setPhotos((prev) => [...prev, ...newPhotos].slice(0, MAX_PHOTOS));
-    setCameraVisible(false);
-  }, []);
+  const handlePhotosConfirmed = useCallback(
+    (captured: CapturedPhoto[]) => {
+      const newPhotos: PhotoItem[] = captured.map((photo, i) => ({
+        id: String(Date.now() + i),
+        localUri: photo.uri,
+        isUploading: false,
+        annotations: photo.annotations,
+      }));
+      photos.setPhotos((prev) => [...prev, ...newPhotos].slice(0, MAX_PHOTOS));
+      photos.setCameraVisible(false);
+    },
+    [photos]
+  );
 
   const handleUpdateAnnotations = useCallback(
     (photoId: string, annotations: AnnotationLayer) => {
-      setPhotos((prev) =>
+      photos.setPhotos((prev) =>
         prev.map((p) => (p.id === photoId ? { ...p, annotations } : p))
       );
     },
-    []
+    [photos]
   );
 
   const handleUpdateCaption = useCallback(
     (photoId: string, caption: string) => {
-      setPhotos((prev) =>
+      photos.setPhotos((prev) =>
         prev.map((p) => (p.id === photoId ? { ...p, caption } : p))
       );
     },
-    []
+    [photos]
   );
 
   const handleDeletePhoto = useCallback(
     async (photoId: string) => {
-      const photo = photos.find((p) => p.id === photoId);
+      const photo = photos.photos.find((p) => p.id === photoId);
       if (!photo) return;
 
       // Remove from local state immediately
-      setPhotos((prev) => prev.filter((p) => p.id !== photoId));
+      photos.setPhotos((prev) => prev.filter((p) => p.id !== photoId));
 
       // If photo was saved to DB, delete from defect_photos table and storage
       if (photo.dbId) {
@@ -392,7 +247,7 @@ export default function AddDefectScreen() {
   );
 
   const handleSave = useCallback(async () => {
-    if (!canSave) {
+    if (!form.canSave) {
       showToast('יש למלא תיאור וקטגוריה', 'error');
       return;
     }
@@ -403,42 +258,43 @@ export default function AddDefectScreen() {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    savingRef.current = true;
-    setIsSaving(true);
     try {
       // Zod validation before Supabase insert (security M1)
       const validation = createDefectSchema.safeParse({
         deliveryReportId: finalReportId,
-        description: description.trim(),
-        room: location || '',
-        category: category || '',
-        severity,
+        description: form.description.trim(),
+        room: form.location || '',
+        category: form.category || '',
+        severity: form.severity,
         source: 'manual' as const,
-        standardRef: standardRef.trim() || undefined,
-        standardSection: standardSection.trim() || undefined,
-        recommendation: recommendation.trim() || undefined,
-        notes: note.trim() || undefined,
-        cost: costAmount ? parseFloat(costAmount.replace(/,/g, '')) : undefined,
-        costUnit: costUnit || undefined,
+        standardRef: form.standardRef.trim() || undefined,
+        standardSection: form.standardSection.trim() || undefined,
+        recommendation: form.recommendation.trim() || undefined,
+        notes: form.note.trim() || undefined,
+        cost: form.costAmount
+          ? parseFloat(form.costAmount.replace(/,/g, ''))
+          : undefined,
+        costUnit: form.costUnit || undefined,
       });
 
       if (!validation.success) {
         const firstError =
           validation.error.errors[0]?.message ?? 'שגיאה בנתונים';
         showToast(firstError, 'error');
-        setIsSaving(false);
         return;
       }
 
       // Compute cost fields based on cost unit type
-      const isFixedCost = costUnit === 'fixed';
-      const parsedAmount = costAmount
-        ? parseFloat(costAmount.replace(/,/g, ''))
+      const isFixedCost = form.costUnit === 'fixed';
+      const parsedAmount = form.costAmount
+        ? parseFloat(form.costAmount.replace(/,/g, ''))
         : null;
-      const parsedUnitPrice = costPerUnit
-        ? parseFloat(costPerUnit.replace(/,/g, ''))
+      const parsedUnitPrice = form.costPerUnit
+        ? parseFloat(form.costPerUnit.replace(/,/g, ''))
         : null;
-      const parsedQty = costQty ? parseFloat(costQty.replace(/,/g, '')) : null;
+      const parsedQty = form.costQty
+        ? parseFloat(form.costQty.replace(/,/g, ''))
+        : null;
 
       const costValue = isFixedCost
         ? parsedAmount
@@ -451,20 +307,20 @@ export default function AddDefectScreen() {
         .insert({
           delivery_report_id: finalReportId,
           organization_id: organizationId,
-          description,
-          room: location || null,
-          category: category || null,
-          standard_ref: standardRef.trim() || null,
-          standard_section: standardSection.trim() || null,
-          severity,
+          description: form.description,
+          room: form.location || null,
+          category: form.category || null,
+          standard_ref: form.standardRef.trim() || null,
+          standard_section: form.standardSection.trim() || null,
+          severity: form.severity,
           source: 'manual',
-          recommendation: recommendation.trim() || null,
-          notes: note.trim() || null,
+          recommendation: form.recommendation.trim() || null,
+          notes: form.note.trim() || null,
           cost: costValue,
-          cost_unit: costValue !== null ? costUnit : null,
+          cost_unit: costValue !== null ? form.costUnit : null,
           unit_price: !isFixedCost ? parsedUnitPrice : null,
           quantity: !isFixedCost ? parsedQty : null,
-          unit_label: !isFixedCost && costValue !== null ? costUnit : null,
+          unit_label: !isFixedCost && costValue !== null ? form.costUnit : null,
         })
         .select('id')
         .single();
@@ -480,9 +336,9 @@ export default function AddDefectScreen() {
       const defectId = defectData.id as string;
 
       // Upload and insert photo records into defect_photos
-      if (photos.length > 0) {
-        for (let i = 0; i < photos.length; i++) {
-          const photo = photos[i];
+      if (photos.photos.length > 0) {
+        for (let i = 0; i < photos.photos.length; i++) {
+          const photo = photos.photos[i];
           let imageUrl = photo.publicUrl ?? '';
 
           // Upload local photos that don't have a publicUrl yet
@@ -536,50 +392,32 @@ export default function AddDefectScreen() {
       }
 
       showToast('הממצא נשמר בהצלחה', 'success');
-      closeModal();
+      save.closeModal();
     } catch {
       showToast('שגיאה בשמירת הממצא', 'error');
-    } finally {
-      savingRef.current = false;
-      setIsSaving(false);
     }
   }, [
-    canSave,
+    form.canSave,
     finalReportId,
     organizationId,
-    description,
-    location,
-    category,
-    severity,
-    standardRef,
-    standardSection,
-    recommendation,
-    note,
-    costAmount,
-    costUnit,
-    costPerUnit,
-    costQty,
-    photos,
-    closeModal,
+    form.description,
+    form.location,
+    form.category,
+    form.severity,
+    form.standardRef,
+    form.standardSection,
+    form.recommendation,
+    form.note,
+    form.costAmount,
+    form.costUnit,
+    form.costPerUnit,
+    form.costQty,
+    photos.photos,
+    save,
     showToast,
   ]);
 
   const locationLabels = ROOM_TYPES.map((r) => r.label);
-
-  // Build flattened standard options for ComboField
-  const standardOptions = useMemo(() => {
-    return ISRAELI_STANDARDS.flatMap((std) =>
-      std.sections.map((sec) => `${std.name} סעיף ${sec.code} — ${sec.title}`)
-    );
-  }, []);
-
-  const handleSelectStandard = useCallback(
-    (value: string) => {
-      setStandardRef(value);
-      setStandardDisplay(standardDescMap.get(value) ?? '');
-    },
-    [standardDescMap]
-  );
 
   const screenHeight = Dimensions.get('window').height;
 
@@ -595,14 +433,14 @@ export default function AddDefectScreen() {
       {/* Dimmed overlay — tap to dismiss */}
       <Pressable
         onPress={() => {
-          if (savingRef.current) return;
-          if (!isDirty || savedRef.current) {
-            closeModal();
+          if (save.isSaving) return;
+          if (!form.isDirty) {
+            save.closeModal();
           } else {
             setConfirmAction({
               title: 'שינויים שלא נשמרו',
               message: 'יש שינויים שלא נשמרו. לצאת בלי לשמור?',
-              onConfirm: () => closeModal(),
+              onConfirm: () => save.closeModal(),
             });
           }
         }}
@@ -634,10 +472,10 @@ export default function AddDefectScreen() {
 
         {/* Camera Modal */}
         <CameraCapture
-          visible={cameraVisible}
-          onClose={() => setCameraVisible(false)}
+          visible={photos.cameraVisible}
+          onClose={() => photos.setCameraVisible(false)}
           onPhotosConfirmed={handlePhotosConfirmed}
-          initialPhotoCount={photos.length}
+          initialPhotoCount={photos.photos.length}
           maxPhotos={MAX_PHOTOS}
         />
 
@@ -702,14 +540,14 @@ export default function AddDefectScreen() {
           </View>
           <Pressable
             onPress={() => {
-              if (savingRef.current) return;
-              if (!isDirty || savedRef.current) {
-                closeModal();
+              if (save.isSaving) return;
+              if (!form.isDirty) {
+                save.closeModal();
               } else {
                 setConfirmAction({
                   title: 'שינויים שלא נשמרו',
                   message: 'יש שינויים שלא נשמרו. לצאת בלי לשמור?',
-                  onConfirm: () => closeModal(),
+                  onConfirm: () => save.closeModal(),
                 });
               }
             }}
@@ -747,7 +585,7 @@ export default function AddDefectScreen() {
               <FormField
                 label="קטגוריה"
                 required
-                filled={!!category}
+                filled={!!form.category}
                 icon="grid"
               >
                 {/* Search / add input */}
@@ -757,7 +595,7 @@ export default function AddDefectScreen() {
                     alignItems: 'center',
                     borderRadius: 10,
                     borderWidth: 1,
-                    borderColor: categorySearch
+                    borderColor: form.categorySearch
                       ? COLORS.primary[200]
                       : COLORS.cream[300],
                     backgroundColor: COLORS.cream[100],
@@ -773,8 +611,8 @@ export default function AddDefectScreen() {
                     style={{ marginLeft: 6 }}
                   />
                   <TextInput
-                    value={categorySearch}
-                    onChangeText={setCategorySearch}
+                    value={form.categorySearch}
+                    onChangeText={form.setCategorySearch}
                     placeholder="חפש או הוסף קטגוריה..."
                     placeholderTextColor={COLORS.neutral[400]}
                     style={{
@@ -787,13 +625,13 @@ export default function AddDefectScreen() {
                     }}
                   />
                   {/* Use as custom category button */}
-                  {categorySearch.trim().length > 0 &&
+                  {form.categorySearch.trim().length > 0 &&
                     !DEFECT_CATEGORIES.some(
-                      (c) => c.label === categorySearch.trim()
+                      (c) => c.label === form.categorySearch.trim()
                     ) && (
                       <Pressable
                         onPress={() => {
-                          setCategory(categorySearch.trim());
+                          form.setCategory(form.categorySearch.trim());
                           if (Platform.OS !== 'web') {
                             Haptics.impactAsync(
                               Haptics.ImpactFeedbackStyle.Light
@@ -843,16 +681,16 @@ export default function AddDefectScreen() {
                   >
                     {DEFECT_CATEGORIES.filter(
                       (cat) =>
-                        !categorySearch.trim() ||
-                        cat.label.includes(categorySearch.trim())
+                        !form.categorySearch.trim() ||
+                        cat.label.includes(form.categorySearch.trim())
                     ).map((cat) => {
-                      const isSelected = category === cat.label;
+                      const isSelected = form.category === cat.label;
                       return (
                         <Pressable
                           key={cat.label}
                           onPress={() => {
-                            setCategory(cat.label);
-                            setCategorySearch('');
+                            form.setCategory(cat.label);
+                            form.setCategorySearch('');
                             if (Platform.OS !== 'web') {
                               Haptics.impactAsync(
                                 Haptics.ImpactFeedbackStyle.Light
@@ -898,8 +736,8 @@ export default function AddDefectScreen() {
                     textAlign: 'left',
                   }}
                 >
-                  {categorySearch.trim()
-                    ? `${DEFECT_CATEGORIES.filter((c) => c.label.includes(categorySearch.trim())).length} תוצאות`
+                  {form.categorySearch.trim()
+                    ? `${DEFECT_CATEGORIES.filter((c) => c.label.includes(form.categorySearch.trim())).length} תוצאות`
                     : `${DEFECT_CATEGORIES.length} קטגוריות · גלול לעוד`}
                 </Text>
               </FormField>
@@ -909,19 +747,19 @@ export default function AddDefectScreen() {
             <FormField
               label="תיאור ממצא"
               required
-              filled={!!description}
+              filled={!!form.description}
               icon="alert-triangle"
             >
               <TextInput
-                value={description}
+                value={form.description}
                 onChangeText={(text) => {
-                  setDescription(text);
-                  setShowSuggestions(true);
+                  form.setDescription(text);
+                  library.setShowSuggestions(true);
                 }}
-                onFocus={() => setShowSuggestions(true)}
+                onFocus={() => library.setShowSuggestions(true)}
                 onBlur={() => {
                   // Delay hiding to allow suggestion tap
-                  setTimeout(() => setShowSuggestions(false), 200);
+                  setTimeout(() => library.setShowSuggestions(false), 200);
                 }}
                 placeholder="תאר את הממצא..."
                 placeholderTextColor={COLORS.neutral[400]}
@@ -931,10 +769,10 @@ export default function AddDefectScreen() {
                   paddingHorizontal: 12,
                   borderRadius: BORDER_RADIUS.md,
                   borderWidth: 1,
-                  borderColor: description
+                  borderColor: form.description
                     ? COLORS.primary[200]
                     : COLORS.cream[300],
-                  backgroundColor: description
+                  backgroundColor: form.description
                     ? COLORS.primary[50]
                     : COLORS.cream[50],
                   fontSize: 15,
@@ -948,7 +786,7 @@ export default function AddDefectScreen() {
               />
 
               {/* Autocomplete suggestions from defect library */}
-              {showSuggestions && suggestions.length > 0 && (
+              {library.showSuggestions && library.suggestions.length > 0 && (
                 <View
                   style={{
                     marginTop: 4,
@@ -959,10 +797,10 @@ export default function AddDefectScreen() {
                     overflow: 'hidden',
                   }}
                 >
-                  {suggestions.map((item) => (
+                  {library.suggestions.map((item) => (
                     <Pressable
                       key={item.id}
-                      onPress={() => handleSelectSuggestion(item)}
+                      onPress={() => library.handleSelectSuggestion(item)}
                       style={({ pressed }) => ({
                         paddingVertical: 10,
                         paddingHorizontal: 12,
@@ -1058,10 +896,10 @@ export default function AddDefectScreen() {
               )}
 
               {/* Add to Library button */}
-              {showAddToLibrary && !showSuggestions && (
+              {library.showAddToLibrary && !library.showSuggestions && (
                 <Pressable
-                  onPress={handleAddToLibrary}
-                  disabled={isAdding || addedToLibrary}
+                  onPress={library.handleAddToLibrary}
+                  disabled={isAdding || library.addedToLibrary}
                   style={{
                     flexDirection: 'row-reverse',
                     alignItems: 'center',
@@ -1072,10 +910,10 @@ export default function AddDefectScreen() {
                     borderRadius: BORDER_RADIUS.sm,
                     borderWidth: 1,
                     borderStyle: 'dashed',
-                    borderColor: addedToLibrary
+                    borderColor: library.addedToLibrary
                       ? COLORS.primary[500]
                       : COLORS.primary[300],
-                    backgroundColor: addedToLibrary
+                    backgroundColor: library.addedToLibrary
                       ? COLORS.primary[100]
                       : COLORS.primary[50],
                     marginTop: 8,
@@ -1083,7 +921,9 @@ export default function AddDefectScreen() {
                   }}
                 >
                   <Feather
-                    name={addedToLibrary ? 'check-circle' : 'plus-circle'}
+                    name={
+                      library.addedToLibrary ? 'check-circle' : 'plus-circle'
+                    }
                     size={14}
                     color={COLORS.primary[500]}
                   />
@@ -1094,7 +934,7 @@ export default function AddDefectScreen() {
                       fontFamily: 'Rubik-Medium',
                     }}
                   >
-                    {addedToLibrary ? 'נוסף!' : 'הוסף למאגר'}
+                    {library.addedToLibrary ? 'נוסף!' : 'הוסף למאגר'}
                   </Text>
                 </Pressable>
               )}
@@ -1104,7 +944,7 @@ export default function AddDefectScreen() {
             <FormField label="מיקום" filled={!!location} icon="map-pin">
               <ComboField
                 value={location}
-                onSelect={setLocation}
+                onSelect={form.setLocation}
                 options={locationLabels}
                 placeholder="הקלד או בחר מיקום..."
                 allowCustom
@@ -1115,7 +955,7 @@ export default function AddDefectScreen() {
             {showSeverity && (
               <FormField
                 label="רמת דחיפות"
-                filled={!!severity}
+                filled={!!form.severity}
                 icon="alert-triangle"
               >
                 <View
@@ -1126,12 +966,12 @@ export default function AddDefectScreen() {
                   }}
                 >
                   {DEFECT_SEVERITIES.map((sev) => {
-                    const isSelected = severity === sev.value;
+                    const isSelected = form.severity === sev.value;
                     return (
                       <Pressable
                         key={sev.value}
                         onPress={() => {
-                          setSeverity(sev.value);
+                          form.setSeverity(sev.value);
                           if (Platform.OS !== 'web') {
                             Haptics.impactAsync(
                               Haptics.ImpactFeedbackStyle.Light
@@ -1177,10 +1017,10 @@ export default function AddDefectScreen() {
             {!isDelivery && (
               <FormField
                 label="תקן"
-                filled={!!standardRef}
+                filled={!!form.standardRef}
                 icon="book"
                 labelExtra={
-                  standardRef.trim() ? (
+                  form.standardRef.trim() ? (
                     <Text
                       style={{
                         fontSize: 11,
@@ -1194,20 +1034,20 @@ export default function AddDefectScreen() {
                         overflow: 'hidden',
                       }}
                     >
-                      {standardRef.split(' סעיף ')[0] || standardRef}
+                      {form.standardRef.split(' סעיף ')[0] || form.standardRef}
                     </Text>
                   ) : undefined
                 }
-                hint={entrySource === 'library' ? 'מהספרייה' : undefined}
+                hint={form.entrySource === 'library' ? 'מהספרייה' : undefined}
               >
                 <ComboField
-                  value={standardRef}
-                  onSelect={handleSelectStandard}
-                  options={standardOptions}
+                  value={form.standardRef}
+                  onSelect={form.handleSelectStandard}
+                  options={form.standardOptions}
                   placeholder="חפש תקן ישראלי..."
                   allowCustom
                 />
-                {standardDisplay ? (
+                {form.standardDisplay ? (
                   <View
                     style={{
                       marginTop: 8,
@@ -1229,7 +1069,7 @@ export default function AddDefectScreen() {
                         lineHeight: 19,
                       }}
                     >
-                      {standardDisplay}
+                      {form.standardDisplay}
                     </Text>
                   </View>
                 ) : null}
@@ -1239,7 +1079,7 @@ export default function AddDefectScreen() {
             {/* 5. Recommendation — DS: icon tool g500; delivery: optional with hint */}
             <FormField
               label="המלצה לתיקון"
-              filled={!!recommendation}
+              filled={!!form.recommendation}
               icon="tool"
               iconColor={COLORS.primary[500]}
               labelExtra={
@@ -1258,8 +1098,8 @@ export default function AddDefectScreen() {
               }
             >
               <TextInput
-                value={recommendation}
-                onChangeText={setRecommendation}
+                value={form.recommendation}
+                onChangeText={form.setRecommendation}
                 placeholder={
                   isDelivery
                     ? 'ניתן להשאיר ריק או להוסיף המלצה ליזם/קבלן…'
@@ -1272,10 +1112,10 @@ export default function AddDefectScreen() {
                   paddingHorizontal: 12,
                   borderRadius: 10,
                   borderWidth: 1,
-                  borderColor: recommendation
+                  borderColor: form.recommendation
                     ? COLORS.primary[200]
                     : COLORS.cream[200],
-                  backgroundColor: recommendation
+                  backgroundColor: form.recommendation
                     ? COLORS.cream[50]
                     : COLORS.cream[100],
                   fontSize: 14,
@@ -1321,14 +1161,14 @@ export default function AddDefectScreen() {
                   </Text>
                 </View>
                 <CostSection
-                  costUnit={costUnit}
-                  onCostUnitChange={setCostUnit}
-                  costAmount={costAmount}
-                  onCostAmountChange={setCostAmount}
-                  costQty={costQty}
-                  onCostQtyChange={setCostQty}
-                  costPerUnit={costPerUnit}
-                  onCostPerUnitChange={setCostPerUnit}
+                  costUnit={form.costUnit}
+                  onCostUnitChange={form.setCostUnit}
+                  costAmount={form.costAmount}
+                  onCostAmountChange={form.setCostAmount}
+                  costQty={form.costQty}
+                  onCostQtyChange={form.setCostQty}
+                  costPerUnit={form.costPerUnit}
+                  onCostPerUnitChange={form.setCostPerUnit}
                 />
               </View>
             )}
@@ -1336,13 +1176,15 @@ export default function AddDefectScreen() {
             {/* 7. Photos — DS: icon camera n500, count as Inter number */}
             <FormField
               label="תמונות"
-              filled={photos.length > 0}
+              filled={photos.photos.length > 0}
               icon="camera"
-              count={photos.length > 0 ? photos.length : undefined}
+              count={
+                photos.photos.length > 0 ? photos.photos.length : undefined
+              }
             >
               <PhotoGrid
-                photos={photos}
-                onAddPhoto={handleAddPhoto}
+                photos={photos.photos}
+                onAddPhoto={photos.handleAddPhoto}
                 onPickFromGallery={handlePickFromGallery}
                 onDeletePhoto={handleDeletePhoto}
                 onUpdateAnnotations={handleUpdateAnnotations}
@@ -1354,15 +1196,17 @@ export default function AddDefectScreen() {
             {!isDelivery && (
               <FormField
                 label="נספח"
-                filled={appendixDocs.length > 0}
+                filled={photos.appendixDocs.length > 0}
                 icon="file"
                 hint="תקנים ומסמכים"
                 count={
-                  appendixDocs.length > 0 ? appendixDocs.length : undefined
+                  photos.appendixDocs.length > 0
+                    ? photos.appendixDocs.length
+                    : undefined
                 }
               >
                 <AppendixSection
-                  documents={appendixDocs}
+                  documents={photos.appendixDocs}
                   onAddFromLibrary={() => {
                     // Placeholder — library picker not yet implemented
                   }}
@@ -1370,17 +1214,19 @@ export default function AddDefectScreen() {
                     // Placeholder — camera capture for appendix not yet implemented
                   }}
                   onDelete={(id) =>
-                    setAppendixDocs((prev) => prev.filter((d) => d.id !== id))
+                    photos.setAppendixDocs((prev) =>
+                      prev.filter((d) => d.id !== id)
+                    )
                   }
                 />
               </FormField>
             )}
 
             {/* 9. Notes — DS: muted, icon file n500 */}
-            <FormField label="הערות" filled={!!note} icon="file" muted>
+            <FormField label="הערות" filled={!!form.note} icon="file" muted>
               <TextInput
-                value={note}
-                onChangeText={setNote}
+                value={form.note}
+                onChangeText={form.setNote}
                 placeholder="הערות פנימיות, תזכורות לעצמך, תיאום עם הדייר…"
                 placeholderTextColor={COLORS.neutral[400]}
                 multiline
@@ -1390,8 +1236,12 @@ export default function AddDefectScreen() {
                   paddingHorizontal: 12,
                   borderRadius: 10,
                   borderWidth: 1,
-                  borderColor: note ? COLORS.primary[200] : COLORS.cream[200],
-                  backgroundColor: note ? COLORS.cream[50] : COLORS.cream[100],
+                  borderColor: form.note
+                    ? COLORS.primary[200]
+                    : COLORS.cream[200],
+                  backgroundColor: form.note
+                    ? COLORS.cream[50]
+                    : COLORS.cream[100],
                   fontSize: 13,
                   lineHeight: 19,
                   fontFamily: 'Rubik-Regular',
@@ -1418,14 +1268,14 @@ export default function AddDefectScreen() {
         >
           <Pressable
             onPress={handleSave}
-            disabled={!canSave || isSaving}
+            disabled={!form.canSave || save.isSaving}
             style={{
               height: 46,
               borderRadius: 10,
               backgroundColor: COLORS.primary[500],
               alignItems: 'center',
               justifyContent: 'center',
-              opacity: canSave && !isSaving ? 1 : 0.5,
+              opacity: form.canSave && !save.isSaving ? 1 : 0.5,
               boxShadow: '0 2px 8px rgba(27,122,68,.18)',
             }}
           >
@@ -1437,7 +1287,7 @@ export default function AddDefectScreen() {
                 fontFamily: 'Rubik-SemiBold',
               }}
             >
-              {isSaving ? 'שומר...' : 'שמור ממצא'}
+              {save.isSaving ? 'שומר...' : 'שמור ממצא'}
             </Text>
           </Pressable>
         </View>
