@@ -1125,21 +1125,13 @@ export default function ChecklistScreen() {
       {/* Footer */}
       <ChecklistFooter
         onAddDefect={() => {
-          console.error('[ChecklistFooter] Button clicked', {
-            finalReportId,
-            hasID: !!finalReportId,
-            reportType: report?.reportType,
-          });
           if (!finalReportId) {
-            console.error('[ChecklistFooter] ERROR: Missing finalReportId!');
             return;
           }
           if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }
-          const path = `/(app)/reports/${finalReportId}/add-defect`;
-          console.error('[ChecklistFooter] Navigating to:', path);
-          router.push(path);
+          router.push(`/(app)/reports/${finalReportId}/add-defect`);
         }}
         onSearch={() => setShowSearch(true)}
       />
