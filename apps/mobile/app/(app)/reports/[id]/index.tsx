@@ -468,7 +468,7 @@ export default function ReportDetailScreen() {
               style={{
                 paddingHorizontal: 16,
                 paddingTop: 16,
-                paddingBottom: 100, // Space for Tab Bar
+                paddingBottom: Math.max(insets.bottom + 80, 100), // Space for Tab Bar + safe area
                 alignItems: 'flex-end',
               }}
             >
