@@ -1,7 +1,18 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ISRAELI_STANDARDS } from '@infield/shared';
 
 // --- Types ---
+
+export interface DefectFormInitialData {
+  description?: string;
+  category?: string;
+  location?: string;
+  recommendation?: string;
+  standardRef?: string;
+  severity?: string;
+  costAmount?: string;
+  costUnit?: string;
+}
 
 export interface UseDefectFormReturn {
   // Core form fields
@@ -51,32 +62,135 @@ export interface UseDefectFormReturn {
   handleSelectStandard: (value: string) => void;
 }
 
+interface FormState {
+  description: string;
+  category: string;
+  categorySearch: string;
+  location: string;
+  severity: string;
+  standardRef: string;
+  standardSection: string;
+  standardDisplay: string;
+  recommendation: string;
+  note: string;
+  costUnit: string;
+  costAmount: string;
+  costQty: string;
+  costPerUnit: string;
+  defaultPrice: number | null;
+  entrySource: 'direct' | 'library';
+}
+
 // --- Hook ---
 
-export function useDefectForm(initialCategory?: string): UseDefectFormReturn {
-  // Core form state
-  const [category, setCategory] = useState(initialCategory ?? '');
-  const [categorySearch, setCategorySearch] = useState('');
-  const [description, setDescription] = useState('');
-  const [location, setLocation] = useState('');
-  const [severity, setSeverity] = useState<string>('medium');
-  const [standardRef, setStandardRef] = useState('');
-  const [standardSection, _setStandardSection] = useState('');
-  const [standardDisplay, setStandardDisplay] = useState('');
-  const [recommendation, setRecommendation] = useState('');
-  const [note, setNote] = useState('');
+export function useDefectForm(
+  initialCategory?: string,
+  initialData?: DefectFormInitialData,
+  isLoadingTemplate?: boolean
+): UseDefectFormReturn {
+  // Single state object for all form fields — ensures batching of template initializations
+  const [formState, setFormState] = useState<FormState>({
+    description: '',
+    category: initialCategory ?? '',
+    categorySearch: '',
+    location: '',
+    severity: 'medium',
+    standardRef: '',
+    standardSection: '',
+    standardDisplay: '',
+    recommendation: '',
+    note: '',
+    costUnit: 'fixed',
+    costAmount: '',
+    costQty: '',
+    costPerUnit: '',
+    defaultPrice: null,
+    entrySource: 'direct',
+  });
 
-  // Cost state
-  const [costUnit, setCostUnit] = useState('fixed');
-  const [costAmount, setCostAmount] = useState('');
-  const [costQty, setCostQty] = useState('');
-  const [costPerUnit, setCostPerUnit] = useState('');
-  const [defaultPrice, setDefaultPrice] = useState<number | null>(null);
-
-  // Entry source
-  const [entrySource, setEntrySource] = useState<'direct' | 'library'>(
-    'direct'
+  // Individual setter functions that update the single state object
+  const setDescription = useCallback(
+    (val: string) => setFormState((prev) => ({ ...prev, description: val })),
+    []
   );
+  const setCategory = useCallback(
+    (val: string) => setFormState((prev) => ({ ...prev, category: val })),
+    []
+  );
+  const setCategorySearch = useCallback(
+    (val: string) => setFormState((prev) => ({ ...prev, categorySearch: val })),
+    []
+  );
+  const setLocation = useCallback(
+    (val: string) => setFormState((prev) => ({ ...prev, location: val })),
+    []
+  );
+  const setSeverity = useCallback(
+    (val: string) => setFormState((prev) => ({ ...prev, severity: val })),
+    []
+  );
+  const setStandardRef = useCallback(
+    (val: string) => setFormState((prev) => ({ ...prev, standardRef: val })),
+    []
+  );
+  const setStandardDisplay = useCallback(
+    (val: string) =>
+      setFormState((prev) => ({ ...prev, standardDisplay: val })),
+    []
+  );
+  const setRecommendation = useCallback(
+    (val: string) => setFormState((prev) => ({ ...prev, recommendation: val })),
+    []
+  );
+  const setNote = useCallback(
+    (val: string) => setFormState((prev) => ({ ...prev, note: val })),
+    []
+  );
+  const setCostUnit = useCallback(
+    (val: string) => setFormState((prev) => ({ ...prev, costUnit: val })),
+    []
+  );
+  const setCostAmount = useCallback(
+    (val: string) => setFormState((prev) => ({ ...prev, costAmount: val })),
+    []
+  );
+  const setCostQty = useCallback(
+    (val: string) => setFormState((prev) => ({ ...prev, costQty: val })),
+    []
+  );
+  const setCostPerUnit = useCallback(
+    (val: string) => setFormState((prev) => ({ ...prev, costPerUnit: val })),
+    []
+  );
+  const setDefaultPrice = useCallback(
+    (val: number | null) =>
+      setFormState((prev) => ({ ...prev, defaultPrice: val })),
+    []
+  );
+  const setEntrySource = useCallback(
+    (val: 'direct' | 'library') =>
+      setFormState((prev) => ({ ...prev, entrySource: val })),
+    []
+  );
+
+  // Apply template initialData once when it becomes available
+  // All fields update in a single state operation, ensuring batching
+  // and robustness against future async changes.
+  useEffect(() => {
+    if (!isLoadingTemplate && initialData) {
+      setFormState((prev) => ({
+        ...prev,
+        description: initialData.description ?? prev.description,
+        category: initialData.category ?? prev.category,
+        location: initialData.location ?? prev.location,
+        recommendation: initialData.recommendation ?? prev.recommendation,
+        standardRef: initialData.standardRef ?? prev.standardRef,
+        severity: initialData.severity ?? prev.severity,
+        costAmount: initialData.costAmount ?? prev.costAmount,
+        costUnit: initialData.costUnit ?? prev.costUnit,
+      }));
+    }
+  }, [isLoadingTemplate, initialData]);
 
   // Build a lookup map for standard descriptions
   const standardDescMap = useMemo(() => {
@@ -99,18 +213,19 @@ export function useDefectForm(initialCategory?: string): UseDefectFormReturn {
 
   // Dirty check — exclude initialCategory since it's pre-filled
   const isDirty =
-    (!!category && category !== (initialCategory ?? '')) ||
-    !!description.trim() ||
-    !!location ||
-    !!standardRef.trim() ||
-    !!recommendation.trim() ||
-    !!costAmount ||
-    !!costQty ||
-    !!costPerUnit ||
-    !!note.trim();
+    (!!formState.category && formState.category !== (initialCategory ?? '')) ||
+    !!formState.description.trim() ||
+    !!formState.location ||
+    !!formState.standardRef.trim() ||
+    !!formState.recommendation.trim() ||
+    !!formState.costAmount ||
+    !!formState.costQty ||
+    !!formState.costPerUnit ||
+    !!formState.note.trim();
 
   // Can save if category + description are populated
-  const canSave = !!category && description.trim().length > 0;
+  const canSave =
+    !!formState.category && formState.description.trim().length > 0;
 
   // Handle standard selection
   const handleSelectStandard = useCallback(
@@ -118,40 +233,40 @@ export function useDefectForm(initialCategory?: string): UseDefectFormReturn {
       setStandardRef(value);
       setStandardDisplay(standardDescMap.get(value) ?? '');
     },
-    [standardDescMap]
+    [standardDescMap, setStandardRef, setStandardDisplay]
   );
 
   return {
-    category,
+    category: formState.category,
     setCategory,
-    categorySearch,
+    categorySearch: formState.categorySearch,
     setCategorySearch,
-    description,
+    description: formState.description,
     setDescription,
-    location,
+    location: formState.location,
     setLocation,
-    severity,
+    severity: formState.severity,
     setSeverity,
-    standardRef,
+    standardRef: formState.standardRef,
     setStandardRef,
-    standardSection,
-    standardDisplay,
+    standardSection: formState.standardSection,
+    standardDisplay: formState.standardDisplay,
     setStandardDisplay,
-    recommendation,
+    recommendation: formState.recommendation,
     setRecommendation,
-    note,
+    note: formState.note,
     setNote,
-    costUnit,
+    costUnit: formState.costUnit,
     setCostUnit,
-    costAmount,
+    costAmount: formState.costAmount,
     setCostAmount,
-    costQty,
+    costQty: formState.costQty,
     setCostQty,
-    costPerUnit,
+    costPerUnit: formState.costPerUnit,
     setCostPerUnit,
-    defaultPrice,
+    defaultPrice: formState.defaultPrice,
     setDefaultPrice,
-    entrySource,
+    entrySource: formState.entrySource,
     setEntrySource,
     standardDescMap,
     standardOptions,

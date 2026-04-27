@@ -1,12 +1,14 @@
-import { useRef, useState, useMemo, useCallback } from 'react';
+import { useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   TextInput,
   ScrollView,
+  SectionList,
   FlatList,
   Pressable,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from '@/lib/haptics';
@@ -16,96 +18,172 @@ import Animated, {
   withSpring,
   FadeInUp,
 } from 'react-native-reanimated';
+import { useRouter } from 'expo-router';
 import type BottomSheet from '@gorhom/bottom-sheet';
 
-import { COLORS, BORDER_RADIUS } from '@infield/ui';
+import { COLORS } from '@infield/ui';
+import { DEFECT_CATEGORIES, CATEGORY_LABELS } from '@infield/shared';
 import { BottomSheetWrapper } from '@/components/ui/BottomSheetWrapper';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { useDefectLibrary } from '@/hooks/useDefectLibrary';
-import type { DefectItem } from '@/hooks/useReport';
+import { useSearchFilter } from '@/hooks/useSearchFilter';
+import type { DefectLibraryItem } from '@/hooks/useDefectLibrary';
 
 // --- Types ---
 
-/** Unified item for both report defects and library entries */
-interface SearchItem {
-  id: string;
-  description: string;
-  category: string | null;
-  room: string | null;
-  photoCount: number;
-  origin: 'report' | 'library';
-}
-
 interface SearchOverlayProps {
-  defects: DefectItem[];
-  onSelect: (defectId: string) => void;
+  reportId: string;
   onClose: () => void;
 }
 
-// --- Chip component with press animation ---
+// --- Category Chips Row (Multi-Select) ---
 
-interface ChipProps {
-  label: string;
-  isActive: boolean;
-  onPress: () => void;
-}
-
-function CategoryChip({ label, isActive, onPress }: ChipProps) {
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.95);
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1);
-  };
+function CategoryChipsRow({
+  selectionOrder,
+  onToggle,
+  onClear,
+}: {
+  selectionOrder: string[];
+  onToggle: (categoryValue: string) => void;
+  onClear: () => void;
+}) {
+  const selectedSet = new Set(selectionOrder);
 
   return (
-    <Animated.View style={animatedStyle}>
-      <Pressable
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        style={{
-          paddingHorizontal: 12,
-          paddingVertical: 6,
-          borderRadius: BORDER_RADIUS.full,
-          backgroundColor: isActive ? COLORS.primary[500] : COLORS.cream[100],
-          borderWidth: 1,
-          borderColor: isActive ? COLORS.primary[500] : COLORS.cream[200],
-          marginEnd: 8,
+    <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          flexDirection: 'row-reverse',
+          gap: 8,
+          paddingVertical: 8,
         }}
       >
-        <Text
+        {DEFECT_CATEGORIES.map((cat) => {
+          const isSelected = selectedSet.has(cat.value);
+          return (
+            <Pressable
+              key={cat.value}
+              onPress={() => {
+                if (Platform.OS !== 'web') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                onToggle(cat.value);
+              }}
+              style={{
+                backgroundColor: isSelected
+                  ? COLORS.primary[500]
+                  : 'transparent',
+                borderWidth: isSelected ? 0 : 1,
+                borderColor: COLORS.cream[200],
+                borderRadius: 18,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontFamily: isSelected ? 'Rubik-SemiBold' : 'Rubik-Medium',
+                  fontWeight: isSelected ? '600' : '500',
+                  color: isSelected ? COLORS.white : COLORS.neutral[600],
+                }}
+              >
+                {cat.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {selectionOrder.length > 0 && (
+        <Pressable
+          onPress={onClear}
           style={{
-            fontSize: 12,
-            fontFamily: isActive ? 'Rubik-SemiBold' : 'Rubik-Regular',
-            color: isActive ? COLORS.white : COLORS.neutral[600],
+            alignSelf: 'flex-end',
+            paddingHorizontal: 12,
+            paddingVertical: 4,
           }}
         >
-          {label}
-        </Text>
-      </Pressable>
-    </Animated.View>
+          <Text
+            style={{
+              fontSize: 12,
+              fontFamily: 'Rubik-Regular',
+              color: COLORS.primary[500],
+            }}
+          >
+            נקה
+          </Text>
+        </Pressable>
+      )}
+    </View>
   );
 }
 
-// --- Result item component ---
+// --- Search Input ---
 
-interface ResultItemProps {
-  item: SearchItem;
-  index: number;
-  onPress: () => void;
+function SearchInput({
+  query,
+  onChangeText,
+  onClear,
+}: {
+  query: string;
+  onChangeText: (text: string) => void;
+  onClear: () => void;
+}) {
+  return (
+    <View
+      style={{
+        marginHorizontal: 16,
+        marginBottom: 12,
+        flexDirection: 'row-reverse',
+        alignItems: 'center',
+        backgroundColor: COLORS.cream[100],
+        borderWidth: 1,
+        borderColor: COLORS.cream[200],
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        gap: 8,
+      }}
+    >
+      <Feather name="search" size={16} color={COLORS.neutral[400]} />
+      <TextInput
+        value={query}
+        onChangeText={onChangeText}
+        placeholder="חיפוש לפי שם או תיאור..."
+        placeholderTextColor={COLORS.neutral[400]}
+        textAlign="right"
+        autoFocus
+        style={{
+          flex: 1,
+          fontSize: Platform.OS === 'ios' ? 16 : 14,
+          fontFamily: 'Rubik-Regular',
+          color: COLORS.neutral[800],
+          paddingVertical: 10,
+          writingDirection: 'rtl',
+        }}
+      />
+      {query.length > 0 && (
+        <Pressable onPress={onClear} hitSlop={8}>
+          <Feather name="x-circle" size={16} color={COLORS.neutral[400]} />
+        </Pressable>
+      )}
+    </View>
+  );
 }
 
-function ResultItem({ item, index, onPress }: ResultItemProps) {
+// --- Result Item ---
+
+function ResultItem({
+  item,
+  index,
+  onPress,
+}: {
+  item: DefectLibraryItem;
+  index: number;
+  onPress: () => void;
+}) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -122,8 +200,6 @@ function ResultItem({ item, index, onPress }: ResultItemProps) {
   const handlePressOut = () => {
     scale.value = withSpring(1);
   };
-
-  const isLibrary = item.origin === 'library';
 
   return (
     <Animated.View
@@ -144,7 +220,6 @@ function ResultItem({ item, index, onPress }: ResultItemProps) {
           gap: 10,
         }}
       >
-        {/* Description + metadata */}
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text
             style={{
@@ -156,7 +231,7 @@ function ResultItem({ item, index, onPress }: ResultItemProps) {
             }}
             numberOfLines={2}
           >
-            {item.description}
+            {item.title}
           </Text>
 
           <View
@@ -167,30 +242,7 @@ function ResultItem({ item, index, onPress }: ResultItemProps) {
               flexWrap: 'wrap',
             }}
           >
-            {/* Origin badge */}
-            <View
-              style={{
-                backgroundColor: isLibrary
-                  ? COLORS.gold[100]
-                  : COLORS.primary[50],
-                borderRadius: 4,
-                paddingHorizontal: 6,
-                paddingVertical: 2,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 10,
-                  fontFamily: 'Rubik-Medium',
-                  color: isLibrary ? COLORS.gold[600] : COLORS.primary[700],
-                }}
-              >
-                {isLibrary ? 'מאגר' : 'דוח'}
-              </Text>
-            </View>
-
-            {/* Category badge */}
-            {item.category ? (
+            {item.category && (
               <View
                 style={{
                   backgroundColor: COLORS.cream[100],
@@ -206,13 +258,14 @@ function ResultItem({ item, index, onPress }: ResultItemProps) {
                     color: COLORS.neutral[600],
                   }}
                 >
-                  {item.category}
+                  {CATEGORY_LABELS[
+                    item.category as keyof typeof CATEGORY_LABELS
+                  ] || item.category}
                 </Text>
               </View>
-            ) : null}
+            )}
 
-            {/* Room/location */}
-            {item.room ? (
+            {item.price && (
               <Text
                 style={{
                   fontSize: 10,
@@ -220,35 +273,12 @@ function ResultItem({ item, index, onPress }: ResultItemProps) {
                   color: COLORS.neutral[400],
                 }}
               >
-                {item.room}
+                ₪{item.price}
               </Text>
-            ) : null}
-
-            {/* Photo count */}
-            {item.photoCount > 0 ? (
-              <View
-                style={{
-                  flexDirection: 'row-reverse',
-                  alignItems: 'center',
-                  gap: 3,
-                }}
-              >
-                <Feather name="camera" size={10} color={COLORS.neutral[400]} />
-                <Text
-                  style={{
-                    fontSize: 10,
-                    fontFamily: 'Rubik-Regular',
-                    color: COLORS.neutral[400],
-                  }}
-                >
-                  {item.photoCount}
-                </Text>
-              </View>
-            ) : null}
+            )}
           </View>
         </View>
 
-        {/* Chevron */}
         <Feather
           name="chevron-left"
           size={16}
@@ -260,266 +290,226 @@ function ResultItem({ item, index, onPress }: ResultItemProps) {
   );
 }
 
-// --- Main component ---
+// --- Empty States ---
 
-export function SearchOverlay({
-  defects,
-  onSelect,
-  onClose,
-}: SearchOverlayProps) {
+function InitialEmptyState() {
+  return (
+    <EmptyState
+      icon="filter"
+      title="בחר קטגוריות או חפש"
+      subtitle="בחר קטגוריות או הקלד מילות חיפוש כדי למצוא ממצאים מהמאגר"
+    />
+  );
+}
+
+function NoResultsEmptyState() {
+  return (
+    <EmptyState
+      icon="search"
+      title="לא נמצאו ממצאים"
+      subtitle="נסה לשנות את הסינון או את מילת החיפוש"
+    />
+  );
+}
+
+function LoadingState() {
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingBottom: 40,
+      }}
+    >
+      <ActivityIndicator size="large" color={COLORS.primary[500]} />
+    </View>
+  );
+}
+
+// --- Main Component ---
+
+export function SearchOverlay({ reportId, onClose }: SearchOverlayProps) {
+  const router = useRouter();
   const sheetRef = useRef<BottomSheet>(null);
   const [query, setQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string>('הכל');
+  const [queryDebounced, setQueryDebounced] = useState('');
+  const [selectionOrder, setSelectionOrder] = useState<string[]>([]);
 
-  // Fetch global defect library
+  // Debounce search query (250ms)
+  useMemo(() => {
+    const timer = setTimeout(() => {
+      setQueryDebounced(query);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Fetch library items
   const { items: libraryItems, isLoading: libraryLoading } = useDefectLibrary();
 
-  // Merge report defects + library items into unified SearchItem[]
-  const allItems: SearchItem[] = useMemo(() => {
-    const reportItems: SearchItem[] = defects.map((d) => ({
-      id: d.id,
-      description: d.description,
-      category: d.category,
-      room: d.room,
-      photoCount: d.photoCount,
-      origin: 'report' as const,
-    }));
-
-    const libItems: SearchItem[] = libraryItems.map((lib) => ({
-      id: `lib-${lib.id}`,
-      description: lib.title,
-      category: lib.category || null,
-      room: null,
-      photoCount: 0,
-      origin: 'library' as const,
-    }));
-
-    // Report defects first, then library
-    return [...reportItems, ...libItems];
-  }, [defects, libraryItems]);
-
-  // Build unique category list from all items
-  const categories = useMemo(() => {
-    const seen = new Set<string>();
-    const result: string[] = ['הכל'];
-    allItems.forEach((d) => {
-      if (d.category && !seen.has(d.category)) {
-        seen.add(d.category);
-        result.push(d.category);
-      }
-    });
-    return result;
-  }, [allItems]);
-
-  // Filter logic
-  const filtered = useMemo(() => {
-    let items = allItems;
-    if (activeCategory !== 'הכל') {
-      items = items.filter((d) => d.category === activeCategory);
-    }
-    if (query.trim()) {
-      const q = query.trim().toLowerCase();
-      items = items.filter((d) => d.description.toLowerCase().includes(q));
-    }
-    return items;
-  }, [allItems, activeCategory, query]);
-
-  const handleClose = useCallback(() => {
-    onClose();
-  }, [onClose]);
-
-  const handleSelect = useCallback(
-    (item: SearchItem) => {
-      if (item.origin === 'report') {
-        onSelect(item.id);
-      }
-      onClose();
-    },
-    [onSelect, onClose]
+  // Filter and group results
+  const { filtered, grouped, flatSorted } = useSearchFilter(
+    libraryItems,
+    selectionOrder,
+    queryDebounced
   );
 
-  const handleCategoryPress = (cat: string) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setActiveCategory(cat);
-  };
+  // Handle category toggle (single source of truth: selectionOrder array)
+  const handleCategoryToggle = useCallback((categoryValue: string) => {
+    setSelectionOrder((prev) =>
+      prev.includes(categoryValue)
+        ? prev.filter((c) => c !== categoryValue)
+        : [...prev, categoryValue]
+    );
+  }, []);
 
-  const reportCount = filtered.filter((i) => i.origin === 'report').length;
-  const libraryCount = filtered.filter((i) => i.origin === 'library').length;
+  const handleClear = useCallback(() => {
+    setSelectionOrder([]);
+  }, []);
+
+  // Handle result selection
+  const handleSelectItem = useCallback(
+    (item: DefectLibraryItem) => {
+      onClose();
+      router.push({
+        pathname: '/(app)/reports/[id]/add-defect',
+        params: {
+          id: reportId,
+          templateId: item.id,
+        },
+      });
+    },
+    [reportId, router, onClose]
+  );
+
+  // Determine current state
+  const isFilterActive = selectionOrder.length > 0 || queryDebounced.trim();
+  const hasResults = filtered.length > 0;
 
   return (
-    <>
-      <BottomSheetWrapper
-        ref={sheetRef}
-        snapPoints={['85%']}
-        onClose={handleClose}
-      >
-        <View style={{ flex: 1 }}>
-          {/* Header */}
-          <View
-            style={{
-              flexDirection: 'row-reverse',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              paddingHorizontal: 16,
-              paddingTop: 4,
-              paddingBottom: 12,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontFamily: 'Rubik-SemiBold',
-                color: COLORS.neutral[800],
-                textAlign: 'right',
-              }}
-            >
-              חיפוש ממצאים
-            </Text>
-            <Pressable onPress={handleClose} hitSlop={8}>
-              <Feather name="x" size={20} color={COLORS.neutral[400]} />
-            </Pressable>
-          </View>
-
-          {/* Search input */}
-          <View
-            style={{
-              marginHorizontal: 16,
-              marginBottom: 12,
-              flexDirection: 'row-reverse',
-              alignItems: 'center',
-              backgroundColor: COLORS.cream[100],
-              borderWidth: 1,
-              borderColor: COLORS.cream[200],
-              borderRadius: 10,
-              paddingHorizontal: 12,
-              gap: 8,
-            }}
-          >
-            <Feather name="search" size={16} color={COLORS.neutral[400]} />
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              placeholder="חפש ממצא בדוח או במאגר..."
-              placeholderTextColor={COLORS.neutral[400]}
-              textAlign="right"
-              autoFocus
-              style={{
-                flex: 1,
-                fontSize: Platform.OS === 'ios' ? 16 : 14,
-                fontFamily: 'Rubik-Regular',
-                color: COLORS.neutral[800],
-                paddingVertical: 10,
-                writingDirection: 'rtl',
-              }}
-            />
-            {query.length > 0 && (
-              <Pressable onPress={() => setQuery('')} hitSlop={8}>
-                <Feather
-                  name="x-circle"
-                  size={16}
-                  color={COLORS.neutral[400]}
-                />
-              </Pressable>
-            )}
-          </View>
-
-          {/* Category chips */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{
-              flexDirection: 'row-reverse',
-              paddingHorizontal: 16,
-              paddingBottom: 12,
-            }}
-          >
-            {categories.map((cat) => (
-              <CategoryChip
-                key={cat}
-                label={cat}
-                isActive={activeCategory === cat}
-                onPress={() => handleCategoryPress(cat)}
-              />
-            ))}
-          </ScrollView>
-
-          {/* Divider */}
-          <View
-            style={{
-              height: 1,
-              backgroundColor: COLORS.cream[200],
-              marginBottom: 4,
-            }}
-          />
-
-          {/* Results count */}
+    <BottomSheetWrapper ref={sheetRef} snapPoints={['85%']} onClose={onClose}>
+      <View style={{ flex: 1 }}>
+        {/* Header */}
+        <View
+          style={{
+            flexDirection: 'row-reverse',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: 16,
+            paddingTop: 4,
+            paddingBottom: 12,
+          }}
+        >
           <Text
             style={{
-              fontSize: 11,
-              fontFamily: 'Rubik-Regular',
-              color: COLORS.neutral[400],
+              fontSize: 16,
+              fontFamily: 'Rubik-SemiBold',
+              color: COLORS.neutral[800],
               textAlign: 'right',
-              paddingHorizontal: 16,
-              paddingVertical: 6,
             }}
           >
-            {reportCount} בדוח · {libraryCount} במאגר
-            {libraryLoading ? ' (טוען...)' : ''}
+            חיפוש ממצאים
           </Text>
+          <Pressable onPress={onClose} hitSlop={8}>
+            <Feather name="x" size={20} color={COLORS.neutral[400]} />
+          </Pressable>
+        </View>
 
-          {/* Results list */}
-          {filtered.length === 0 ? (
-            <View
-              style={{
-                flex: 1,
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingBottom: 40,
-              }}
-            >
-              <Feather name="search" size={48} color={COLORS.cream[300]} />
-              <Text
-                style={{
-                  marginTop: 12,
-                  fontSize: 14,
-                  fontFamily: 'Rubik-Medium',
-                  color: COLORS.neutral[500],
-                  textAlign: 'center',
-                }}
-              >
-                לא נמצאו ממצאים
-              </Text>
-              <Text
-                style={{
-                  marginTop: 4,
-                  fontSize: 12,
-                  fontFamily: 'Rubik-Regular',
-                  color: COLORS.neutral[400],
-                  textAlign: 'center',
-                }}
-              >
-                נסה מילת חיפוש אחרת או שנה קטגוריה
-              </Text>
-            </View>
-          ) : (
-            <FlatList
-              data={filtered}
+        {/* Search Input */}
+        <SearchInput
+          query={query}
+          onChangeText={setQuery}
+          onClear={() => setQuery('')}
+        />
+
+        {/* Category Chips */}
+        <CategoryChipsRow
+          selectionOrder={selectionOrder}
+          onToggle={handleCategoryToggle}
+          onClear={handleClear}
+        />
+
+        {/* Divider */}
+        <View
+          style={{
+            height: 1,
+            backgroundColor: COLORS.cream[200],
+            marginBottom: 4,
+          }}
+        />
+
+        {/* Content Area — Four States */}
+
+        {/* STATE 1: Initial (no filter) */}
+        {!isFilterActive && !libraryLoading && <InitialEmptyState />}
+
+        {/* STATE 2: Results */}
+        {isFilterActive &&
+          hasResults &&
+          !libraryLoading &&
+          (grouped ? (
+            <SectionList
+              sections={grouped.map((g) => ({
+                category: g.category,
+                categoryLabel: g.categoryLabel,
+                data: g.items,
+              }))}
               keyExtractor={(item) => item.id}
-              keyboardShouldPersistTaps="handled"
               renderItem={({ item, index }) => (
                 <ResultItem
                   item={item}
                   index={index}
-                  onPress={() => handleSelect(item)}
+                  onPress={() => handleSelectItem(item)}
+                />
+              )}
+              renderSectionHeader={({ section: { categoryLabel, data } }) => (
+                <View
+                  style={{
+                    backgroundColor: COLORS.cream[100],
+                    paddingHorizontal: 16,
+                    paddingVertical: 10,
+                    borderBottomWidth: 1,
+                    borderBottomColor: COLORS.cream[200],
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontFamily: 'Rubik-SemiBold',
+                      color: COLORS.neutral[700],
+                      textAlign: 'right',
+                    }}
+                  >
+                    {categoryLabel} ({data.length})
+                  </Text>
+                </View>
+              )}
+              contentContainerStyle={{ paddingBottom: 32 }}
+              scrollEnabled={true}
+            />
+          ) : (
+            <FlatList
+              data={flatSorted}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item, index }) => (
+                <ResultItem
+                  item={item}
+                  index={index}
+                  onPress={() => handleSelectItem(item)}
                 />
               )}
               contentContainerStyle={{ paddingBottom: 32 }}
             />
-          )}
-        </View>
-      </BottomSheetWrapper>
-    </>
+          ))}
+
+        {/* STATE 3: No Results After Filter */}
+        {isFilterActive && !hasResults && !libraryLoading && (
+          <NoResultsEmptyState />
+        )}
+
+        {/* STATE 4: Loading */}
+        {libraryLoading && <LoadingState />}
+      </View>
+    </BottomSheetWrapper>
   );
 }

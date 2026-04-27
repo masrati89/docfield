@@ -530,21 +530,10 @@ export default function ReportDetailScreen() {
             />
           )}
 
-          {/* Search overlay */}
-          {showSearch && (
+          {/* Search overlay — library template browser */}
+          {showSearch && reportId && (
             <SearchOverlay
-              defects={defects}
-              onSelect={(defectId) => {
-                setShowSearch(false);
-                // Open the category containing this defect so the user can see it
-                const defect = defects.find((d) => d.id === defectId);
-                if (defect?.category) {
-                  setOpenCategories((prev) => ({
-                    ...prev,
-                    [defect.category as string]: true,
-                  }));
-                }
-              }}
+              reportId={reportId}
               onClose={() => setShowSearch(false)}
             />
           )}

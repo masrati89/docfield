@@ -15,10 +15,6 @@ export function ReportActionsBar({
   onAddDefect,
   onSearch,
 }: ReportActionsBarProps) {
-  console.warn('[ReportActionsBar] rendered with callbacks:', {
-    onAddDefect: !!onAddDefect,
-    onSearch: !!onSearch,
-  });
   return (
     <View
       style={{
@@ -35,8 +31,6 @@ export function ReportActionsBar({
         flexDirection: 'row-reverse',
         gap: 10,
         boxShadow: '0 -4px 20px rgba(60,54,42,.12)',
-        pointerEvents: 'auto',
-        zIndex: 100,
       }}
     >
       {/* Search button */}

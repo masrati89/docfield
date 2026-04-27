@@ -20,6 +20,7 @@ export interface DefectLibraryItem {
   price: number | null;
   source: 'system' | 'user';
   userId: string | null;
+  usage_count?: number;
 }
 
 interface SimilarityMatch {
@@ -44,7 +45,7 @@ async function fetchDefectLibrary(
   const { data, error } = await supabase
     .from('defect_library')
     .select(
-      'id, description, category, standard_reference, recommendation, price, is_global, organization_id'
+      'id, description, category, standard_reference, recommendation, price, is_global, organization_id, usage_count'
     )
     .order('category')
     .order('description');
@@ -64,6 +65,7 @@ async function fetchDefectLibrary(
     price: (d.price as number) ?? null,
     source: (d.is_global as boolean) ? ('system' as const) : ('user' as const),
     userId: null,
+    usage_count: (d.usage_count as number) ?? 0,
   }));
 }
 

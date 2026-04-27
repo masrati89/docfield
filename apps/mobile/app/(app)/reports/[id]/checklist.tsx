@@ -193,17 +193,6 @@ export default function ChecklistScreen() {
         window.location.hash.match(/\/reports\/([^/]+)/)?.[1]
       : undefined);
 
-  if (typeof window !== 'undefined') {
-    console.error('[Checklist ID Debug]', {
-      reportId,
-      finalReportId,
-      pathname: window.location.pathname,
-      hash: window.location.hash,
-      pathnameMatch: window.location.pathname.match(/\/reports\/([^/]+)/)?.[1],
-      hashMatch: window.location.hash.match(/\/reports\/([^/]+)/)?.[1],
-    });
-  }
-
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { toast, showToast, hideToast } = useToast();
@@ -1121,11 +1110,10 @@ export default function ChecklistScreen() {
         </View>
       </ScrollView>
 
-      {/* Search overlay */}
-      {showSearch && (
+      {/* Search overlay — library template browser */}
+      {showSearch && finalReportId && (
         <SearchOverlay
-          defects={defects}
-          onSelect={() => setShowSearch(false)}
+          reportId={finalReportId}
           onClose={() => setShowSearch(false)}
         />
       )}
