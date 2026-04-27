@@ -138,6 +138,7 @@ export default function AppLayout() {
     position: 'absolute' as const,
     elevation: 0,
     opacity: isNestedScreen ? 0 : 1,
+    pointerEvents: isNestedScreen ? ('none' as const) : ('auto' as const),
   };
 
   return (

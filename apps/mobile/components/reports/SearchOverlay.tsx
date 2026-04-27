@@ -349,171 +349,177 @@ export function SearchOverlay({
   const libraryCount = filtered.filter((i) => i.origin === 'library').length;
 
   return (
-    <BottomSheetWrapper
-      ref={sheetRef}
-      snapPoints={['85%']}
-      onClose={handleClose}
-    >
-      <View style={{ flex: 1 }}>
-        {/* Header */}
-        <View
-          style={{
-            flexDirection: 'row-reverse',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: 16,
-            paddingTop: 4,
-            paddingBottom: 12,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 16,
-              fontFamily: 'Rubik-SemiBold',
-              color: COLORS.neutral[800],
-              textAlign: 'right',
-            }}
-          >
-            חיפוש ממצאים
-          </Text>
-          <Pressable onPress={handleClose} hitSlop={8}>
-            <Feather name="x" size={20} color={COLORS.neutral[400]} />
-          </Pressable>
-        </View>
-
-        {/* Search input */}
-        <View
-          style={{
-            marginHorizontal: 16,
-            marginBottom: 12,
-            flexDirection: 'row-reverse',
-            alignItems: 'center',
-            backgroundColor: COLORS.cream[100],
-            borderWidth: 1,
-            borderColor: COLORS.cream[200],
-            borderRadius: 10,
-            paddingHorizontal: 12,
-            gap: 8,
-          }}
-        >
-          <Feather name="search" size={16} color={COLORS.neutral[400]} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="חפש ממצא בדוח או במאגר..."
-            placeholderTextColor={COLORS.neutral[400]}
-            textAlign="right"
-            autoFocus
-            style={{
-              flex: 1,
-              fontSize: Platform.OS === 'ios' ? 16 : 14,
-              fontFamily: 'Rubik-Regular',
-              color: COLORS.neutral[800],
-              paddingVertical: 10,
-              writingDirection: 'rtl',
-            }}
-          />
-          {query.length > 0 && (
-            <Pressable onPress={() => setQuery('')} hitSlop={8}>
-              <Feather name="x-circle" size={16} color={COLORS.neutral[400]} />
-            </Pressable>
-          )}
-        </View>
-
-        {/* Category chips */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            flexDirection: 'row-reverse',
-            paddingHorizontal: 16,
-            paddingBottom: 12,
-          }}
-        >
-          {categories.map((cat) => (
-            <CategoryChip
-              key={cat}
-              label={cat}
-              isActive={activeCategory === cat}
-              onPress={() => handleCategoryPress(cat)}
-            />
-          ))}
-        </ScrollView>
-
-        {/* Divider */}
-        <View
-          style={{
-            height: 1,
-            backgroundColor: COLORS.cream[200],
-            marginBottom: 4,
-          }}
-        />
-
-        {/* Results count */}
-        <Text
-          style={{
-            fontSize: 11,
-            fontFamily: 'Rubik-Regular',
-            color: COLORS.neutral[400],
-            textAlign: 'right',
-            paddingHorizontal: 16,
-            paddingVertical: 6,
-          }}
-        >
-          {reportCount} בדוח · {libraryCount} במאגר
-          {libraryLoading ? ' (טוען...)' : ''}
-        </Text>
-
-        {/* Results list */}
-        {filtered.length === 0 ? (
+    <>
+      <BottomSheetWrapper
+        ref={sheetRef}
+        snapPoints={['85%']}
+        onClose={handleClose}
+      >
+        <View style={{ flex: 1 }}>
+          {/* Header */}
           <View
             style={{
-              flex: 1,
+              flexDirection: 'row-reverse',
               alignItems: 'center',
-              justifyContent: 'center',
-              paddingBottom: 40,
+              justifyContent: 'space-between',
+              paddingHorizontal: 16,
+              paddingTop: 4,
+              paddingBottom: 12,
             }}
           >
-            <Feather name="search" size={48} color={COLORS.cream[300]} />
             <Text
               style={{
-                marginTop: 12,
-                fontSize: 14,
-                fontFamily: 'Rubik-Medium',
-                color: COLORS.neutral[500],
-                textAlign: 'center',
+                fontSize: 16,
+                fontFamily: 'Rubik-SemiBold',
+                color: COLORS.neutral[800],
+                textAlign: 'right',
               }}
             >
-              לא נמצאו ממצאים
+              חיפוש ממצאים
             </Text>
-            <Text
-              style={{
-                marginTop: 4,
-                fontSize: 12,
-                fontFamily: 'Rubik-Regular',
-                color: COLORS.neutral[400],
-                textAlign: 'center',
-              }}
-            >
-              נסה מילת חיפוש אחרת או שנה קטגוריה
-            </Text>
+            <Pressable onPress={handleClose} hitSlop={8}>
+              <Feather name="x" size={20} color={COLORS.neutral[400]} />
+            </Pressable>
           </View>
-        ) : (
-          <FlatList
-            data={filtered}
-            keyExtractor={(item) => item.id}
-            keyboardShouldPersistTaps="handled"
-            renderItem={({ item, index }) => (
-              <ResultItem
-                item={item}
-                index={index}
-                onPress={() => handleSelect(item)}
-              />
+
+          {/* Search input */}
+          <View
+            style={{
+              marginHorizontal: 16,
+              marginBottom: 12,
+              flexDirection: 'row-reverse',
+              alignItems: 'center',
+              backgroundColor: COLORS.cream[100],
+              borderWidth: 1,
+              borderColor: COLORS.cream[200],
+              borderRadius: 10,
+              paddingHorizontal: 12,
+              gap: 8,
+            }}
+          >
+            <Feather name="search" size={16} color={COLORS.neutral[400]} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="חפש ממצא בדוח או במאגר..."
+              placeholderTextColor={COLORS.neutral[400]}
+              textAlign="right"
+              autoFocus
+              style={{
+                flex: 1,
+                fontSize: Platform.OS === 'ios' ? 16 : 14,
+                fontFamily: 'Rubik-Regular',
+                color: COLORS.neutral[800],
+                paddingVertical: 10,
+                writingDirection: 'rtl',
+              }}
+            />
+            {query.length > 0 && (
+              <Pressable onPress={() => setQuery('')} hitSlop={8}>
+                <Feather
+                  name="x-circle"
+                  size={16}
+                  color={COLORS.neutral[400]}
+                />
+              </Pressable>
             )}
-            contentContainerStyle={{ paddingBottom: 32 }}
+          </View>
+
+          {/* Category chips */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              flexDirection: 'row-reverse',
+              paddingHorizontal: 16,
+              paddingBottom: 12,
+            }}
+          >
+            {categories.map((cat) => (
+              <CategoryChip
+                key={cat}
+                label={cat}
+                isActive={activeCategory === cat}
+                onPress={() => handleCategoryPress(cat)}
+              />
+            ))}
+          </ScrollView>
+
+          {/* Divider */}
+          <View
+            style={{
+              height: 1,
+              backgroundColor: COLORS.cream[200],
+              marginBottom: 4,
+            }}
           />
-        )}
-      </View>
-    </BottomSheetWrapper>
+
+          {/* Results count */}
+          <Text
+            style={{
+              fontSize: 11,
+              fontFamily: 'Rubik-Regular',
+              color: COLORS.neutral[400],
+              textAlign: 'right',
+              paddingHorizontal: 16,
+              paddingVertical: 6,
+            }}
+          >
+            {reportCount} בדוח · {libraryCount} במאגר
+            {libraryLoading ? ' (טוען...)' : ''}
+          </Text>
+
+          {/* Results list */}
+          {filtered.length === 0 ? (
+            <View
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingBottom: 40,
+              }}
+            >
+              <Feather name="search" size={48} color={COLORS.cream[300]} />
+              <Text
+                style={{
+                  marginTop: 12,
+                  fontSize: 14,
+                  fontFamily: 'Rubik-Medium',
+                  color: COLORS.neutral[500],
+                  textAlign: 'center',
+                }}
+              >
+                לא נמצאו ממצאים
+              </Text>
+              <Text
+                style={{
+                  marginTop: 4,
+                  fontSize: 12,
+                  fontFamily: 'Rubik-Regular',
+                  color: COLORS.neutral[400],
+                  textAlign: 'center',
+                }}
+              >
+                נסה מילת חיפוש אחרת או שנה קטגוריה
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filtered}
+              keyExtractor={(item) => item.id}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item, index }) => (
+                <ResultItem
+                  item={item}
+                  index={index}
+                  onPress={() => handleSelect(item)}
+                />
+              )}
+              contentContainerStyle={{ paddingBottom: 32 }}
+            />
+          )}
+        </View>
+      </BottomSheetWrapper>
+    </>
   );
 }
