@@ -456,57 +456,6 @@ export default function ReportDetailScreen() {
             </View>
           </ScrollView>
 
-          {/* Footer: add defect button */}
-          <View
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              backgroundColor: COLORS.cream[50],
-              borderTopWidth: 1,
-              borderTopColor: COLORS.cream[200],
-              paddingHorizontal: 16,
-              paddingTop: 10,
-              paddingBottom: Math.max(insets.bottom, 22),
-              boxShadow: '0 -4px 20px rgba(60,54,42,.12)',
-              zIndex: 50,
-              pointerEvents: 'auto',
-            }}
-          >
-            <Pressable
-              onPress={() => {
-                console.error('[ReportFooter] Button clicked!', { reportId });
-                if (reportId) {
-                  console.error('[ReportFooter] Pushing to add-defect');
-                  router.push(`/(app)/reports/${reportId}/add-defect`);
-                }
-              }}
-              style={{
-                height: 48,
-                borderRadius: 12,
-                backgroundColor: COLORS.primary[500],
-                flexDirection: 'row-reverse',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                boxShadow: '0 2px 10px rgba(27,122,68,.26)',
-              }}
-            >
-              <Feather name="plus" size={20} color="#fff" />
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: '#fff',
-                  fontFamily: 'Rubik-SemiBold',
-                }}
-              >
-                הוסף ממצא
-              </Text>
-            </Pressable>
-          </View>
-
           {/* Summary modal */}
           {report && (
             <PrePdfSummary
@@ -558,6 +507,55 @@ export default function ReportDetailScreen() {
               reportId={id}
             />
           )}
+          {/* Footer: add defect button */}
+          <View
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              backgroundColor: COLORS.cream[50],
+              borderTopWidth: 1,
+              borderTopColor: COLORS.cream[200],
+              paddingHorizontal: 16,
+              paddingTop: 10,
+              paddingBottom: Math.max(insets.bottom, 22),
+              boxShadow: '0 -4px 20px rgba(60,54,42,.12)',
+              zIndex: 50,
+            }}
+          >
+            <Pressable
+              onPress={() => {
+                console.error('[ReportFooter] Button clicked!', { reportId });
+                if (reportId) {
+                  console.error('[ReportFooter] Pushing to add-defect');
+                  router.push(`/(app)/reports/${reportId}/add-defect`);
+                }
+              }}
+              style={{
+                height: 48,
+                borderRadius: 12,
+                backgroundColor: COLORS.primary[500],
+                flexDirection: 'row-reverse',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                boxShadow: '0 2px 10px rgba(27,122,68,.26)',
+              }}
+            >
+              <Feather name="plus" size={20} color="#fff" />
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: '#fff',
+                  fontFamily: 'Rubik-SemiBold',
+                }}
+              >
+                הוסף ממצא
+              </Text>
+            </Pressable>
+          </View>
         </>
       )}
 
