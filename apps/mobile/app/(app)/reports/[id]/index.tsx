@@ -32,6 +32,7 @@ import { PrePdfSummary } from '@/components/reports/PrePdfSummary';
 import { ReportPreviewModal } from '@/components/reports/ReportPreviewModal';
 import { TenantSignatureScreen } from '@/components/reports/TenantSignatureScreen';
 import { SearchOverlay } from '@/components/reports/SearchOverlay';
+import { ReportActionsBar } from '@/components/reports/ReportActionsBar';
 import type { CategoryGroup } from '@/components/reports/reportDetailConstants';
 
 type ReportStatus = 'draft' | 'in_progress' | 'completed' | 'sent';
@@ -538,7 +539,7 @@ export default function ReportDetailScreen() {
             />
           )}
 
-          {/* PDF Preview modal */}
+          {/* Preview modal */}
           {id && (
             <ReportPreviewModal
               visible={showPreview}
@@ -900,6 +901,13 @@ export default function ReportDetailScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Report actions footer */}
+      <ReportActionsBar
+        bottomInset={insets.bottom}
+        onAddDefect={() => router.push(`/(app)/reports/${reportId}/add-defect`)}
+        onSearch={() => setShowSearch(true)}
+      />
 
       <SideMenu visible={menuOpen} onClose={closeMenu} />
     </View>
