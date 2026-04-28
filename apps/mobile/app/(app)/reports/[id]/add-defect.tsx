@@ -103,7 +103,7 @@ export default function AddDefectScreen() {
         const { data, error } = await supabase
           .from('defect_library')
           .select(
-            'id, title, description, category, location, standard_ref, recommendation, unit_price'
+            'id, title, description, category, location, standard, recommendation, price'
           )
           .eq('id', templateId)
           .single();
@@ -114,9 +114,9 @@ export default function AddDefectScreen() {
             description: data.description || '',
             category: data.category || '',
             location: data.location || '',
-            standardRef: data.standard_ref || '',
+            standardRef: data.standard || '',
             recommendation: data.recommendation || '',
-            costAmount: data.unit_price ? String(data.unit_price) : '',
+            costAmount: data.price ? String(data.price) : '',
           });
         }
       } catch (err) {
