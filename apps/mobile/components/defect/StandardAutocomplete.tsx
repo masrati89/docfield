@@ -58,9 +58,17 @@ function StandardItem({
     onPress();
   };
 
+  // Defensive check: ensure standard is a string
+  const standardStr = typeof standard === 'string' ? standard : String(standard);
+  console.log('🔍 DEBUG StandardItem:', {
+    standard: standardStr,
+    type: typeof standard,
+    isObject: typeof standard === 'object',
+  });
+
   // Truncate long standards to 50 chars
   const displayText =
-    standard.length > 50 ? standard.substring(0, 50) + '...' : standard;
+    standardStr.length > 50 ? standardStr.substring(0, 50) + '...' : standardStr;
 
   return (
     <Animated.View style={animatedStyle}>
@@ -114,6 +122,7 @@ function StandardItem({
             color: isSelected ? COLORS.primary[700] : COLORS.neutral[700],
             textAlign: 'right',
           }}
+          numberOfLines={1}
         >
           {displayText}
         </Text>
@@ -132,25 +141,52 @@ export function StandardAutocomplete({
 }: StandardAutocompleteProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Debug: Log what we receive
+  console.log('🔍 DEBUG StandardAutocomplete - received props:', {
+    label,
+    standardsCount: standards.length,
+    standardsType: typeof standards[0],
+    standardsSamples: standards.slice(0, 5),
+    allStandards: standards,
+    selectedStandard,
+  });
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(
     null
   );
 
   // Fuse.js search
-  const fuse = useMemo(
-    () =>
-      new Fuse(standards, {
-        threshold: 0.3,
-        ignoreLocation: true,
-      }),
-    [standards]
-  );
+  const fuse = useMemo(() => {
+    // Ensure standards is an array of strings, not objects
+    const standardsArray = standards.filter(
+      (s): s is string => typeof s === 'string'
+    );
+    if (standardsArray.length !== standards.length) {
+      console.warn('🚨 WARNING: standards contains non-string items!', {
+        totalCount: standards.length,
+        stringCount: standardsArray.length,
+        nonStringItems: standards.filter((s) => typeof s !== 'string'),
+      });
+    }
+
+    return new Fuse(standardsArray, {
+      threshold: 0.3,
+      ignoreLocation: true,
+    });
+  }, [standards]);
 
   // Filtered standards based on search (max 10)
   const filteredStandards = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const results = fuse.search(searchQuery).slice(0, 10);
-    return results.map((r) => r.item);
+    const mapped = results.map((r) => r.item);
+    console.log('🔍 DEBUG StandardAutocomplete - filtered:', {
+      searchQuery,
+      fuseResultsCount: results.length,
+      mappedResults: mapped,
+      fuseRawResults: results,
+    });
+    return mapped;
   }, [searchQuery, fuse]);
 
   // Debounced search handler
@@ -272,14 +308,21 @@ export function StandardAutocomplete({
         {searchQuery.trim() ? (
           filteredStandards.length > 0 ? (
             <View>
-              {filteredStandards.map((standard) => (
-                <StandardItem
-                  key={standard}
-                  standard={standard}
-                  isSelected={selectedStandard === standard}
-                  onPress={() => handleSelect(standard)}
-                />
-              ))}
+              {filteredStandards.map((standard, idx) => {
+                console.log(`🔍 DEBUG StandardAutocomplete - rendering item ${idx}:`, {
+                  standard,
+                  type: typeof standard,
+                  isString: typeof standard === 'string',
+                });
+                return (
+                  <StandardItem
+                    key={standard}
+                    standard={standard}
+                    isSelected={selectedStandard === standard}
+                    onPress={() => handleSelect(standard)}
+                  />
+                );
+              })}
             </View>
           ) : (
             <View

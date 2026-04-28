@@ -206,7 +206,13 @@ export function useDefectLibrary(): UseDefectLibraryReturn {
       }
     });
 
-    return Array.from(stds).sort();
+    const result = Array.from(stds).sort();
+    console.log('🔍 DEBUG useDefectLibrary - standards extracted:', {
+      count: result.length,
+      samples: result.slice(0, 10),
+      allStandards: result,
+    });
+    return result;
   }, [items]);
 
   // Delete user item
