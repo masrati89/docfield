@@ -1,0 +1,252 @@
+-- Seed Data for DocField Development
+-- Run after migrations: supabase db reset
+--
+-- NOTE: This seed creates demo data for local development only.
+-- Auth users are created in auth.users which triggers handle_new_user()
+-- to auto-populate public.users.
+
+-- ===========================================
+-- DEMO ORGANIZATION
+-- ===========================================
+INSERT INTO organizations (id, name, settings) VALUES (
+    '00000000-0000-0000-0000-000000000001',
+    'חברת דמו לבנייה בע"מ',
+    '{
+        "defaultReportType": "delivery",
+        "defaultLanguage": "he",
+        "pdfBrandingEnabled": true
+    }'::jsonb
+);
+
+-- ===========================================
+-- DEMO USERS (auth.users → trigger creates public.users)
+-- Password for all: Test1234
+-- ===========================================
+
+-- Admin user
+INSERT INTO auth.users (
+    instance_id, id, aud, role, email, encrypted_password,
+    email_confirmed_at, raw_user_meta_data, raw_app_meta_data,
+    created_at, updated_at, confirmation_token, recovery_token,
+    email_change, email_change_token_new, email_change_token_current,
+    phone, phone_change, phone_change_token,
+    email_change_confirm_status
+) VALUES (
+    '00000000-0000-0000-0000-000000000000',
+    '00000000-0000-0000-0000-000000000101',
+    'authenticated', 'authenticated',
+    'admin@docfield.test',
+    crypt('Test1234', gen_salt('bf')),
+    NOW(),
+    jsonb_build_object(
+        'full_name', 'חיים מנהל',
+        'organization_id', '00000000-0000-0000-0000-000000000001',
+        'role', 'admin'
+    ),
+    '{"provider": "email", "providers": ["email"]}'::jsonb,
+    NOW(), NOW(), '', '',
+    '', '', '',
+    NULL, '', '',
+    0
+);
+
+INSERT INTO auth.identities (
+    id, user_id, identity_data, provider, provider_id,
+    last_sign_in_at, created_at, updated_at
+) VALUES (
+    '00000000-0000-0000-0000-000000000101',
+    '00000000-0000-0000-0000-000000000101',
+    jsonb_build_object('sub', '00000000-0000-0000-0000-000000000101', 'email', 'admin@docfield.test'),
+    'email',
+    '00000000-0000-0000-0000-000000000101',
+    NOW(), NOW(), NOW()
+);
+
+-- Inspector user
+INSERT INTO auth.users (
+    instance_id, id, aud, role, email, encrypted_password,
+    email_confirmed_at, raw_user_meta_data, raw_app_meta_data,
+    created_at, updated_at, confirmation_token, recovery_token,
+    email_change, email_change_token_new, email_change_token_current,
+    phone, phone_change, phone_change_token,
+    email_change_confirm_status
+) VALUES (
+    '00000000-0000-0000-0000-000000000000',
+    '00000000-0000-0000-0000-000000000102',
+    'authenticated', 'authenticated',
+    'inspector@docfield.test',
+    crypt('Test1234', gen_salt('bf')),
+    NOW(),
+    jsonb_build_object(
+        'full_name', 'דני מפקח',
+        'organization_id', '00000000-0000-0000-0000-000000000001',
+        'role', 'inspector'
+    ),
+    '{"provider": "email", "providers": ["email"]}'::jsonb,
+    NOW(), NOW(), '', '',
+    '', '', '',
+    NULL, '', '',
+    0
+);
+
+INSERT INTO auth.identities (
+    id, user_id, identity_data, provider, provider_id,
+    last_sign_in_at, created_at, updated_at
+) VALUES (
+    '00000000-0000-0000-0000-000000000102',
+    '00000000-0000-0000-0000-000000000102',
+    jsonb_build_object('sub', '00000000-0000-0000-0000-000000000102', 'email', 'inspector@docfield.test'),
+    'email',
+    '00000000-0000-0000-0000-000000000102',
+    NOW(), NOW(), NOW()
+);
+
+-- ===========================================
+-- DEMO PROJECT: פרויקט השקמה
+-- ===========================================
+INSERT INTO projects (id, organization_id, name, address, city, status) VALUES (
+    '00000000-0000-0000-0000-000000000010',
+    '00000000-0000-0000-0000-000000000001',
+    'פרויקט השקמה',
+    'רחוב השקמה 15',
+    'תל אביב',
+    'active'
+);
+
+INSERT INTO projects (id, organization_id, name, address, city, status) VALUES (
+    '00000000-0000-0000-0000-000000000011',
+    '00000000-0000-0000-0000-000000000001',
+    'מגדלי הים',
+    'שדרות בן גוריון 42',
+    'חיפה',
+    'active'
+);
+
+-- ===========================================
+-- DEMO BUILDINGS
+-- ===========================================
+INSERT INTO buildings (id, project_id, organization_id, name, floors_count) VALUES
+    ('00000000-0000-0000-0000-000000000020', '00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000001', 'בניין A', 8),
+    ('00000000-0000-0000-0000-000000000021', '00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000001', 'בניין B', 6),
+    ('00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000001', 'מגדל 1', 20);
+
+-- ===========================================
+-- DEMO APARTMENTS
+-- ===========================================
+INSERT INTO apartments (id, building_id, organization_id, number, floor, rooms_count, apartment_type, status) VALUES
+    ('00000000-0000-0000-0000-000000000030', '00000000-0000-0000-0000-000000000020', '00000000-0000-0000-0000-000000000001', '1', 1, 3, 'garden', 'pending'),
+    ('00000000-0000-0000-0000-000000000031', '00000000-0000-0000-0000-000000000020', '00000000-0000-0000-0000-000000000001', '2', 1, 4, 'regular', 'pending'),
+    ('00000000-0000-0000-0000-000000000032', '00000000-0000-0000-0000-000000000020', '00000000-0000-0000-0000-000000000001', '3', 2, 3.5, 'regular', 'in_progress'),
+    ('00000000-0000-0000-0000-000000000033', '00000000-0000-0000-0000-000000000020', '00000000-0000-0000-0000-000000000001', '4', 2, 5, 'penthouse', 'delivered'),
+    ('00000000-0000-0000-0000-000000000034', '00000000-0000-0000-0000-000000000021', '00000000-0000-0000-0000-000000000001', '1', 1, 3, 'regular', 'pending'),
+    ('00000000-0000-0000-0000-000000000035', '00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000001', '101', 10, 4, 'regular', 'pending');
+
+-- ===========================================
+-- GLOBAL CHECKLIST TEMPLATE: דוח מסירה סטנדרטי
+-- ===========================================
+INSERT INTO checklist_templates (id, organization_id, name, report_type, is_global, is_active) VALUES (
+    '00000000-0000-0000-0000-000000000040',
+    NULL,
+    'דוח מסירה סטנדרטי',
+    'delivery',
+    true,
+    true
+);
+
+-- Categories
+INSERT INTO checklist_categories (id, template_id, name, sort_order) VALUES
+    ('00000000-0000-0000-0000-000000000050', '00000000-0000-0000-0000-000000000040', 'מטבח', 1),
+    ('00000000-0000-0000-0000-000000000051', '00000000-0000-0000-0000-000000000040', 'סלון', 2),
+    ('00000000-0000-0000-0000-000000000052', '00000000-0000-0000-0000-000000000040', 'חדר שינה ראשי', 3),
+    ('00000000-0000-0000-0000-000000000053', '00000000-0000-0000-0000-000000000040', 'חדר רחצה ראשי', 4),
+    ('00000000-0000-0000-0000-000000000054', '00000000-0000-0000-0000-000000000040', 'מרפסת', 5),
+    ('00000000-0000-0000-0000-000000000055', '00000000-0000-0000-0000-000000000040', 'חשמל כללי', 6),
+    ('00000000-0000-0000-0000-000000000056', '00000000-0000-0000-0000-000000000040', 'אינסטלציה כללית', 7);
+
+-- Checklist items — מטבח
+INSERT INTO checklist_items (category_id, description, default_severity, requires_photo, sort_order) VALUES
+    ('00000000-0000-0000-0000-000000000050', 'אריחי רצפה ללא סדקים ופגמים', 'medium', false, 1),
+    ('00000000-0000-0000-0000-000000000050', 'אריחי חיפוי קיר ללא סדקים', 'medium', false, 2),
+    ('00000000-0000-0000-0000-000000000050', 'משטח שיש ללא פגמים וסדקים', 'critical', true, 3),
+    ('00000000-0000-0000-0000-000000000050', 'ארונות מטבח — דלתות נפתחות ונסגרות תקין', 'medium', false, 4),
+    ('00000000-0000-0000-0000-000000000050', 'ארונות מטבח — מגירות נפתחות ונסגרות תקין', 'medium', false, 5),
+    ('00000000-0000-0000-0000-000000000050', 'כיור מותקן ללא נזילות', 'critical', false, 6),
+    ('00000000-0000-0000-0000-000000000050', 'ברז מטבח פועל תקין (חם+קר)', 'critical', false, 7),
+    ('00000000-0000-0000-0000-000000000050', 'נקודות חשמל פועלות', 'critical', false, 8);
+
+-- Checklist items — סלון
+INSERT INTO checklist_items (category_id, description, default_severity, requires_photo, sort_order) VALUES
+    ('00000000-0000-0000-0000-000000000051', 'רצפה ללא פגמים וסדקים', 'medium', false, 1),
+    ('00000000-0000-0000-0000-000000000051', 'קירות — טיח חלק ללא סדקים', 'medium', false, 2),
+    ('00000000-0000-0000-0000-000000000051', 'קירות — צבע אחיד ללא כתמים', 'low', false, 3),
+    ('00000000-0000-0000-0000-000000000051', 'חלונות נפתחים ונסגרים תקין', 'medium', false, 4),
+    ('00000000-0000-0000-0000-000000000051', 'תריסים/וילונות חשמליים פועלים', 'medium', false, 5),
+    ('00000000-0000-0000-0000-000000000051', 'דלת כניסה — נעילה תקינה', 'critical', false, 6);
+
+-- Checklist items — חדר שינה ראשי
+INSERT INTO checklist_items (category_id, description, default_severity, requires_photo, sort_order) VALUES
+    ('00000000-0000-0000-0000-000000000052', 'רצפה ללא פגמים', 'medium', false, 1),
+    ('00000000-0000-0000-0000-000000000052', 'קירות — טיח וצבע תקינים', 'medium', false, 2),
+    ('00000000-0000-0000-0000-000000000052', 'חלון — פתיחה וסגירה תקינים', 'medium', false, 3),
+    ('00000000-0000-0000-0000-000000000052', 'דלת — פתיחה/סגירה/נעילה', 'medium', false, 4),
+    ('00000000-0000-0000-0000-000000000052', 'ארון קיר — דלתות ומגירות', 'low', false, 5);
+
+-- Checklist items — חדר רחצה ראשי
+INSERT INTO checklist_items (category_id, description, default_severity, requires_photo, sort_order) VALUES
+    ('00000000-0000-0000-0000-000000000053', 'אריחי רצפה — ללא סדקים, שיפוע תקין', 'critical', false, 1),
+    ('00000000-0000-0000-0000-000000000053', 'אריחי קיר — ללא סדקים ופגמים', 'medium', false, 2),
+    ('00000000-0000-0000-0000-000000000053', 'אסלה — תקינות הדחה ואיטום', 'critical', false, 3),
+    ('00000000-0000-0000-0000-000000000053', 'כיור — תקין ללא נזילות', 'critical', false, 4),
+    ('00000000-0000-0000-0000-000000000053', 'מקלחון — דלת/מחיצה, ניקוז', 'critical', true, 5),
+    ('00000000-0000-0000-0000-000000000053', 'ברזים — פועלים תקין (חם+קר)', 'critical', false, 6),
+    ('00000000-0000-0000-0000-000000000053', 'אוורור — מאוורר פועל', 'medium', false, 7);
+
+-- Checklist items — מרפסת
+INSERT INTO checklist_items (category_id, description, default_severity, requires_photo, sort_order) VALUES
+    ('00000000-0000-0000-0000-000000000054', 'רצפה — שיפוע ניקוז תקין', 'critical', false, 1),
+    ('00000000-0000-0000-0000-000000000054', 'מעקה — יציבות וגובה תקני', 'critical', true, 2),
+    ('00000000-0000-0000-0000-000000000054', 'איטום — ללא סימני רטיבות', 'critical', true, 3),
+    ('00000000-0000-0000-0000-000000000054', 'דלת מרפסת — פתיחה ונעילה', 'medium', false, 4);
+
+-- Checklist items — חשמל
+INSERT INTO checklist_items (category_id, description, default_severity, requires_photo, sort_order) VALUES
+    ('00000000-0000-0000-0000-000000000055', 'לוח חשמל — תקינות מפסקים', 'critical', false, 1),
+    ('00000000-0000-0000-0000-000000000055', 'שקעים — כל השקעים פועלים', 'critical', false, 2),
+    ('00000000-0000-0000-0000-000000000055', 'מפסקי תאורה — כולם פועלים', 'medium', false, 3),
+    ('00000000-0000-0000-0000-000000000055', 'גופי תאורה — מותקנים ופועלים', 'medium', false, 4),
+    ('00000000-0000-0000-0000-000000000055', 'אינטרקום / פעמון — פועל', 'low', false, 5);
+
+-- Checklist items — אינסטלציה
+INSERT INTO checklist_items (category_id, description, default_severity, requires_photo, sort_order) VALUES
+    ('00000000-0000-0000-0000-000000000056', 'לחצי מים — תקינים בכל הדירה', 'critical', false, 1),
+    ('00000000-0000-0000-0000-000000000056', 'ניקוז — כל הניקוזים פועלים', 'critical', false, 2),
+    ('00000000-0000-0000-0000-000000000056', 'דוד שמש / מחמם — פועל', 'medium', false, 3),
+    ('00000000-0000-0000-0000-000000000056', 'ברזי כיבוי ראשיים — נגישים', 'critical', false, 4);
+
+-- ===========================================
+-- GLOBAL DEFECT LIBRARY (common Israeli construction defects)
+-- ===========================================
+INSERT INTO defect_library (organization_id, description, category, default_severity, standard_reference, is_global) VALUES
+    (NULL, 'סדק באריח רצפה', 'ריצוף', 'medium', 'ת"י 1555', true),
+    (NULL, 'אריח שבור או פגום', 'ריצוף', 'medium', 'ת"י 1555', true),
+    (NULL, 'פער בין אריחים לא אחיד', 'ריצוף', 'low', 'ת"י 1555', true),
+    (NULL, 'סדק בטיח', 'טיח', 'medium', 'ת"י 1920', true),
+    (NULL, 'טיח לא ישר / גבשושים', 'טיח', 'low', 'ת"י 1920', true),
+    (NULL, 'כתם רטיבות בקיר', 'איטום', 'critical', 'ת"י 1227', true),
+    (NULL, 'נזילה מצנרת', 'אינסטלציה', 'critical', NULL, true),
+    (NULL, 'שקע חשמל לא פועל', 'חשמל', 'critical', NULL, true),
+    (NULL, 'דלת לא נסגרת כראוי', 'נגרות', 'medium', NULL, true),
+    (NULL, 'חלון לא נסגר באיטום', 'אלומיניום', 'medium', NULL, true),
+    (NULL, 'שיפוע ניקוז לא תקין במרפסת', 'איטום', 'critical', 'ת"י 1227', true),
+    (NULL, 'מעקה רופף או לא בגובה תקני', 'בטיחות', 'critical', 'תקנות הבנייה', true),
+    (NULL, 'משטח שיש סדוק', 'שיש', 'critical', NULL, true),
+    (NULL, 'צבע לא אחיד / מריחות', 'צבע', 'low', NULL, true),
+    (NULL, 'תריס חשמלי תקוע / לא פועל', 'אלומיניום', 'medium', NULL, true);
+
+-- ===========================================
+-- DEMO CLIENTS
+-- ===========================================
+INSERT INTO clients (organization_id, name, phone, email) VALUES
+    ('00000000-0000-0000-0000-000000000001', 'ישראל ישראלי', '0521234567', 'israel@example.com'),
+    ('00000000-0000-0000-0000-000000000001', 'שרה כהן', '0539876543', 'sarah@example.com'),
+    ('00000000-0000-0000-0000-000000000001', 'דוד לוי', '0501112233', NULL);

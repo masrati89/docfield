@@ -1,0 +1,64 @@
+{
+  "model": "claude-opus-4-6",
+  "thinking": "always",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(git *)",
+      "Bash(expo *)",
+      "Bash(eas *)",
+      "Bash(supabase *)",
+      "Bash(turbo *)",
+      "Bash(python3 *)",
+      "Bash(node *)",
+      "Bash(tsc *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(rm *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(echo *)",
+      "Bash(touch *)",
+      "Bash(pwd)",
+      "Bash(cd *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)"
+    ],
+    "deny": [
+      "Bash(sudo *)",
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ \"$(git branch --show-current 2>/dev/null)\" != \"main\" ] || { echo 'Cannot edit directly on main branch. Create a feature branch first.' >&2; exit 2; }",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '\\a'"
+          }
+        ]
+      }
+    ]
+  }
+}

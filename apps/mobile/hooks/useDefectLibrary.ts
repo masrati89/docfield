@@ -154,7 +154,14 @@ export function useDefectLibrary(): UseDefectLibraryReturn {
 
     // Step 3: Standard filter (optional - only if explicitly selected)
     if (selectedStandard) {
-      result = result.filter((item) => item.standard === selectedStandard);
+      result = result.filter((item) => {
+        // Check dedicated standard column first
+        if (item.standard === selectedStandard) return true;
+        // Fallback: check if selectedStandard is in the standardRef
+        if (item.standardRef && item.standardRef.includes(selectedStandard))
+          return true;
+        return false;
+      });
     }
 
     // Sort: user items first, then system
@@ -179,11 +186,26 @@ export function useDefectLibrary(): UseDefectLibraryReturn {
     return Array.from(cats).sort();
   }, [items]);
 
-  // Standards (286 unique values from DB) - use 'standard' column, not full text reference
+  // Standards (286 unique values from DB) - extract from standard_reference if standard is empty
   const standards = useMemo(() => {
-    const stds = new Set(
-      items.map((i) => i.standard).filter((s): s is string => s !== null)
-    );
+    const stds = new Set<string>();
+
+    items.forEach((i) => {
+      // Prefer dedicated 'standard' column if populated
+      if (i.standard) {
+        stds.add(i.standard);
+      }
+      // Fallback: extract standard code from standardRef (e.g., "1555-1" from "תקן ישראלי 1555-1: ...")
+      else if (i.standardRef) {
+        // Try to extract digits and hyphens that look like a standard code
+        // Pattern: 4 digits optionally followed by -digit(s)
+        const match = i.standardRef.match(/(\d{4}(?:-\d+)?)/);
+        if (match) {
+          stds.add(match[1]);
+        }
+      }
+    });
+
     return Array.from(stds).sort();
   }, [items]);
 

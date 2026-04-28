@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Web Dashboard (Vite)",
+      "runtimeExecutable": "wsl",
+      "runtimeArgs": ["npm", "run", "dev", "--workspace", "apps/web"],
+      "port": 5173
+    },
+    {
+      "name": "Mobile App (Expo)",
+      "runtimeExecutable": "wsl",
+      "runtimeArgs": ["npm", "run", "start", "--workspace", "apps/mobile"],
+      "port": 8081
+    },
+    {
+      "name": "Supabase Local",
+      "runtimeExecutable": "wsl",
+      "runtimeArgs": ["npx", "supabase", "start"],
+      "port": 54321
+    },
+    {
+      "name": "Supabase Studio",
+      "runtimeExecutable": "wsl",
+      "runtimeArgs": ["npx", "supabase", "start"],
+      "port": 54323
+    }
+  ]
+}
