@@ -16,6 +16,7 @@ export interface UseDefectSaveInput {
   photos: PhotoItem[];
   showToast: (msg: string, type: 'success' | 'error') => void;
   isDirty: boolean;
+  templateId?: string;
 }
 
 export interface UseDefectSaveReturn {
@@ -35,7 +36,15 @@ export interface UseDefectSaveReturn {
 // --- Hook ---
 
 export function useDefectSave(input: UseDefectSaveInput): UseDefectSaveReturn {
-  const { reportId, organizationId, form, photos, showToast, isDirty } = input;
+  const {
+    reportId,
+    organizationId,
+    form,
+    photos,
+    showToast,
+    isDirty,
+    templateId,
+  } = input;
 
   const router = useRouter();
   const navigation = useNavigation();
@@ -157,6 +166,7 @@ export function useDefectSave(input: UseDefectSaveInput): UseDefectSaveReturn {
           unit_price: !isFixedCost ? parsedUnitPrice : null,
           quantity: !isFixedCost ? parsedQty : null,
           unit_label: !isFixedCost && costValue !== null ? form.costUnit : null,
+          library_template_id: templateId || null,
         })
         .select('id')
         .single();
@@ -252,6 +262,7 @@ export function useDefectSave(input: UseDefectSaveInput): UseDefectSaveReturn {
     reportId,
     organizationId,
     photos,
+    templateId,
     closeModal,
     showToast,
   ]);

@@ -190,6 +190,7 @@ export default function AddDefectScreen() {
     photos: photos.photos,
     showToast,
     isDirty: form.isDirty,
+    templateId,
   });
 
   // Modal state (specific to this component)
