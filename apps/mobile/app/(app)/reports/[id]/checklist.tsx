@@ -1073,6 +1073,85 @@ export default function ChecklistScreen() {
               )}
             </>
           )}
+
+          {/* Footer with action buttons */}
+          <View
+            style={{
+              paddingHorizontal: 16,
+              paddingTop: 16,
+              paddingBottom: Math.max(insets.bottom + 80, 100),
+              flexDirection: 'row-reverse',
+              gap: 10,
+            }}
+          >
+            {/* Search button */}
+            <Pressable
+              onPress={() => {
+                if (Platform.OS !== 'web')
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowSearch(true);
+              }}
+              style={({ pressed }) => ({
+                flex: 1,
+                flexDirection: 'row-reverse',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                backgroundColor: COLORS.cream[100],
+                borderWidth: 1,
+                borderColor: COLORS.cream[200],
+                borderRadius: 10,
+                paddingVertical: 10,
+                paddingHorizontal: 16,
+                transform: [{ scale: pressed ? 0.98 : 1 }],
+              })}
+            >
+              <Feather name="search" size={16} color={COLORS.primary[500]} />
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontFamily: 'Rubik-SemiBold',
+                  color: COLORS.primary[500],
+                }}
+              >
+                חיפוש
+              </Text>
+            </Pressable>
+
+            {/* Add defect button */}
+            <Pressable
+              onPress={() => {
+                if (finalReportId) {
+                  if (Platform.OS !== 'web')
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push(`/(app)/reports/${finalReportId}/add-defect`);
+                }
+              }}
+              style={({ pressed }) => ({
+                flex: 1,
+                flexDirection: 'row-reverse',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                backgroundColor: COLORS.primary[500],
+                borderRadius: 10,
+                paddingVertical: 10,
+                paddingHorizontal: 16,
+                transform: [{ scale: pressed ? 0.98 : 1 }],
+              })}
+            >
+              <Feather name="plus" size={16} color={COLORS.white} />
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontFamily: 'Rubik-SemiBold',
+                  color: COLORS.white,
+                }}
+              >
+                הוסף ממצא
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
 
