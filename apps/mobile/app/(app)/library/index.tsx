@@ -172,6 +172,17 @@ export default function LibraryScreen() {
     refetch();
   }, [refetch]);
 
+  const handleRemoveCategory = useCallback(
+    (cat: string) => {
+      setCategoryFilter(categoryFilter.filter((c: string) => c !== cat));
+    },
+    [categoryFilter, setCategoryFilter]
+  );
+
+  const handleRemoveStandard = useCallback(() => {
+    setSelectedStandard(undefined);
+  }, [setSelectedStandard]);
+
   const handleClearAllFilters = useCallback(() => {
     setSearchQuery('');
     setCategoryFilter([]);
@@ -361,9 +372,7 @@ export default function LibraryScreen() {
         {categoryFilter.length > 0 && (
           <SelectedChips
             items={categoryFilter}
-            onRemove={(cat) =>
-              setCategoryFilter(categoryFilter.filter((c) => c !== cat))
-            }
+            onRemove={handleRemoveCategory}
             color="green"
           />
         )}
@@ -372,7 +381,7 @@ export default function LibraryScreen() {
         {selectedStandard && (
           <SelectedChips
             items={[selectedStandard]}
-            onRemove={() => setSelectedStandard(undefined)}
+            onRemove={handleRemoveStandard}
             color="blue"
             prefix="תקן: "
           />
