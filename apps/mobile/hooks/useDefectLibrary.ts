@@ -153,13 +153,19 @@ export function useDefectLibrary(): UseDefectLibraryReturn {
     }
 
     // Step 3: Standard filter (optional - only if explicitly selected)
+    // selectedStandard is a code like "1205", need to match against full text like "ת"י 1205 חלק 1 — ..."
     if (selectedStandard) {
       result = result.filter((item) => {
-        // Check dedicated standard column first
-        if (item.standard === selectedStandard) return true;
-        // Fallback: check if selectedStandard is in the standardRef
-        if (item.standardRef && item.standardRef.includes(selectedStandard))
-          return true;
+        // Extract code from standard column
+        if (item.standard) {
+          const match = item.standard.match(/ת"י\s+(\d{4}(?:-\d+)?)/);
+          if (match && match[1] === selectedStandard) return true;
+        }
+        // Extract code from standardRef column
+        if (item.standardRef) {
+          const match = item.standardRef.match(/ת"י\s+(\d{4}(?:-\d+)?)/);
+          if (match && match[1] === selectedStandard) return true;
+        }
         return false;
       });
     }
@@ -186,30 +192,40 @@ export function useDefectLibrary(): UseDefectLibraryReturn {
     return Array.from(cats).sort();
   }, [items]);
 
-  // Standards (286 unique values from DB) - extract from standard_reference if standard is empty
+  // Standards - extract code (e.g. "1205") from full Hebrew text like "ת"י 1205 חלק 2 — ..."
   const standards = useMemo(() => {
     const stds = new Set<string>();
 
     items.forEach((i) => {
-      // Prefer dedicated 'standard' column if populated
+      let codeToAdd: string | null = null;
+
+      // If standard column has text, extract the code from it
       if (i.standard) {
-        stds.add(i.standard);
-      }
-      // Fallback: extract standard code from standardRef (e.g., "1555-1" from "תקן ישראלי 1555-1: ...")
-      else if (i.standardRef) {
-        // Try to extract digits and hyphens that look like a standard code
-        // Pattern: 4 digits optionally followed by -digit(s)
-        const match = i.standardRef.match(/(\d{4}(?:-\d+)?)/);
+        // Pattern: ת"י followed by space and 4 digits (optionally with -digits)
+        // e.g. "ת"י 1205" from "ת"י 1205 — מערכת אינסטלציה..."
+        // or "ת"י 1205 חלק 1" from "ת"י 1205 חלק 1 — ..."
+        const match = i.standard.match(/ת"י\s+(\d{4}(?:-\d+)?)/);
         if (match) {
-          stds.add(match[1]);
+          codeToAdd = match[1];
         }
+      }
+      // Fallback: extract from standardRef column
+      else if (i.standardRef) {
+        const match = i.standardRef.match(/ת"י\s+(\d{4}(?:-\d+)?)/);
+        if (match) {
+          codeToAdd = match[1];
+        }
+      }
+
+      if (codeToAdd) {
+        stds.add(codeToAdd);
       }
     });
 
     const result = Array.from(stds).sort();
     console.log('🔍 DEBUG useDefectLibrary - standards extracted:', {
       count: result.length,
-      samples: result.slice(0, 10),
+      samples: result.slice(0, 5),
       allStandards: result,
     });
     return result;
