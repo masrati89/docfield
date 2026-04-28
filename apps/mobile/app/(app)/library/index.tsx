@@ -1,11 +1,10 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   TextInput,
   Pressable,
   FlatList,
-  ScrollView,
   RefreshControl,
   Platform,
   I18nManager,
@@ -24,7 +23,11 @@ import Animated, {
 
 import { COLORS, BORDER_RADIUS, SHADOWS } from '@infield/ui';
 import { useDefectLibrary } from '@/hooks/useDefectLibrary';
-import { DefectLibraryCard } from '@/components/defect';
+import {
+  DefectLibraryCard,
+  MultiSelectDropdown,
+  StandardAutocomplete,
+} from '@/components/defect';
 import { SkeletonBlock } from '@/components/ui/SkeletonBlock';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { DefectLibraryItem } from '@/hooks/useDefectLibrary';
@@ -120,67 +123,6 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-// --- Category Chip ---
-
-function CategoryChip({
-  label,
-  isSelected,
-  onPress,
-}: {
-  label: string;
-  isSelected: boolean;
-  onPress: () => void;
-}) {
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.94, { damping: 15, stiffness: 200 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 200 });
-  };
-
-  return (
-    <Animated.View style={animatedStyle}>
-      <Pressable
-        onPress={() => {
-          if (Platform.OS !== 'web') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
-          onPress();
-        }}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        style={{
-          height: 32,
-          paddingHorizontal: 14,
-          justifyContent: 'center',
-          borderRadius: 16,
-          backgroundColor: isSelected ? COLORS.primary[500] : 'transparent',
-          borderWidth: 1,
-          borderColor: isSelected ? COLORS.primary[500] : COLORS.cream[300],
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 13,
-            fontFamily: isSelected ? 'Rubik-SemiBold' : 'Rubik-Regular',
-            color: isSelected ? COLORS.white : COLORS.neutral[600],
-            lineHeight: 18,
-          }}
-        >
-          {label}
-        </Text>
-      </Pressable>
-    </Animated.View>
-  );
-}
-
 // --- Animated Library Card Item ---
 
 function AnimatedLibraryItem({
@@ -212,6 +154,7 @@ export default function LibraryScreen() {
   const {
     items,
     categories,
+    standards,
     isLoading,
     isRefreshing,
     error,
@@ -219,6 +162,8 @@ export default function LibraryScreen() {
     setSearchQuery,
     categoryFilter,
     setCategoryFilter,
+    selectedStandard,
+    setSelectedStandard,
     refetch,
   } = useDefectLibrary();
 
@@ -226,12 +171,20 @@ export default function LibraryScreen() {
     refetch();
   }, [refetch]);
 
-  const handleCategoryPress = useCallback(
-    (cat: string | null) => {
-      setCategoryFilter(categoryFilter === cat ? null : cat);
-    },
-    [categoryFilter, setCategoryFilter]
-  );
+  const handleClearAllFilters = useCallback(() => {
+    setSearchQuery('');
+    setCategoryFilter([]);
+    setSelectedStandard(undefined);
+  }, [setSearchQuery, setCategoryFilter, setSelectedStandard]);
+
+  // Check if there are active filters
+  const hasActiveFilters = useMemo(() => {
+    return (
+      searchQuery.trim().length > 0 ||
+      categoryFilter.length > 0 ||
+      selectedStandard !== undefined
+    );
+  }, [searchQuery, categoryFilter, selectedStandard]);
 
   const backScale = useSharedValue(1);
   const backStyle = useAnimatedStyle(() => ({
@@ -377,32 +330,59 @@ export default function LibraryScreen() {
         )}
       </View>
 
-      {/* Category chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingVertical: 10,
-          gap: 6,
-          flexDirection: I18nManager.isRTL ? 'row' : 'row-reverse',
+      {/* Filter dropdowns */}
+      <View
+        style={{
+          marginHorizontal: 16,
+          marginTop: 12,
+          marginBottom: 8,
+          gap: 8,
         }}
       >
-        <CategoryChip
-          key="all"
-          label="הכל"
-          isSelected={categoryFilter === null}
-          onPress={() => handleCategoryPress(null)}
-        />
-        {categories.map((cat) => (
-          <CategoryChip
-            key={cat}
-            label={cat}
-            isSelected={categoryFilter === cat}
-            onPress={() => handleCategoryPress(cat)}
+        <View style={{ flexDirection: 'row-reverse', gap: 8 }}>
+          <MultiSelectDropdown
+            label="קטגוריה"
+            options={categories}
+            selectedValues={categoryFilter}
+            onSelectionChange={setCategoryFilter}
+            maxHeight={250}
           />
-        ))}
-      </ScrollView>
+          <StandardAutocomplete
+            label="תקן"
+            standards={standards}
+            selectedStandard={selectedStandard}
+            onSelect={setSelectedStandard}
+            maxHeight={250}
+          />
+        </View>
+
+        {/* Clear all filters button */}
+        {hasActiveFilters && (
+          <Pressable
+            onPress={() => {
+              if (Platform.OS !== 'web') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              handleClearAllFilters();
+            }}
+            style={{
+              alignSelf: 'flex-end',
+              paddingVertical: 4,
+              paddingHorizontal: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                fontFamily: 'Rubik-Medium',
+                color: COLORS.primary[500],
+              }}
+            >
+              נקה הכל
+            </Text>
+          </Pressable>
+        )}
+      </View>
 
       {/* Results */}
       {isLoading ? (
@@ -413,17 +393,15 @@ export default function LibraryScreen() {
         <View style={{ flex: 1 }}>
           <EmptyState
             icon="book-open"
-            title={
-              searchQuery.trim() || categoryFilter
-                ? 'לא נמצאו ממצאים'
-                : 'המאגר ריק'
-            }
+            title={hasActiveFilters ? 'לא נמצאו ממצאים' : 'המאגר ריק'}
             subtitle={
               searchQuery.trim()
                 ? 'נסה מונחי חיפוש אחרים'
-                : categoryFilter
-                  ? 'אין ממצאים בקטגוריה זו'
-                  : 'הוסף ממצאים מסך "הוסף ממצא"'
+                : categoryFilter.length > 0
+                  ? 'אין ממצאים בקטגוריות שנבחרו'
+                  : selectedStandard
+                    ? 'אין ממצאים עם התקן הזה'
+                    : 'הוסף ממצאים מסך "הוסף ממצא"'
             }
           />
         </View>

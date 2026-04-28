@@ -6,3 +6,6 @@ export { CostSection } from './CostSection';
 export { PhotoGrid } from './PhotoGrid';
 export { DefectLibraryCard } from './DefectLibraryCard';
 export { AppendixSection } from './AppendixSection';
+export { DropdownBase } from './DropdownBase';
+export { MultiSelectDropdown } from './MultiSelectDropdown';
+export { StandardAutocomplete } from './StandardAutocomplete';

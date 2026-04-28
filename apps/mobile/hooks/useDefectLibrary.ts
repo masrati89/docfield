@@ -71,13 +71,48 @@ async function fetchDefectLibrary(
 
 // --- Hook ---
 
-export function useDefectLibrary() {
+type GroupingMode = 'none' | 'room' | 'category' | 'relevance';
+
+interface UseDefectLibraryReturn {
+  items: DefectLibraryItem[];
+  allItems: DefectLibraryItem[];
+  categories: string[];
+  standards: string[];
+  isLoading: boolean;
+  isRefreshing: boolean;
+  error: boolean;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  categoryFilter: string[];
+  setCategoryFilter: (cats: string[]) => void;
+  selectedStandard: string | undefined;
+  setSelectedStandard: (standard: string | undefined) => void;
+  groupingMode: GroupingMode;
+  deleteItem: (id: string) => void;
+  isDeleting: boolean;
+  addItem: (
+    item: Omit<DefectLibraryItem, 'id' | 'source' | 'userId'>
+  ) => Promise<void>;
+  isAdding: boolean;
+  updateItem: (
+    itemId: string,
+    updates: Partial<Omit<DefectLibraryItem, 'id' | 'source' | 'userId'>>
+  ) => Promise<void>;
+  isUpdating: boolean;
+  findSimilar: (title: string) => SimilarityMatch | null;
+  refetch: () => void;
+}
+
+export function useDefectLibrary(): UseDefectLibraryReturn {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const userId = user?.id ?? '';
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+  const [selectedStandard, setSelectedStandard] = useState<
+    string | undefined
+  >();
 
   const query = useQuery({
     queryKey: defectLibraryKeys.list(),
@@ -101,16 +136,23 @@ export function useDefectLibrary() {
     [items]
   );
 
-  // Filtered + searched items
+  // Filtering logic: text → categories → standard
   const filteredItems = useMemo(() => {
     let result = items;
 
+    // Step 1: Text search (Fuse.js)
     if (searchQuery.trim()) {
       result = fuse.search(searchQuery).map((r) => r.item);
     }
 
-    if (categoryFilter) {
-      result = result.filter((item) => item.category === categoryFilter);
+    // Step 2: Category filter (OR logic - if multiple selected, include all)
+    if (categoryFilter.length > 0) {
+      result = result.filter((item) => categoryFilter.includes(item.category));
+    }
+
+    // Step 3: Standard filter (optional - only if explicitly selected)
+    if (selectedStandard) {
+      result = result.filter((item) => item.standardRef === selectedStandard);
     }
 
     // Sort: user items first, then system
@@ -119,12 +161,28 @@ export function useDefectLibrary() {
       if (a.source === 'system' && b.source === 'user') return 1;
       return 0;
     });
-  }, [items, searchQuery, categoryFilter, fuse]);
+  }, [items, searchQuery, categoryFilter, selectedStandard, fuse]);
+
+  // Determine grouping mode intelligently
+  const groupingMode = useMemo<GroupingMode>(() => {
+    if (categoryFilter.length === 1 && !selectedStandard) return 'room';
+    if (selectedStandard) return 'category';
+    if (searchQuery.trim()) return 'relevance';
+    return 'none';
+  }, [categoryFilter, selectedStandard, searchQuery]);
 
   // Categories
   const categories = useMemo(() => {
     const cats = new Set(items.map((i) => i.category).filter(Boolean));
     return Array.from(cats).sort();
+  }, [items]);
+
+  // Standards (286 unique values from DB)
+  const standards = useMemo(() => {
+    const stds = new Set(
+      items.map((i) => i.standardRef).filter((s): s is string => s !== null)
+    );
+    return Array.from(stds).sort();
   }, [items]);
 
   // Delete user item
@@ -230,10 +288,21 @@ export function useDefectLibrary() {
     [items]
   );
 
+  const updateItemAsync = useCallback(
+    async (
+      itemId: string,
+      updates: Partial<Omit<DefectLibraryItem, 'id' | 'source' | 'userId'>>
+    ) => {
+      return updateMutation.mutateAsync({ itemId, updates });
+    },
+    [updateMutation]
+  );
+
   return {
     items: filteredItems,
     allItems: items,
     categories,
+    standards,
     isLoading: query.isLoading,
     isRefreshing: query.isFetching && !query.isLoading,
     error: query.isError,
@@ -241,11 +310,14 @@ export function useDefectLibrary() {
     setSearchQuery,
     categoryFilter,
     setCategoryFilter,
+    selectedStandard,
+    setSelectedStandard,
+    groupingMode,
     deleteItem: deleteMutation.mutate,
     isDeleting: deleteMutation.isPending,
     addItem: addMutation.mutateAsync,
     isAdding: addMutation.isPending,
-    updateItem: updateMutation.mutateAsync,
+    updateItem: updateItemAsync,
     isUpdating: updateMutation.isPending,
     findSimilar,
     refetch: () =>
