@@ -908,7 +908,6 @@ export default function ChecklistScreen() {
                     style={{
                       flexDirection: 'row-reverse',
                       alignItems: 'center',
-                      justifyContent: 'space-between',
                       marginBottom: 8,
                     }}
                   >
@@ -925,39 +924,6 @@ export default function ChecklistScreen() {
                         ? `ממצאים חדשים (${defects.filter((d) => d.source !== 'inherited').length})`
                         : `ממצאים (${defects.length})`}
                     </Text>
-                    <PressableScale
-                      onPress={() => {
-                        if (finalReportId) {
-                          router.push(
-                            `/(app)/reports/${finalReportId}/add-defect`
-                          );
-                        }
-                      }}
-                      style={{
-                        flexDirection: 'row-reverse',
-                        alignItems: 'center',
-                        gap: 4,
-                        paddingVertical: 6,
-                        paddingHorizontal: 10,
-                        borderRadius: 8,
-                        backgroundColor: COLORS.primary[50],
-                      }}
-                    >
-                      <Feather
-                        name="plus"
-                        size={14}
-                        color={COLORS.primary[500]}
-                      />
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          fontFamily: 'Rubik-Medium',
-                          color: COLORS.primary[500],
-                        }}
-                      >
-                        הוסף
-                      </Text>
-                    </PressableScale>
                   </View>
 
                   {defects

@@ -10,7 +10,6 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
 import * as Haptics from '@/lib/haptics';
 import { COLORS } from '@infield/ui';
 import { supabase } from '@/lib/supabase';
@@ -464,48 +463,11 @@ export default function ReportDetailScreen() {
               )}
             </View>
 
-            {/* Quick add defect button — inside ScrollView to avoid Tab Bar overlap */}
             <View
               style={{
-                paddingHorizontal: 16,
-                paddingTop: 16,
-                paddingBottom: Math.max(insets.bottom + 80, 100), // Space for Tab Bar + safe area
-                alignItems: 'flex-end',
+                paddingBottom: Math.max(insets.bottom + 80, 100),
               }}
-            >
-              <Pressable
-                onPress={() => {
-                  if (reportId) {
-                    router.push(`/(app)/reports/${reportId}/add-defect`);
-                  }
-                }}
-                style={{
-                  flexDirection: 'row-reverse',
-                  alignItems: 'center',
-                  gap: 6,
-                  backgroundColor: COLORS.primary[500],
-                  borderRadius: 10,
-                  paddingVertical: 10,
-                  paddingHorizontal: 16,
-                  shadowColor: 'rgb(27,122,68)',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.22,
-                  shadowRadius: 8,
-                  elevation: 4,
-                }}
-              >
-                <Feather name="plus" size={16} color={COLORS.white} />
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontFamily: 'Rubik-SemiBold',
-                    color: COLORS.white,
-                  }}
-                >
-                  הוסף ממצא
-                </Text>
-              </Pressable>
-            </View>
+            />
           </ScrollView>
 
           {/* Summary modal */}
