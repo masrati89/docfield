@@ -45,7 +45,7 @@ async function fetchDefectLibrary(
   const { data, error } = await supabase
     .from('defect_library')
     .select(
-      'id, description, category, standard_reference, recommendation, price, is_global, organization_id, usage_count'
+      'id, title, description, category, standard_reference, recommendation, price, is_global, organization_id, usage_count'
     )
     .order('category')
     .order('description');
@@ -54,7 +54,7 @@ async function fetchDefectLibrary(
 
   return (data ?? []).map((d: Record<string, unknown>) => ({
     id: d.id as string,
-    title: (d.description as string) ?? '',
+    title: ((d.title as string) || (d.description as string)) ?? '',
     category: (d.category as string) ?? '',
     location: '',
     standardRef: (d.standard_reference as string) ?? null,
