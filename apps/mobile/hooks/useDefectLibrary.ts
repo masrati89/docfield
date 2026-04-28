@@ -13,6 +13,7 @@ export interface DefectLibraryItem {
   category: string;
   location: string;
   standardRef: string | null;
+  standard: string | null;
   recommendation: string | null;
   cost: number | null;
   costUnit: string | null;
@@ -45,7 +46,7 @@ async function fetchDefectLibrary(
   const { data, error } = await supabase
     .from('defect_library')
     .select(
-      'id, title, description, category, standard_reference, recommendation, price, is_global, organization_id, usage_count'
+      'id, title, description, category, standard_reference, standard, recommendation, price, is_global, organization_id, usage_count'
     )
     .order('category')
     .order('description');
@@ -58,6 +59,7 @@ async function fetchDefectLibrary(
     category: (d.category as string) ?? '',
     location: '',
     standardRef: (d.standard_reference as string) ?? null,
+    standard: (d.standard as string) ?? null,
     recommendation: (d.recommendation as string) ?? null,
     cost: null,
     costUnit: null,
@@ -152,7 +154,7 @@ export function useDefectLibrary(): UseDefectLibraryReturn {
 
     // Step 3: Standard filter (optional - only if explicitly selected)
     if (selectedStandard) {
-      result = result.filter((item) => item.standardRef === selectedStandard);
+      result = result.filter((item) => item.standard === selectedStandard);
     }
 
     // Sort: user items first, then system
@@ -177,10 +179,10 @@ export function useDefectLibrary(): UseDefectLibraryReturn {
     return Array.from(cats).sort();
   }, [items]);
 
-  // Standards (286 unique values from DB)
+  // Standards (286 unique values from DB) - use 'standard' column, not full text reference
   const standards = useMemo(() => {
     const stds = new Set(
-      items.map((i) => i.standardRef).filter((s): s is string => s !== null)
+      items.map((i) => i.standard).filter((s): s is string => s !== null)
     );
     return Array.from(stds).sort();
   }, [items]);

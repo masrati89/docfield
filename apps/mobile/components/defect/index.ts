@@ -9,3 +9,4 @@ export { AppendixSection } from './AppendixSection';
 export { DropdownBase } from './DropdownBase';
 export { MultiSelectDropdown } from './MultiSelectDropdown';
 export { StandardAutocomplete } from './StandardAutocomplete';
+export { SelectedChips } from './SelectedChips';

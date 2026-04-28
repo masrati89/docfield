@@ -100,13 +100,6 @@ function DefectLibraryCardInner({
     }
   }, [hasDetails, expanded, chevronRotation, onPress]);
 
-  const handleSelect = useCallback(() => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    onPress();
-  }, [onPress]);
-
   const chevronStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${chevronRotation.value}deg` }],
   }));
@@ -294,34 +287,6 @@ function DefectLibraryCardInner({
           {item.notes && (
             <DetailRow icon="file-text" label="הערות" value={item.notes} />
           )}
-
-          {/* Select button */}
-          <Pressable
-            onPress={handleSelect}
-            style={({ pressed }) => ({
-              marginTop: 6,
-              height: 36,
-              borderRadius: 10,
-              backgroundColor: pressed
-                ? COLORS.primary[600]
-                : COLORS.primary[500],
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'row-reverse',
-              gap: 6,
-            })}
-          >
-            <Feather name="plus" size={14} color={COLORS.white} />
-            <Text
-              style={{
-                fontSize: 13,
-                fontFamily: 'Rubik-SemiBold',
-                color: COLORS.white,
-              }}
-            >
-              בחר ממצא
-            </Text>
-          </Pressable>
         </Animated.View>
       )}
     </View>

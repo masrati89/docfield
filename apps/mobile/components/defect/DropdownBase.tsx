@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import { View, Text, Pressable, Platform, ScrollView } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from '@/lib/haptics';
@@ -29,6 +29,28 @@ export function DropdownBase({
   maxHeight = 300,
 }: DropdownBaseProps) {
   const scale = useSharedValue(1);
+  const dropdownRef = useRef<View>(null);
+
+  // Close dropdown on outside click (web only)
+  useEffect(() => {
+    if (!isOpen || Platform.OS !== 'web') return;
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      const viewElement = dropdownRef.current as unknown as HTMLElement | null;
+      if (
+        viewElement &&
+        event.target instanceof Node &&
+        !viewElement.contains(event.target)
+      ) {
+        onToggle();
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [isOpen, onToggle]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -57,7 +79,7 @@ export function DropdownBase({
   }, [label, selectedCount]);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View ref={dropdownRef} style={{ flex: 1 }}>
       {/* Dropdown Header/Button */}
       <Animated.View style={animatedStyle}>
         <Pressable

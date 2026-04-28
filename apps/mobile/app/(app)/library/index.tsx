@@ -27,6 +27,7 @@ import {
   DefectLibraryCard,
   MultiSelectDropdown,
   StandardAutocomplete,
+  SelectedChips,
 } from '@/components/defect';
 import { SkeletonBlock } from '@/components/ui/SkeletonBlock';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -355,6 +356,27 @@ export default function LibraryScreen() {
             maxHeight={250}
           />
         </View>
+
+        {/* Selected categories chips */}
+        {categoryFilter.length > 0 && (
+          <SelectedChips
+            items={categoryFilter}
+            onRemove={(cat) =>
+              setCategoryFilter(categoryFilter.filter((c) => c !== cat))
+            }
+            color="green"
+          />
+        )}
+
+        {/* Selected standard chip */}
+        {selectedStandard && (
+          <SelectedChips
+            items={[selectedStandard]}
+            onRemove={() => setSelectedStandard(undefined)}
+            color="blue"
+            prefix="תקן: "
+          />
+        )}
 
         {/* Clear all filters button */}
         {hasActiveFilters && (
