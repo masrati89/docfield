@@ -3,6 +3,21 @@
 -- Dependencies: organizations
 
 -- ===========================================
+-- Forward-compat helper: ensure get_user_org_id exists before policies reference it.
+-- This duplicates migration 028's definition (line 13). CREATE OR REPLACE makes 028's
+-- later run a no-op. Required so `supabase db reset` can build from scratch.
+-- Do not remove without also moving this definition to an earlier migration.
+-- ===========================================
+CREATE OR REPLACE FUNCTION get_user_org_id()
+RETURNS UUID
+LANGUAGE sql
+STABLE SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT organization_id FROM users WHERE id = auth.uid();
+$$;
+
+-- ===========================================
 -- TABLE: checklist_templates
 -- organizationId NULL = global template (available to all)
 -- ===========================================
